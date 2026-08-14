@@ -66,7 +66,20 @@ Pins after 2026-08-14 freshness check:
 
 ## 5. Phase 1: first shielded flow ✅ live mainnet 2026-08-14
 
-Status: app floor built 2026-08-14. `npm run typecheck` and `npm run build` pass. First shielded mainnet tx landed 2026-08-14: [`0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193`](https://voyager.online/tx/0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193) (DEPLOY_ACCOUNT then strk20 deposit, 0.1 STRK shielded, 6 STRK pool fee). Logged in `strk20.json`.
+Status: app floor built 2026-08-14. `npm run typecheck` and `npm run build` pass. Three real mainnet txs logged in `strk20.json`, all from the same Ready wallet [`0x0101ab74cf27f868fa42f02de17c5fca88697dd63dd850ee6626d74c25ed6a4a`](https://voyager.online/contract/0x0101ab74cf27f868fa42f02de17c5fca88697dd63dd850ee6626d74c25ed6a4a):
+
+| Item | Status |
+|---|---|
+| Ready connect | ✅ live. Capability gate verified live (`["0.10"]`/`["0.10.3"]`/`["0.11"]` pass, `["0.9"]`/`[]` fail). |
+| Shield STRK | ✅ live mainnet. [`0x02cbfcceac813b17696710fd8f2e52b603e4ba6dabd87e774d1840d20b21a735`](https://voyager.online/tx/0x02cbfcceac813b17696710fd8f2e52b603e4ba6dabd87e774d1840d20b21a735) (DEPLOY_ACCOUNT) then [`0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193`](https://voyager.online/tx/0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193) (0.1 STRK shielded, 6 STRK pool fee, read live from `get_fee_amount`). |
+| Shield USDC | ✅ live mainnet. [`0x059eb6c1bdddd048006f372b4db6602560dbfc722536b94d59ece8abb865586e`](https://voyager.online/tx/0x059eb6c1bdddd048006f372b4db6602560dbfc722536b94d59ece8abb865586e) (0.2 USDC in, 0.0395 USDC shielded after the pool's privacy fee). |
+| Receive QR / payment link | ✅ live. Registered pool address, no stealth scheme. |
+| Honest labels | ✅ live. Public-vs-private table on every screen, real receipts (finality + `actual_fee`), wallet's own error text surfaced on unclassified failures. |
+| Unshield | Coded, not yet mainnet-exercised. MAX unshields the full note; pool fee (6 STRK, live from `get_fee_amount`) plus Ready's buffer is paid in public STRK, and the demo wallet does not hold enough public STRK past that fee yet. Real blocker: fund the demo wallet with public STRK. |
+| Private send | Coded, not yet mainnet-exercised. Recipient must already be registered in the pool; only one wallet has been run through the app so far. Real blocker: a second Ready wallet, already registered, to send to. |
+| AVNU private swap | Coded, not yet mainnet-exercised. `AVNU_PAYMASTER_API_KEY` not set on the live deployment; `/api/avnu/status` answers `configured: false` and the Swap tab shows the 503 notice honestly. Real blocker: place the paymaster key server-side (user-only, per `docs/_SHARED` rule: dapp never holds viewing keys, key goes in `.env` by hand). |
+
+No fourth tx exists and none is claimed. Full detail: `docs/JUDGE_PASS_2026-08-14.md`.
 
 Sprint floor (must work by Aug 31): Ready connect, shield, private send to a second registered Ready wallet, honest labels. Stretch: AVNU private swap from an already-shielded balance. Cut from the floor: statement PDF, Vesu, payroll, card, shadow accounts.
 
@@ -80,7 +93,7 @@ Sprint floor (must work by Aug 31): Ready connect, shield, private send to a sec
 ## 6. Phase 2: feature integration
 
 - Receive: payment link / QR that is a registered pool address, not a new stealth scheme. ✅ in Phase 1 floor (2026-08-14).
-- AVNU private swap from an already-shielded balance. Paymaster API key server-side only. ✅ code landed 2026-08-14 (`/api/avnu/*`, Swap tab). Live quote/submit still needs `AVNU_PAYMASTER_API_KEY` in `.env` and Ready in a browser. https://docs.avnu.fi/docs/privacy
+- AVNU private swap from an already-shielded balance. Paymaster API key server-side only. Coded, not yet mainnet-exercised 2026-08-14 (`/api/avnu/*`, Swap tab). Real blocker: `AVNU_PAYMASTER_API_KEY` not yet in `.env` on the live deployment; `/api/avnu/status` answers `configured: false`. https://docs.avnu.fi/docs/privacy
 - Vesu deposit/withdraw through the official helper via Wallet API invoke + open notes. https://strk20-by-example.org/starknet-wallet-api/private-defi
 - Honest private vs public labels on every screen.
 - Statement view only via consented `strk20Balances` when we actually show balances.
