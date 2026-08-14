@@ -15,6 +15,16 @@ Locked product rule, unchanged: a Visa cannot debit a STRK20 note. Path is unshi
 
 Ready's own card ran on Kulipa, a Paris-based EMI. Kulipa wind-down: EEA-only cutoff in June 2026 with one-hour notice, then late July 2026 full stop of the Metal/Lite card tiers. The same wind-down paused Solflare Card, a second Kulipa-issued product. Do not rebuild card issuance on Kulipa. This is why Ready's own card is currently unavailable, and it is the direct reason Phase 2 needs a different issuer.
 
+### What they did next
+
+Sourced 2026-08-14.
+
+Solflare, official https://www.solflare.com/blog/cards-service-pause/: cards stopped 28 July 2026, moving to a "new card issuing partner" expected August. Existing cards do not carry over. Partner name, network, and fees not stated. Live product page still shows paused. SpendNode agrees the partner is not yet named. Any specific BIN guess (Rain, Bridge, Reap, Gnosis, Monavate) is UNVERIFIED.
+
+Ready, official https://www.ready.co/blog/community-finance (6 Aug 2026, Itamar Lesuisse): announces Community Cards launching soon, where spend sends a share of card program revenue to a chosen community. The new Ready runs on Base, with a later August app update; existing users get a new self-custodial Base account and old accounts do not auto-migrate. Ready's help center separately says they are transitioning to a new card partner, no launch date, partner not named. Ready's app ToS states the card is issued by a third-party issuer with the legal name left blank.
+
+Do not treat Community Cards or Base as our issuer, and do not copy Ready's new product as the STRK20 last mile: it answers a different question (Ready's own migration) than the one this note is scoping (who issues our card in Phase 2).
+
 ## Rejected: BlankCard is not an issuer
 
 Local path `/Users/kamal/Desktop/BlankCard`, upstream `github.com/altaga/BlankCard`. This is a 2024 hackathon zero-knowledge anti-cloning demo on Base, not a card issuer. The Noir circuit hardcodes a single PAN (`6268857032070713`). The NFC flow accepts a fixed UID (`01020304`) and injects a pre-built canned proof rather than proving against live card state. There is no BIN, no Visa settlement rail, and no Starknet integration anywhere in the repo (graph scan: 203 nodes, zero issuer node). Reject this code outright; it does not belong in any issuer evaluation.
