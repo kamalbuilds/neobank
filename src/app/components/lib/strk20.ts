@@ -74,29 +74,43 @@ export async function submitStrk20(
 }
 
 export type WaitOutcome =
-  | { status: "confirmed"; reverted: false; revertReason?: undefined }
-  | { status: "confirmed"; reverted: true; revertReason?: string }
+  // `receipt` is the real RPC receipt, carried so the UI never has to invent one.
+  | { status: "confirmed"; reverted: boolean; revertReason?: string; receipt: unknown }
   | { status: "submitted" } // hit the 120s ceiling; not confirmed, not failed
   | { status: "error"; message: string };
 
 const WAIT_CEILING_MS = 120_000;
+const POLL_INTERVAL_MS = 3_000;
 
 // Poll with a FRESH RpcProvider for the given network - never the
 // WalletAccount's provider, which is frozen to whatever network was active
 // at connect time and can silently point at the wrong chain.
 export async function waitStrk20Transaction(txHash: string, network: NetworkKey): Promise<WaitOutcome> {
   const provider = providerFor(network);
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     const receipt: any = await Promise.race([
-      provider.waitForTransaction(txHash, { retries: 400, retryInterval: 3000 }),
-      new Promise((_, reject) => setTimeout(() => reject(new Error("WAIT_TIMEOUT")), WAIT_CEILING_MS)),
+      // The retry budget matches the ceiling. With a larger budget the losing
+      // side of this race keeps polling long after the UI has moved on.
+      provider.waitForTransaction(txHash, {
+        retries: Math.ceil(WAIT_CEILING_MS / POLL_INTERVAL_MS),
+        retryInterval: POLL_INTERVAL_MS,
+      }),
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error("WAIT_TIMEOUT")), WAIT_CEILING_MS);
+      }),
     ]);
     const value = receipt?.value ?? receipt;
     const reverted = value?.execution_status === "REVERTED";
-    return { status: "confirmed", reverted, revertReason: value?.revert_reason };
+    return { status: "confirmed", reverted, revertReason: value?.revert_reason, receipt: value };
   } catch (error: any) {
-    if (error?.message === "WAIT_TIMEOUT") return { status: "submitted" };
-    return { status: "error", message: error?.message ?? String(error) };
+    const message: string = error?.message ?? String(error);
+    // Either ceiling can fire first. Both mean "submitted, not yet seen by this
+    // RPC" - never report an unconfirmed transaction as a failed one.
+    if (message === "WAIT_TIMEOUT" || message.includes("timed-out")) return { status: "submitted" };
+    return { status: "error", message };
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }
 
@@ -115,6 +129,11 @@ export async function readPrivateBalance(
 ): Promise<bigint> {
   const entries = await walletAccount.strk20Balances([token]);
   const entry = entries?.[0] as { balance?: string; amount?: string } | undefined;
-  const raw = entry?.balance ?? entry?.amount ?? "0x0";
+  const raw = entry?.balance ?? entry?.amount;
+  // Never fall back to zero: a shape this code cannot read would silently
+  // present an empty shielded balance as a real one.
+  if (raw === undefined) {
+    throw new Error("The wallet returned a shielded balance this app could not read. Update Ready and try again.");
+  }
   return BigInt(raw);
 }

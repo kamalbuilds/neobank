@@ -9,7 +9,7 @@ import { submitStrk20, waitStrk20Transaction, readPrivateBalance } from "../lib/
 import { usePoolFee } from "../lib/useFee";
 import TokenSelect from "./TokenSelect";
 import FeeRow from "./FeeRow";
-import { ResultCard, errorResult, receiptToResult, type ActionResult } from "./ActionResult";
+import { ResultCard, errorResult, receiptToResult, walletErrorResult, type ActionResult } from "./ActionResult";
 
 export default function UnshieldPanel({ network }: { network: NetworkKey }) {
   const myWalletAccount = useStoreWallet((s) => s.myWalletAccount);
@@ -67,7 +67,7 @@ export default function UnshieldPanel({ network }: { network: NetworkKey }) {
       { type: "withdraw", token: tokenConfig.address, amount: `0x${units.toString(16)}`, recipient: dest },
     ]);
     if (!submission.ok || !submission.txHash) {
-      setResult(errorResult(submission.error?.message ?? "Action failed."));
+      setResult(walletErrorResult(submission.error));
       setSubmitting(false);
       return;
     }
@@ -79,8 +79,7 @@ export default function UnshieldPanel({ network }: { network: NetworkKey }) {
     });
     const outcome = await waitStrk20Transaction(submission.txHash, network);
     if (outcome.status === "confirmed") {
-      const receipt = { execution_status: outcome.reverted ? "REVERTED" : "SUCCEEDED" };
-      setResult(receiptToResult(receipt, submission.txHash, amountLabel));
+      setResult(receiptToResult(outcome.receipt, submission.txHash, amountLabel));
     } else if (outcome.status === "submitted") {
       setResult({
         status: "pending",

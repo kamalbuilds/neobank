@@ -1,6 +1,6 @@
 # Private money account
 
-Hold, send, and earn on the live STRK20 pool without publishing salary or net worth.
+Hold and send on the live STRK20 pool without publishing salary or net worth. Yield is planned, not in this repo.
 
 This is a non-custodial Starknet app. It is not a licensed bank and not a mixer. The dapp never holds a viewing key. Ready does the proving.
 
