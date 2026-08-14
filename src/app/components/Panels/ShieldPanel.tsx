@@ -8,7 +8,7 @@ import { submitStrk20, waitStrk20Transaction, isScreeningRevert } from "../lib/s
 import { usePoolFee } from "../lib/useFee";
 import TokenSelect from "./TokenSelect";
 import FeeRow from "./FeeRow";
-import { ResultCard, errorResult, receiptToResult, type ActionResult } from "./ActionResult";
+import { ResultCard, errorResult, receiptToResult, walletErrorResult, type ActionResult } from "./ActionResult";
 
 export default function ShieldPanel({ network }: { network: NetworkKey }) {
   const myWalletAccount = useStoreWallet((s) => s.myWalletAccount);
@@ -57,14 +57,14 @@ export default function ShieldPanel({ network }: { network: NetworkKey }) {
       { type: "deposit", token: tokenConfig.address, amount: `0x${units.toString(16)}` },
     ]);
     if (!submission.ok || !submission.txHash) {
-      setResult(errorResult(submission.error?.message ?? "Action failed."));
+      setResult(walletErrorResult(submission.error));
       setSubmitting(false);
       return;
     }
-    const amountLabel = `${amount} ${token}`;
+    const amountLabel = `${amount} ${token} (public deposit)`;
     setResult({
       status: "pending",
-      title: "Confirm the deposit in your wallet, then waiting for confirmation…",
+      title: "Deposit submitted. Waiting for confirmation…",
       rows: [{ label: "Amount", value: amountLabel }, { label: "Transaction", value: submission.txHash, hash: submission.txHash }],
     });
     const outcome = await waitStrk20Transaction(submission.txHash, network);
@@ -77,8 +77,7 @@ export default function ShieldPanel({ network }: { network: NetworkKey }) {
           rows: [{ label: "Transaction", value: submission.txHash, hash: submission.txHash }],
         });
       } else {
-        const receipt = { execution_status: outcome.reverted ? "REVERTED" : "SUCCEEDED" };
-        setResult(receiptToResult(receipt, submission.txHash, amountLabel));
+        setResult(receiptToResult(outcome.receipt, submission.txHash, amountLabel));
       }
     } else if (outcome.status === "submitted") {
       setResult({
@@ -96,8 +95,10 @@ export default function ShieldPanel({ network }: { network: NetworkKey }) {
   return (
     <div className={styles.panel}>
       <div className={styles.warn} style={{ color: "var(--muted)" }}>
-        Shielding is two wallet prompts: a public ERC-20 approve, then the private deposit. Once shielded,
-        notes take about 10 blocks to mature - do not plan to spend them immediately.
+        Shielding is two wallet prompts: a public ERC-20 approve, then the private deposit. The deposit
+        itself is public: this address, this amount, and the time are all visible onchain. What stays
+        private is what you do with the balance afterwards. Once shielded, notes take about 10 blocks to
+        mature - do not plan to spend them immediately.
       </div>
 
       <div className={styles.inputBlock}>
