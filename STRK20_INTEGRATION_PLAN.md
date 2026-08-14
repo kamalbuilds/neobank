@@ -79,8 +79,8 @@ Sprint floor (must work by Aug 31): Ready connect, shield, private send to a sec
 
 ## 6. Phase 2: feature integration
 
-- Receive: payment link / QR that is a registered pool address, not a new stealth scheme. https://strk20-by-example.org/viewing-keys
-- AVNU private swap from an already-shielded balance. Paymaster API key server-side only. https://docs.avnu.fi/docs/privacy
+- Receive: payment link / QR that is a registered pool address, not a new stealth scheme. ✅ in Phase 1 floor (2026-08-14).
+- AVNU private swap from an already-shielded balance. Paymaster API key server-side only. ✅ code landed 2026-08-14 (`/api/avnu/*`, Swap tab). Live quote/submit still needs `AVNU_PAYMASTER_API_KEY` in `.env` and Ready in a browser. https://docs.avnu.fi/docs/privacy
 - Vesu deposit/withdraw through the official helper via Wallet API invoke + open notes. https://strk20-by-example.org/starknet-wallet-api/private-defi
 - Honest private vs public labels on every screen.
 - Statement view only via consented `strk20Balances` when we actually show balances.
