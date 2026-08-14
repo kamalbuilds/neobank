@@ -4,18 +4,18 @@ Four headless Claude Code sessions plus two Claude-process subagents and one rea
 
 ## How to actually run Claude in parallel
 
-`claude --bg` starts an idle PTY and **does not consume the prompt**. Four earlier `--bg` sessions sat `blocked` until killed.
+Grok's subagent panel only lists `spawn_subagent` types (`kimi-coder`, `explore`, ...). It cannot take `--model haiku|sonnet|opus`. Direct Claude Code is `scripts/claude-dispatch.sh`.
 
-What works:
+`claude --bg` starts an idle PTY and does not consume the prompt.
 
 ```
-cat prompt.md | claude -p --output-format json \
-  --permission-mode acceptEdits \
-  --allowedTools Read,Write,Edit,Grep,Glob,WebFetch,WebSearch,Bash \
-  --disable-slash-commands --effort medium --name neobank-topic
+scripts/claude-dispatch.sh LOW    <name> <prompt-file>   # haiku,  effort low
+scripts/claude-dispatch.sh MEDIUM <name> <prompt-file>   # sonnet, effort medium
+scripts/claude-dispatch.sh HIGH   <name> <prompt-file>   # opus,   effort high
 ```
 
-Run one process per topic. Do not combine `-p` with `--bg`. Auth on this machine: Claude Max (`claude.ai`), `claude auth status` logged in.
+Watch them in Claude Code: `claude agents --json --cwd /Users/kamal/Desktop/neobank`.
+They will not appear as Grok "kimi" rows. Do not combine `-p` with `--bg`. Auth: Claude Max.
 
 ## Sessions that wrote files
 
@@ -30,6 +30,14 @@ Run one process per topic. Do not combine `-p` with `--bg`. Auth on this machine
 | explore org scan | 019fffb5-102f-7e73-b2b4-fdb717d29497 | 0 | this file + plan patches | no file (read-only) |
 
 Privacy SDK writeup was finished in-host after the Kimi fail: `docs/research/claude-privacy-sdk.md`.
+
+Second wave, model-tiered Claude Code (visible as `claude-haiku-pins`, `claude-sonnet-skill-drift`, `claude-opus-open-q`):
+
+| Tier | Model | Session | File |
+|---|---|---|---|
+| LOW | haiku | b8f36ae6-e6c3-420a-89a1-6dba541d2d0a | `docs/research/claude-haiku-pins.md` |
+| MEDIUM | sonnet | 9b328404-b765-4707-9138-cd67e0eb0a6c | `docs/research/claude-sonnet-skill-drift.md` + sdk-route.md |
+| HIGH | opus | a978521f-3e00-4463-b1ad-a5b32b906413 | `docs/research/claude-opus-open-questions.md` |
 
 All four Claude jobs launched together at 09:58:05Z and finished in about four minutes.
 
