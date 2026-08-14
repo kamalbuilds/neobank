@@ -10,10 +10,11 @@ import SendPanel from "./components/Panels/SendPanel";
 import ReceivePanel from "./components/Panels/ReceivePanel";
 import UnshieldPanel from "./components/Panels/UnshieldPanel";
 import SwapPanel from "./components/Panels/SwapPanel";
+import ActivityPanel from "./components/Panels/ActivityPanel";
 import HonestTable from "./components/Panels/HonestTable";
 import SelectWallet from "./components/client/WalletHandle/SelectWallet";
 
-type Tab = "shield" | "send" | "receive" | "unshield" | "swap";
+type Tab = "shield" | "send" | "receive" | "unshield" | "swap" | "activity";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "shield", label: "Shield" },
@@ -21,10 +22,19 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "receive", label: "Receive" },
   { id: "unshield", label: "Unshield" },
   { id: "swap", label: "Swap" },
+  { id: "activity", label: "Activity" },
 ];
 
 function readTab(raw: string | null): Tab {
-  if (raw === "send" || raw === "receive" || raw === "unshield" || raw === "shield" || raw === "swap") return raw;
+  if (
+    raw === "send" ||
+    raw === "receive" ||
+    raw === "unshield" ||
+    raw === "shield" ||
+    raw === "swap" ||
+    raw === "activity"
+  )
+    return raw;
   return "shield";
 }
 
@@ -73,12 +83,15 @@ export default function Home() {
 
       <header className={styles.hero}>
         <h1 className={styles.heroTitle}>
-          Private money
+          A private money account
           <br />
-          <span className={styles.heroAccent}>without publishing the book</span>
+          <span className={styles.heroAccent}>built on STRK20</span>
         </h1>
         <p className={styles.heroSub}>
-          Shield incoming STRK or USDC, send privately to a registered Ready wallet, then unshield only when you need a public balance.
+          Shield incoming STRK or USDC and send privately between registered Ready wallets. The pool
+          hides balances and transfers onchain, not what happens after you unshield. When you need to
+          spend, unshield to a public USDC balance and take it to an issuer, same as cashing out any
+          onchain asset today.
         </p>
       </header>
 
@@ -116,6 +129,7 @@ export default function Home() {
               {tab === "receive" ? <ReceivePanel /> : null}
               {tab === "unshield" ? <UnshieldPanel network={network} /> : null}
               {tab === "swap" ? <SwapPanel network={network} /> : null}
+              {tab === "activity" ? <ActivityPanel network={network} /> : null}
             </>
           )}
         </>
