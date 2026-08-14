@@ -3,18 +3,16 @@ import styles from "../../../uni.module.css";
 import { useStoreWallet } from "../../Wallet/walletContext";
 import { useFrontendProvider } from "../provider/providerContext";
 import { useEffect, useState } from "react";
-import { walletV6, validateAndParseAddress, constants as SNconstants, WalletAccountV6 } from "starknet";
+import { walletV6, validateAndParseAddress, WalletAccountV6 } from "starknet";
 import { WALLET_API } from "@starknet-io/types-js";
-import { myFrontendProviders } from "@/utils/constants";
+import { networkForChainId, providerFor } from "@/utils/constants";
 import { createStore, type Store } from "@starknet-io/get-starknet-discovery";
 import type {
   WalletWithStarknetFeatures,
 } from '@starknet-io/get-starknet-wallet-standard/features';
+import { isStrk20Capable } from "../../lib/capability";
 
-
-// Normalize wallet identifiers so starknetkit's connector id / SWO name
-// ("argentX", "Ready", "Braavos") can be matched against the wallet-standard
-// wallet's display name ("Argent X", "Braavos", ...).
+// Normalize wallet identifiers for the MetaMask filter below.
 function normalizeId(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
@@ -22,18 +20,19 @@ function normalizeId(s: string): string {
 export default function SelectWallet({ variant = "ctaBig" }: { variant?: "nav" | "ctaBig" }) {
 
   const setMyWallet = useStoreWallet(state => state.setMyStarknetWalletObject);
-
   const setMyWalletAccount = useStoreWallet(state => state.setMyWalletAccount);
-  const myFrontendProviderIndex = useFrontendProvider(state => state.currentFrontendProviderIndex);
-  const { setCurrentFrontendProviderIndex } = useFrontendProvider(state => state);
+  const setDisplayNetwork = useFrontendProvider(state => state.setDisplayNetwork);
 
   const isConnected = useStoreWallet(state => state.isConnected);
   const setConnected = useStoreWallet(state => state.setConnected);
   const address = useStoreWallet(state => state.address);
+  const resetWallet = useStoreWallet(state => state.resetWallet);
 
   const setWalletApi = useStoreWallet(state => state.setWalletApiList);
+  const setStrk20Capable = useStoreWallet(state => state.setStrk20Capable);
 
   const setChain = useStoreWallet(state => state.setChain);
+  const setNetwork = useStoreWallet(state => state.setNetwork);
   const setAddressAccount = useStoreWallet(state => state.setAddressAccount);
 
   const [connecting, setConnecting] = useState(false);
@@ -52,50 +51,49 @@ export default function SelectWallet({ variant = "ctaBig" }: { variant?: "nav" |
     return () => unsub();
   }, []);
 
-  // Show every detected wallet except MetaMask (its Snap probing spams an unlock popup)
-  // and Braavos (excluded from this starter's picker).
-  const pickable = wallets.filter((w) => {
-    const id = normalizeId(w.name);
-    return !id.includes("metamask") && !id.includes("braavos");
-  });
+  // Show every detected wallet except MetaMask (its Snap probing spams an unlock
+  // popup). Braavos is not excluded by name - the STRK20 version gate handles it.
+  const pickable = wallets.filter((w) => !normalizeId(w.name).includes("metamask"));
 
-  // Unchanged connection flow: takes the wallet-standard wallet and populates
-  // the zustand store with a WalletAccountV6 + account/chain/permissions.
+  // Connect the picked wallet, choosing the RPC from the wallet's own chainId
+  // (mainnet or sepolia), then gate STRK20 actions on a real capability check.
   async function handleSelectedWallet(selectedWallet: WalletWithStarknetFeatures) {
     setMyWallet(selectedWallet); // zustand
-    console.log("Trying to connect wallet=", selectedWallet);
-    const myWA = await WalletAccountV6.connect(myFrontendProviders[2], selectedWallet);
+
+    const chainId = (await walletV6.requestChainId(selectedWallet)) as string;
+    const network = networkForChainId(chainId);
+    setChain(chainId);
+    setNetwork(network);
+    if (network) setDisplayNetwork(network);
+
+    const provider = providerFor(network ?? "mainnet");
+    const myWA = await WalletAccountV6.connect(provider, selectedWallet);
     setMyWalletAccount(myWA);
-    console.log("WalletAccount created=", myWA);
+
     const result = await walletV6.requestAccounts(selectedWallet);
     if (typeof (result) == "string") {
-      console.log("This Wallet is not compatible.");
-      return;
+      throw new Error("This wallet returned an unexpected response to requestAccounts.");
     }
-    console.log("Current account addr =", result);
-    if (Array.isArray(result)) {
-      const addr = validateAndParseAddress(result[0]);
-      setAddressAccount(addr); // zustand
-    }
+    const addr = validateAndParseAddress(result[0]);
+    setAddressAccount(addr); // zustand
+
     const isConnectedWallet: boolean = await walletV6.getPermissions(selectedWallet).then((res: any) => (res as WALLET_API.Permission[]).includes(WALLET_API.Permission.ACCOUNTS));
     setConnected(isConnectedWallet); // zustand
+
     if (isConnectedWallet) {
-      const chainId = (await walletV6.requestChainId(selectedWallet)) as string;
-      setChain(chainId);
-      setCurrentFrontendProviderIndex(chainId === SNconstants.StarknetChainId.SN_MAIN ? 0 : 2);
-      console.log("change Provider index to :", myFrontendProviderIndex);
+      // Capability detection: a version query only, never a data call - see
+      // components/lib/capability.ts for why the threshold is "0.10" not "0.10.3".
+      const apiVersions = (await walletV6.supportedWalletApi(selectedWallet)) as unknown as string[];
+      setWalletApi(apiVersions);
+      setStrk20Capable(isStrk20Capable(apiVersions));
     }
-    setWalletApi(await walletV6.supportedSpecs(selectedWallet));
   }
 
-  // Open the wallet picker so the user can choose (Ready, Xverse, ...).
   const openPicker = () => {
     setError("");
     setPickerOpen(true);
   };
 
-  // Connect the wallet the user picked from the modal.
-  //
   // We deliberately do NOT use starknetkit's connect() here: it bundles
   // get-starknet-core, whose MetaMask detection (waitForMetaMaskProvider, retries:3)
   // repeatedly dispatches EIP-6963 discovery and probes MetaMask's Starknet Snap,
@@ -108,11 +106,14 @@ export default function SelectWallet({ variant = "ctaBig" }: { variant?: "nav" |
       await handleSelectedWallet(w);
       setPickerOpen(false);
     } catch (err: any) {
-      console.log("Wallet connection failed.\n", err);
       setError(err?.message ?? "Wallet connection failed.");
     } finally {
       setConnecting(false);
     }
+  }
+
+  function disconnect() {
+    resetWallet();
   }
 
   const shortAddr = address ? `${address.slice(0, 6)}…${address.slice(-4)}` : "";
@@ -151,7 +152,7 @@ export default function SelectWallet({ variant = "ctaBig" }: { variant?: "nav" |
         ) : (
           <div className={styles.walletHint}>
             No Starknet wallet detected. Install{" "}
-            <a href="https://www.ready.co/" target="_blank" rel="noreferrer">Ready</a> or{" "}
+            <a href="https://www.ready.co/" target="_blank" rel="noreferrer">Ready</a> for private actions, or{" "}
             <a href="https://www.xverse.app/" target="_blank" rel="noreferrer">Xverse</a>.
           </div>
         )}
@@ -167,7 +168,7 @@ export default function SelectWallet({ variant = "ctaBig" }: { variant?: "nav" |
       return (
         <button
           className={styles.addrPill}
-          onClick={() => setConnected(false)}
+          onClick={disconnect}
           title="Disconnect"
         >
           <span className={styles.addrDot} />
@@ -186,8 +187,7 @@ export default function SelectWallet({ variant = "ctaBig" }: { variant?: "nav" |
     );
   }
 
-  // Default (ctaBig): the large solid connect CTA shown in the panel until a
-  // wallet is connected.
+  // Default (ctaBig): the large solid connect CTA shown until a wallet is connected.
   return (
     <>
       <button className={styles.btnCta} onClick={openPicker}>

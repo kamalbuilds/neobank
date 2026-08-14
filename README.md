@@ -33,9 +33,18 @@ Vesu is not on mainnet. The published class hash is undeclared there.
 
 Plan: [`STRK20_INTEGRATION_PLAN.md`](STRK20_INTEGRATION_PLAN.md). Production judgment: [`docs/PRODUCTION_BUILD_PLAN.md`](docs/PRODUCTION_BUILD_PLAN.md).
 
+## Run
+
+```bash
+npm install
+npm run dev
+```
+
+Connect Ready. Private actions appear only when the wallet advertises Wallet API `>= 0.10`. Shielding is two wallet prompts (approve, then deposit). Notes mature about 10 blocks. A private send needs a recipient already registered in the pool.
+
 ## Status
 
-Research and plan are in this repo. App scaffold (starter kit at `187fe78`, DEMO and echo helper deleted) is next. Mainnet txs and a public demo go in [`strk20.json`](strk20.json) when they exist.
+Floor is in this repo: connect, shield, private send, receive QR/link, unshield, honest private/public labels. `npm run typecheck` and `npm run build` pass. Mainnet txs and a public demo go in [`strk20.json`](strk20.json) when they exist.
 
 ## License
 
