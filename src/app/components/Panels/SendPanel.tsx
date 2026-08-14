@@ -57,7 +57,7 @@ export default function SendPanel({
     if (!submission.ok || !submission.txHash) {
       if (submission.error?.kind === "not_registered") {
         setResult({
-          status: "screened",
+          status: "error",
           title: "Recipient not registered in the privacy pool",
           note: submission.error.message,
         });
