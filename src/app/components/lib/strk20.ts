@@ -1,4 +1,5 @@
-import type { WalletAccountV6 } from "starknet";
+import { walletV6, type WalletAccountV6 } from "starknet";
+import type { WalletWithStarknetFeatures } from "@starknet-io/get-starknet-wallet-standard/features";
 import type { WALLET_API } from "@starknet-io/types-js";
 import { providerFor, type NetworkKey } from "@/utils/constants";
 
@@ -23,7 +24,7 @@ export interface Strk20Error {
 
 const COPY: Record<Strk20ErrorKind, string> = {
   not_registered:
-    "This wallet is not registered in the privacy pool yet. Open Ready, finish privacy activation (Shielded tokens), then retry. A first shield in Ready also registers it. This app cannot register an address.",
+    "Approve the first shield in the wallet. That deploys the account if needed and registers it in the pool. This app cannot register a different address for them.",
   api_version_not_supported:
     "This wallet does not support STRK20 privacy actions. Install or update Ready.",
   insufficient_private_balance:
@@ -71,6 +72,63 @@ export async function submitStrk20(
   } catch (error) {
     return { ok: false, error: classifyStrk20Error(error) };
   }
+}
+
+export async function isContractDeployed(network: NetworkKey, address: string): Promise<boolean> {
+  const provider = providerFor(network);
+  try {
+    await provider.getClassHashAt(address);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Ready's "Activate account" is a normal DEPLOY_ACCOUNT. Request it here so
+// the first shield never sends the user into the wallet UI to do it by hand.
+export async function ensureAccountDeployed(
+  walletAccount: WalletAccountV6,
+  wallet: WalletWithStarknetFeatures,
+  network: NetworkKey,
+): Promise<{ alreadyDeployed: boolean; txHash?: string }> {
+  if (await isContractDeployed(network, walletAccount.address)) {
+    return { alreadyDeployed: true };
+  }
+  const data = await walletV6.deploymentData(wallet);
+  const deployed = await walletAccount.deployAccount({
+    classHash: data.class_hash,
+    constructorCalldata: data.calldata,
+    addressSalt: data.salt,
+    contractAddress: data.address,
+  });
+  if (!deployed.transaction_hash) {
+    throw new Error("The wallet did not return a deploy-account transaction.");
+  }
+  const outcome = await waitStrk20Transaction(deployed.transaction_hash, network);
+  if (outcome.status === "error") throw new Error(outcome.message);
+  return { alreadyDeployed: false, txHash: deployed.transaction_hash };
+}
+
+// First shield for this connected wallet: deploy if needed, then deposit.
+// The wallet registers the viewing key on that first deposit (autoRegister).
+export async function submitConnectedShield(
+  walletAccount: WalletAccountV6,
+  wallet: WalletWithStarknetFeatures,
+  network: NetworkKey,
+  actions: WALLET_API.STRK20_ACTION[],
+): Promise<SubmitResult & { deployTxHash?: string }> {
+  let deployTxHash: string | undefined;
+  try {
+    const deploy = await ensureAccountDeployed(walletAccount, wallet, network);
+    deployTxHash = deploy.txHash;
+  } catch (error) {
+    return { ok: false, error: classifyStrk20Error(error), deployTxHash };
+  }
+  let submission = await submitStrk20(walletAccount, actions);
+  if (!submission.ok && submission.error?.kind === "not_registered") {
+    submission = await submitStrk20(walletAccount, actions);
+  }
+  return { ...submission, deployTxHash };
 }
 
 export type WaitOutcome =

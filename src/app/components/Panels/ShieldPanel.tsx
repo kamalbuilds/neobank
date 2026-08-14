@@ -4,7 +4,7 @@ import styles from "../../uni.module.css";
 import { useStoreWallet } from "../Wallet/walletContext";
 import { TOKENS, getPublicBalance, type TokenSymbol, type NetworkKey } from "@/utils/constants";
 import { toBaseUnits, fromBaseUnits } from "../lib/format";
-import { submitStrk20, waitStrk20Transaction, isScreeningRevert } from "../lib/strk20";
+import { submitConnectedShield, waitStrk20Transaction, isScreeningRevert } from "../lib/strk20";
 import { usePoolFee } from "../lib/useFee";
 import TokenSelect from "./TokenSelect";
 import FeeRow from "./FeeRow";
@@ -12,6 +12,7 @@ import { ResultCard, errorResult, receiptToResult, walletErrorResult, type Actio
 
 export default function ShieldPanel({ network }: { network: NetworkKey }) {
   const myWalletAccount = useStoreWallet((s) => s.myWalletAccount);
+  const wallet = useStoreWallet((s) => s.StarknetWalletObject);
   const address = useStoreWallet((s) => s.address);
   const strk20Capable = useStoreWallet((s) => s.strk20Capable);
 
@@ -52,8 +53,17 @@ export default function ShieldPanel({ network }: { network: NetworkKey }) {
       setResult(errorResult(err.message));
       return;
     }
+    if (!wallet) {
+      setResult(errorResult("Connect a wallet first."));
+      return;
+    }
     setSubmitting(true);
-    const submission = await submitStrk20(myWalletAccount, [
+    setResult({
+      status: "pending",
+      title: "Asking the wallet to deploy if needed, then shield…",
+      note: "First privacy use is two wallet txs: deploy the account, then the public deposit that registers you in the pool.",
+    });
+    const submission = await submitConnectedShield(myWalletAccount, wallet, network, [
       { type: "deposit", token: tokenConfig.address, amount: `0x${units.toString(16)}` },
     ]);
     if (!submission.ok || !submission.txHash) {
@@ -62,10 +72,17 @@ export default function ShieldPanel({ network }: { network: NetworkKey }) {
       return;
     }
     const amountLabel = `${amount} ${token} (public deposit)`;
+    const rows = [
+      { label: "Amount", value: amountLabel },
+      { label: "Transaction", value: submission.txHash, hash: submission.txHash },
+    ];
+    if (submission.deployTxHash) {
+      rows.unshift({ label: "Account deploy", value: submission.deployTxHash, hash: submission.deployTxHash });
+    }
     setResult({
       status: "pending",
       title: "Deposit submitted. Waiting for confirmation…",
-      rows: [{ label: "Amount", value: amountLabel }, { label: "Transaction", value: submission.txHash, hash: submission.txHash }],
+      rows,
     });
     const outcome = await waitStrk20Transaction(submission.txHash, network);
     if (outcome.status === "confirmed") {
@@ -95,10 +112,10 @@ export default function ShieldPanel({ network }: { network: NetworkKey }) {
   return (
     <div className={styles.panel}>
       <div className={styles.warn} style={{ color: "var(--muted)" }}>
-        Shielding is two wallet prompts: a public ERC-20 approve, then the private deposit. The deposit
-        itself is public: this address, this amount, and the time are all visible onchain. What stays
-        private is what you do with the balance afterwards. Once shielded, notes take about 10 blocks to
-        mature - do not plan to spend them immediately.
+        First privacy use in this app deploys the account if it is still counterfactual, then shields.
+        That is the same pair of txs as Ready&apos;s Activate and Enable private tokens. After that:
+        two wallet prompts (public approve, then deposit). The deposit is public. Notes take about 10
+        blocks to mature.
       </div>
 
       <div className={styles.inputBlock}>
