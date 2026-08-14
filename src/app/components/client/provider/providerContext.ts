@@ -1,18 +1,15 @@
 "use client";
 import { create } from "zustand";
+import { DEFAULT_NETWORK, type NetworkKey } from "@/utils/constants";
 
-//  StarknetChainId 
-//   0  SN_MAIN = "0x534e5f4d41494e",
-//   1  SN_GOERLI = "0x534e5f474f45524c49",
-//   2  SN_SEPOLIA = "0x534e5f5345504f4c4941",
-//   
-
+// Display network before a wallet connects. Mainnet is the sprint default;
+// a connected wallet's own chainId (see SelectWallet) drives everything after.
 interface FrontEndProviderState {
-    currentFrontendProviderIndex: number,
-    setCurrentFrontendProviderIndex: (currentFrontendProviderIndex: number) => void,
+    displayNetwork: NetworkKey,
+    setDisplayNetwork: (displayNetwork: NetworkKey) => void,
 }
 
 export const useFrontendProvider = create<FrontEndProviderState>()(set => ({
-    currentFrontendProviderIndex: 2,
-    setCurrentFrontendProviderIndex: (currentFrontendProviderIndex: number) => { set(state => ({ currentFrontendProviderIndex })) }
+    displayNetwork: DEFAULT_NETWORK,
+    setDisplayNetwork: (displayNetwork: NetworkKey) => { set(state => ({ displayNetwork })) }
 }));

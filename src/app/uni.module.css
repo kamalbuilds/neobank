@@ -230,6 +230,8 @@
   padding: 8px 12px 0;
   line-height: 1.45;
 }
+.warn a { color: var(--pink-text); font-weight: 600; text-decoration: none; }
+.warn a:hover { text-decoration: underline; }
 
 /* Connect controls */
 .connectPill {

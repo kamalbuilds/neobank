@@ -64,9 +64,9 @@ Pins after 2026-08-14 freshness check:
 - Canonical pool: `0x040337b1af3c663e86e333bab5a4b28da8d4652a15a69beee2b677776ffe812a`
 - Cairo later (Phase 3 only): Scarb + Starknet Foundry. Not in Phase 1
 
-## 5. Phase 1: first shielded flow (buildable now)
+## 5. Phase 1: first shielded flow ✅ headless 2026-08-14
 
-Status: pending approval. Testnet-first locally; mainnet txs only after you confirm (sprint requires mainnet).
+Status: app floor built 2026-08-14. `npm run typecheck` and `npm run build` pass. Mainnet txs and `strk20.json` stay empty until Ready is used in a browser.
 
 Sprint floor (must work by Aug 31): Ready connect, shield, private send to a second registered Ready wallet, honest labels. Stretch: AVNU private swap from an already-shielded balance. Cut from the floor: statement PDF, Vesu, payroll, card, shadow accounts.
 
