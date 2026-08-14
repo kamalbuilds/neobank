@@ -13,9 +13,22 @@ import { ResultCard, errorResult, receiptToResult, type ActionResult } from "./A
 
 const SLIPPAGE = 0.05;
 
+// The SDK's own executePrivateSwap fails fast on a chain mismatch before the
+// expensive proof. The split flow (server-side fee/submit, client-side proving)
+// drops that guard, so re-apply it here. Only enforced when both ids parse as
+// felts - an unparseable id must not block a valid swap.
+function chainMismatch(walletChainId: string, quoteChainId: string): boolean {
+  try {
+    return BigInt(walletChainId) !== BigInt(quoteChainId);
+  } catch {
+    return false;
+  }
+}
+
 export default function SwapPanel({ network }: { network: NetworkKey }) {
   const myWalletAccount = useStoreWallet((s) => s.myWalletAccount);
   const address = useStoreWallet((s) => s.address);
+  const chainId = useStoreWallet((s) => s.chain);
   const strk20Capable = useStoreWallet((s) => s.strk20Capable);
 
   const [sellToken, setSellToken] = useState<TokenSymbol>("STRK");
@@ -60,12 +73,16 @@ export default function SwapPanel({ network }: { network: NetworkKey }) {
     }
     setQuoting(true);
     try {
+      // No takerAddress on the quote request. It is optional here, and
+      // `quoteToCalls({private: true})` sets the taker to AVNU's executor
+      // anyway - sending the user's public address would hand AVNU the
+      // quoteId -> address link that the pool exists to hide, before the same
+      // quoteId is submitted through their paymaster.
       const quotes = await getQuotes(
         {
           sellTokenAddress: TOKENS[sellToken].address,
           buyTokenAddress: TOKENS[buyToken].address,
           sellAmount: units,
-          takerAddress: address || undefined,
           size: 1,
         },
         clientAvnuOptions(network)
@@ -89,6 +106,10 @@ export default function SwapPanel({ network }: { network: NetworkKey }) {
       setResult(errorResult("Fetch a quote first."));
       return;
     }
+    if (chainId && chainMismatch(chainId, quote.chainId)) {
+      setResult(errorResult("This quote is for a different network than the connected wallet. Fetch a new quote."));
+      return;
+    }
     setSubmitting(true);
     try {
       const { fee, feeMode } = await fetchPrivateSwapFee(network, TOKENS.STRK.address);
@@ -110,8 +131,7 @@ export default function SwapPanel({ network }: { network: NetworkKey }) {
       });
       const outcome = await waitStrk20Transaction(txHash, network);
       if (outcome.status === "confirmed") {
-        const receipt = { execution_status: outcome.reverted ? "REVERTED" : "SUCCEEDED" };
-        setResult(receiptToResult(receipt, txHash, amountLabel));
+        setResult(receiptToResult(outcome.receipt, txHash, amountLabel));
       } else if (outcome.status === "submitted") {
         setResult({
           status: "pending",
@@ -163,7 +183,14 @@ export default function SwapPanel({ network }: { network: NetworkKey }) {
         </div>
       </div>
 
-      <FeeRow fee={feeAmount} />
+      {feeAmount === undefined ? (
+        <div className={styles.feeRow}>
+          <span>Pool fee (per private operation)</span>
+          <span className={styles.feeVal}>quoted by the paymaster at submit</span>
+        </div>
+      ) : (
+        <FeeRow fee={feeAmount} />
+      )}
 
       {quote ? (
         <div className={styles.feeRow}>

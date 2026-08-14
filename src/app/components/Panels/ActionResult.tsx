@@ -2,7 +2,8 @@
 import styles from "../../uni.module.css";
 import { num } from "starknet";
 import { explorerTxUrl, type NetworkKey } from "@/utils/constants";
-import { shortHex } from "../lib/format";
+import { fromBaseUnits, shortHex } from "../lib/format";
+import type { Strk20Error } from "../lib/strk20";
 
 export type ResultRow = { label: string; value: string; hash?: string };
 export type ActionResult = {
@@ -14,6 +15,16 @@ export type ActionResult = {
 
 export function errorResult(message: string): ActionResult {
   return { status: "error", title: "Action failed", note: message };
+}
+
+// A wallet error the classifier does not recognise must still show what the
+// wallet actually said. Dropping the raw text turns any unmatched error - a
+// differently worded "not registered" included - into a silent dead end.
+export function walletErrorResult(error: Strk20Error | undefined): ActionResult {
+  if (!error) return errorResult("Action failed.");
+  const note =
+    error.kind === "unknown" && error.raw ? `${error.message}\n\nWallet reported:\n${error.raw}` : error.message;
+  return { status: "error", title: "Action failed", note };
 }
 
 function prettyStatus(finality?: string, exec?: string): string {
@@ -34,10 +45,10 @@ export function receiptToResult(receipt: any, txHash: string, amountLabel: strin
   const reverted = exec === "REVERTED";
   let feeStr: string | undefined;
   const feeRaw = r?.actual_fee?.amount ?? r?.actual_fee;
+  const feeUnit: string | undefined = r?.actual_fee?.unit;
   try {
     if (feeRaw !== undefined && feeRaw !== null) {
-      const fee = num.toBigInt(feeRaw);
-      feeStr = `${(Number(fee) / 1e18).toString()} STRK`;
+      feeStr = `${fromBaseUnits(num.toBigInt(feeRaw), 18)} ${feeUnit === "WEI" ? "ETH" : "STRK"}`;
     }
   } catch {
     // leave fee undefined if unparseable
@@ -45,7 +56,10 @@ export function receiptToResult(receipt: any, txHash: string, amountLabel: strin
   const rows: ResultRow[] = [];
   if (amountLabel) rows.push({ label: "Amount", value: amountLabel });
   rows.push({ label: "Status", value: prettyStatus(finality, exec) });
-  if (feeStr) rows.push({ label: "Network fee", value: feeStr });
+  // Wallet API 0.10.3 has no fee-mode argument, so the app cannot know whether
+  // the wallet relayed this or self-submitted it. "tx sender" is true either
+  // way; a bare "Network fee" would read as a cost the user is known to have paid.
+  if (feeStr) rows.push({ label: "Network gas (paid by tx sender)", value: feeStr });
   rows.push({ label: "Transaction", value: shortHex(txHash), hash: txHash });
   return {
     status: reverted ? "error" : "ok",
