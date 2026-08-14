@@ -2,8 +2,10 @@
 import { create } from "zustand";
 import { DEFAULT_NETWORK, type NetworkKey } from "@/utils/constants";
 
-// Display network before a wallet connects. Mainnet is the sprint default;
-// a connected wallet's own chainId (see SelectWallet) drives everything after.
+// Single source of truth for network is the connected wallet's chainId.
+// displayNetwork only mirrors it: DEFAULT_NETWORK before connect, then set
+// from requestChainId in SelectWallet.connectWallet on every connect. Never
+// write here from anywhere else, or displayNetwork can drift from the wallet.
 interface FrontEndProviderState {
     displayNetwork: NetworkKey,
     setDisplayNetwork: (displayNetwork: NetworkKey) => void,

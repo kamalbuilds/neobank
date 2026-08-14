@@ -243,20 +243,24 @@ export default function SwapPanel({ network }: { network: NetworkKey }) {
         <div className={styles.warn}>This wallet does not support STRK20 privacy actions. Install or update Ready.</div>
       )}
 
-      <button
-        className={styles.btnCta}
-        disabled={!strk20Capable || quoting || !amount || configured === false || maturity.locked}
-        onClick={handleQuote}
-      >
-        {quoting ? "Quoting…" : configured === false ? "AVNU not configured" : maturity.locked ? "Notes maturing…" : "Get quote"}
-      </button>
-      <button
-        className={styles.btnCta}
-        disabled={!strk20Capable || submitting || !quote || configured === false || maturity.locked}
-        onClick={handleSwap}
-      >
-        {submitting ? "Swapping privately…" : "Swap privately"}
-      </button>
+      {configured !== false && (
+        <>
+          <button
+            className={styles.btnCta}
+            disabled={!strk20Capable || quoting || !amount || maturity.locked}
+            onClick={handleQuote}
+          >
+            {quoting ? "Quoting…" : maturity.locked ? "Notes maturing…" : "Get quote"}
+          </button>
+          <button
+            className={styles.btnCta}
+            disabled={!strk20Capable || submitting || !quote || maturity.locked}
+            onClick={handleSwap}
+          >
+            {submitting ? "Swapping privately…" : "Swap privately"}
+          </button>
+        </>
+      )}
 
       {result ? <ResultCard r={result} network={network} /> : null}
     </div>
