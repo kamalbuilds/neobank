@@ -114,6 +114,25 @@ Reddit / HN (search + snippets, not full last30days engine):
 - last30days engine not invoked this turn
 - gsd-researcher still running at write time; card + GitHub agents completed
 
+## Org scan addendum (same day)
+
+Full inventory: `docs/STARKWARE_LIBS_INVENTORY_2026-08-14.md`.
+
+Additional URLs read:
+- https://github.com/orgs/starkware-libs/repositories
+- https://github.com/orgs/starknet-edu/repositories
+- https://github.com/starkware-libs/earn-contracts
+- https://github.com/starkware-libs/starknet-payments
+- https://github.com/starkware-libs/strkBTC
+- https://github.com/starkware-libs/usdc-migration
+- https://github.com/starkware-libs/Seamless-2FA-Wallet
+- https://github.com/starkware-libs/starknet-perpetual
+- https://github.com/starkware-libs/starknet-specs (wallet-api 0.10.4-rc.1)
+- https://github.com/starkware-libs/starknet-privacy/tree/main/client
+- https://github.com/starknet-edu/starknet-privacy-toolkit
+- https://github.com/starknet-edu/starknet-privy-demo
+- npm `@starknet-io/types-js@0.10.3` and `@0.10.4-beta.2`
+
 ## Gaps still open
 
 - Full eprint PDF body (abstract only)

@@ -13,10 +13,12 @@ Discovery log: `docs/INDEPENDENT_DISCOVERY_2026-08-14.md`.
 
 ## Route
 
-Consumer flows: Privacy Wallet API.  
+Consumer flows: Privacy Wallet API 0.10.3 (Ready). Shadow-account actions wait for wallets on 0.10.4.  
 Payroll / card settlement / recurring payouts: our anonymizer + Wallet API.  
 EVM funding: Privacy Bridge (early).  
-We do not put viewing keys in the dapp.
+EVM-native users later: earn-contracts Eth712Account + privacy-client EIP-712 signer.  
+We do not put viewing keys in the dapp.  
+We do not use Tongo (`starknet-edu/starknet-privacy-toolkit`).
 
 ## Phase 0 (blocked on your approval)
 

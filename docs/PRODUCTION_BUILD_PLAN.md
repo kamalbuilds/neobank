@@ -39,7 +39,7 @@ This is not a licensed bank and not a mixer. It is a non-custodial private money
 | Owner of open notes | Filled amount of open notes (DeFi output) |
 | Viewing-key ledger | That an address interacted with the pool, and when |
 
-Anonymizers hide the user address. App-side amounts can stay public. Shadow accounts (SDK `0.14.3-rc.4+`) hide the wallet link for teams that hold keys; the Wallet API route for this is still pending.
+Anonymizers hide the user address. App-side amounts can stay public. Shadow accounts hide the wallet link: the SDK path works now; the Wallet API path is specified in `wallet_rpc.json` **v0.10.4-rc.1** (2026-08-13) and in `@starknet-io/types-js@0.10.4-beta.2` as `wallet_strk20ShadowAccountCommitment` + `shadow_account_invoke`. Stable types-js is still **0.10.3** (no shadow). Ready/Xverse support for 0.10.4 is unverified. Phase 0 stays on 0.10.3 actions only.
 
 Never bundle a public deposit with the private spend it funds.
 
@@ -51,14 +51,18 @@ Mixed, and this is the correct split:
 - Protocol actions we own (payroll, card settlement, recurring payouts): our anonymizer contracts + Wallet API. Team writes, reviews, audits, deploys. Reference: `packages/vesu_lending_anonymizer`, `packages/ekubo_swap_anonymizer`.
 - Funding from EVM: Privacy Bridge (`@starkware-libs/starknet-privacy-bridge` 0.1.x). Early. Read its README before pinning.
 - Advanced backend / org treasury that we operate: Privacy SDK `@starkware-libs/starknet-privacy-sdk` 0.14.3-rc.5 on GitHub Packages. Node >= 24. Viewing key only if we own the account.
+- EVM users who will not install Ready: `earn-contracts` `Eth712Account` + `AccountFactory` (deterministic Starknet account from an Ethereum address, EIP-712 signatures) plus `@starkware-libs/starknet-privacy-client` `Eip712CallSetSigner`. Early (client 0.1.0). This is the RFP's "sign with MetaMask" path, already used by the Earn portal.
+- Watch, do not pin yet: `client/` (`createPrivacyClient`, `resolveShadowAccounts`, `AvnuPaymaster`). Under active development.
 
 Pinned live pool (awesome-strk20 / skill): `0x040337b1af3c663e86e333bab5a4b28da8d4652a15a69beee2b677776ffe812a`.
+
+Do **not** use `starknet-edu/starknet-privacy-toolkit` (Tongo + Noir/Garaga). That is a different privacy pool with its own mainnet USDC contract. Not STRK20.
 
 ## Production architecture
 
 ```
-User (Ready / Xverse)
-  -> Wallet API (starknet.js WalletAccountV6)
+User (Ready / Xverse)  OR  EVM wallet -> earn-contracts Eth712Account
+  -> Wallet API 0.10.3 (Phase 0) / 0.10.4 shadow when wallets ship it
   -> STRK20 pool (encrypted notes)
        |-- AVNU executePrivateSwap (no custom anonymizer)
        |-- Vesu lending anonymizer (yield)
