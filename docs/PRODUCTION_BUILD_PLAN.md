@@ -10,7 +10,7 @@ This is not a licensed bank and not a mixer. It is a non-custodial private money
 |---|---|
 | People will use it / you would use it | Yes, if the loop is payday → shield → send/earn without publishing salary or net worth. Not if it is a dashboard or a fake card. |
 | Real revenue | Yes: yield spread, private swap take, payroll/payouts take, later card interchange. Not from sprint prize money. |
-| Scale the ecosystem | Yes: every shield grows the shared STRK20 anonymity set (~$890K and ~34 assets as of 2026-08-14, community-reported). That is the growth lever StarkWare wrote into the cross-chain hub RFP. |
+| Scale the ecosystem | Yes: every shield grows the shared STRK20 anonymity set. Community-reported ~$890K / ~34 assets as of 2026-08-14 is UNVERIFIED (single X source, not re-indexed). Index Deposit events before that number appears in public copy. |
 
 ## What we are not building (kill list)
 
@@ -26,8 +26,8 @@ This is not a licensed bank and not a mixer. It is a non-custodial private money
 - Open trigger: payday landed, or they need to pay someone, or they are about to spend.
 - 10-second action: connect Ready, shield incoming USDC, or send a private payment link.
 - Return: next payday, next contractor payout, next yield claim.
-- Invite: send a receive link to a teammate so they can get paid privately.
-- 90-second proof: three mainnet txs (shield, private send, Vesu deposit or AVNU private swap) plus a viewing-key income statement PDF.
+- Invite: send a receive link to a teammate who already has Ready and has registered on the pool. The dapp cannot register them.
+- Live proof: a pre-matured shield (Voyager link) plus a private send on stage. Optional stretch: AVNU private swap. Notes mature ~10 blocks, so a 90-second shield-then-spend either waits or bundles and leaks. No statement PDF in the sprint: 0.10.3 has no disclosure artifact, only a consented `strk20Balances` number.
 - Primitive others cannot copy cheaply: live STRK20 pool + anonymizers + CCTP privacy bridge + onchain deposit screening + selective disclosure.
 - Lose condition: anonymity set stays tiny, or the card is theater, or we leak by bundling deposit + spend.
 
@@ -37,7 +37,7 @@ This is not a licensed bank and not a mixer. It is a non-custodial private money
 |---|---|
 | Who paid whom, transfer amounts, token type of private transfers | Deposit and withdrawal amounts |
 | Owner of open notes | Filled amount of open notes (DeFi output) |
-| Viewing-key ledger | That an address interacted with the pool, and when |
+| Viewing-key ledger | That an address interacted with the pool, and when; screening decision on deposit |
 
 Anonymizers hide the user address. App-side amounts can stay public. Shadow accounts hide the wallet link: the SDK path works now; the Wallet API path is specified in `wallet_rpc.json` **v0.10.4-rc.1** (2026-08-13) and in `@starknet-io/types-js@0.10.4-beta.2` as `wallet_strk20ShadowAccountCommitment` + `shadow_account_invoke`. Stable types-js is still **0.10.3** (no shadow). Ready/Xverse support for 0.10.4 is unverified. Phase 0 stays on 0.10.3 actions only.
 
@@ -47,7 +47,7 @@ Never bundle a public deposit with the private spend it funds.
 
 Mixed, and this is the correct split:
 
-- Consumer app: Privacy Wallet API via starknet.js >= 10.4.0 and get-starknet 6.0.3. Ready today. Xverse in-wallet live, dapp API in progress. The app never sees a viewing key.
+- Consumer app: Privacy Wallet API via `starknet@10.4.0` and get-starknet `6.0.4`. Ready today. Xverse in-wallet live, dapp API in progress. The app never sees a viewing key.
 - Protocol actions we own (payroll, card settlement, recurring payouts): our anonymizer contracts + Wallet API. Team writes, reviews, audits, deploys. Reference: `packages/vesu_lending_anonymizer`, `packages/ekubo_swap_anonymizer`.
 - Funding from EVM: Privacy Bridge (`@starkware-libs/starknet-privacy-bridge` 0.1.x). Early. Read its README before pinning.
 - Advanced backend / org treasury that we operate: Privacy SDK `@starkware-libs/starknet-privacy-sdk` 0.14.3-rc.5 on GitHub Packages. Node >= 24. Viewing key only if we own the account.
@@ -96,16 +96,19 @@ History, rewards, and analytics must read the pool `Deposit` event first indexed
 
 Ship a mainnet private money account. Three real txs. Public repo. `strk20.json`. Demo anyone can open.
 
-Must work:
+Floor (must work):
 
-1. Connect Ready. Detect wallet API >= 0.10.3. Degrade honestly if not.
-2. Shield USDC or STRK (do not bundle with the next action).
-3. Private transfer to a registered recipient. Receive via QR / payment link.
-4. One of: AVNU private swap, or Vesu deposit via official anonymizer.
-5. Statement view: user-consented `strk20Balances` only when we actually show balances. Capability detect via `supportedWalletApi`, never via a balance probe.
-6. Honest hidden/visible labels in the UI.
+1. Connect Ready. Detect wallet API >= 0.10.3 with a real semver compare. Degrade honestly if not.
+2. Shield USDC or STRK (do not bundle with the next action). Fund and confirm a mainnet deposit a week before any stage demo.
+3. Private transfer to a second Ready wallet that is already registered. Receive via QR / payment link. Unregistered recipient is a pending state, not a silent fail.
 
-Start from `Akashneelesh/strk20-starter-kit`. Replace the echo helper and DEMO amounts. Do not ship the echo contract as the product.
+Stretch: AVNU private swap from an already-shielded balance. Paymaster key stays on a rate-limited server route, never in the browser. Vesu waits on a verified helper instance address (class hash is not enough).
+
+Cut from the floor: viewing-key income statement PDF, payroll, card, shadow accounts, Madu, Eth712.
+
+Start from `Akashneelesh/strk20-starter-kit` commit `187fe78`. Replace the echo helper and DEMO amounts. Do not ship the echo contract as the product.
+
+Demo wallet is burned for correlation. Do not fund it from a CEX withdrawal tied to a real identity. Do not reuse it for real money.
 
 Sprint entry: one PR to the sprint registry. Nothing else to submit. Whatever the repo shows on Aug 31 counts.
 

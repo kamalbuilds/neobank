@@ -1,4 +1,4 @@
-# STRK20 Privacy Integration Plan — neobank
+# STRK20 Privacy Integration Plan: neobank
 
 Generated 2026-08-14 by the strk20-privacy-integration skill. Statuses below were current at generation time. Freshness check (`scripts/check_freshness.py`) run the same day: get-starknet `next` is 6.0.4 (skill used to pin 6.0.3); `packages/sub_account_anonymizer` renamed to `packages/shadow_account_anonymizer`; Wallet API latest stable is v0.10.3 with v0.10.4-rc.1 in flight.
 
@@ -6,7 +6,7 @@ Product judgment (not executed by this skill): `docs/PRODUCTION_BUILD_PLAN.md`. 
 
 ## 1. Project snapshot
 
-- Stack: greenfield. No `package.json`, no Cairo, no wallet connect. After scaffold: Next.js + `starknet@>=10.4.0` + get-starknet v6 + Ready. Seed from https://github.com/Akashneelesh/strk20-starter-kit then delete DEMO amounts and the echo helper.
+- Stack: greenfield. No `package.json`, no Cairo, no wallet connect. After scaffold: Next.js + exact pins in section 4 + Ready. Seed from https://github.com/Akashneelesh/strk20-starter-kit at commit `187fe78`, then delete DEMO amounts and the echo helper. File-level copy/delete list: `docs/research/claude-starter-kit.md`.
 - Relevant code (does not exist yet; these are the files the starter kit will create and we will change):
   - wallet connect: `src/app` wallet picker / `SelectWallet.tsx` (starter names)
   - transaction layer: wherever `WalletAccountV6` is constructed (starter `WalletAccountV6Tag.tsx`)
@@ -23,7 +23,7 @@ Mixed, and that is the correct split.
 
 - **User flows (Phase 1):** Privacy Wallet API via starknet.js. The dapp asks Ready to shield, transfer, unshield. Never touches a viewing key. https://strk20-by-example.org/starknet-wallet-api/overview
 - **Private swap (Phase 2):** AVNU first-party. No anonymizer of our own. https://strk20-by-example.org/starknet-wallet-api/avnu-private-swaps
-- **Private yield (Phase 2):** Vesu reference helper already on mainnet class hash. Wire Wallet API invoke to that deployed helper. Team still owns any fork we deploy. https://strk20-by-example.org/helpers/vesu-lending-helper
+- **Private yield (Phase 2):** Vesu reference helper. Monorepo README lists class hash `0x3751128dc3ebd36215f982766f14aaca8f78793e4b0f42a73e49372a8e24aae` at tag `PRIVACY-0.14.3-RC.0`. That is a class, not a callable instance. Instance address is UNVERIFIED. Sprint DeFi leg is AVNU, not Vesu, until an instance is verified. https://strk20-by-example.org/helpers/vesu-lending-helper
 - **Payroll / card settlement (Phase 3):** our own `privacy_invoke` helpers. This skill never generates that Cairo. Team writes, reviews, audits, deploys. https://strk20-by-example.org/helpers/privacy-invoke
 - **EVM funding (not an EVM app):** Privacy Bridge as a reference to read, not a pinned dependency. https://github.com/starkware-libs/privacy-bridge
 - **Shadow accounts:** SDK path exists. Wallet API methods exist in spec v0.10.4-rc.1 and `@starknet-io/types-js@0.10.4-beta.2`. Stable types-js is 0.10.3. Ready support unverified. Tracked, not Phase 1.
@@ -32,7 +32,7 @@ Mixed, and that is the correct split.
 
 Do not use Tongo (`starknet-edu/starknet-privacy-toolkit`). Different pool.
 
-## 3. What this delivers — hidden vs visible
+## 3. What this delivers: hidden vs visible
 
 | Private | Public |
 |---|---|
@@ -46,14 +46,16 @@ Anonymizers hide the user's address. Amounts and app activity at Vesu/AVNU may s
 
 History, analytics, and any later rewards read the pool `Deposit` event first indexed key, never `tx.sender`.
 
-A deposit is two wallet prompts (public `approve`, then private deposit). Notes mature ~10 blocks. Do not bundle a public deposit with a later spend unless the plan states the unlinkability cost. https://strk20-by-example.org/what-is-strk20 https://strk20-by-example.org/compliance
+A deposit is two wallet prompts (public `approve`, then private deposit). Notes mature ~10 blocks. Do not bundle a public deposit with a later spend unless the plan states the unlinkability cost. Live demo: shield well before the stage, then show private send (and optional AVNU) against already-mature notes. https://strk20-by-example.org/what-is-strk20 https://strk20-by-example.org/compliance
+
+Recipient of a private transfer must already be registered in the pool. The dapp cannot register them and 0.10.3 has no registration-read. Invite and payroll wait until the recipient has used Ready on the pool once.
 
 ## 4. Prerequisites & versions
 
 Pins after 2026-08-14 freshness check:
 
-- `starknet@10.4.0` or later on the npm `next` tag (`next` is 10.7.0; 10.5+ adds nothing STRK20-specific, so `>= 10.4.0` is enough)
-- `@starknet-io/get-starknet-discovery@6.0.4`, `@starknet-io/get-starknet-wallet-standard@6.0.4` (npm `next`; 6.0.3 pin is stale)
+- `starknet@10.4.0` exact until we re-run the import check on a newer `next` build. Do not leave a floating range against `next`.
+- `@starknet-io/get-starknet-discovery@6.0.4`, `@starknet-io/get-starknet-wallet-standard@6.0.4` (npm `next`; 6.0.3 pin is stale). Compare Wallet API versions with a real semver helper, not string order.
 - `@starknet-io/types-js@0.10.3` for Phase 1 (stable). Do not pin `0.10.4-beta.2` until Ready advertises Wallet API >= 0.10.4
 - `@avnu/avnu-sdk@4.2.0` when Phase 2 starts
 - Test wallet: Ready extension
@@ -61,9 +63,11 @@ Pins after 2026-08-14 freshness check:
 - Canonical pool: `0x040337b1af3c663e86e333bab5a4b28da8d4652a15a69beee2b677776ffe812a`
 - Cairo later (Phase 3 only): Scarb + Starknet Foundry. Not in Phase 1
 
-## 5. Phase 1 — first shielded flow (buildable now)
+## 5. Phase 1: first shielded flow (buildable now)
 
 Status: pending approval. Testnet-first locally; mainnet txs only after you confirm (sprint requires mainnet).
+
+Sprint floor (must work by Aug 31): Ready connect, shield, private send to a second registered Ready wallet, honest labels. Stretch: AVNU private swap from an already-shielded balance. Cut from the floor: statement PDF, Vesu, payroll, card, shadow accounts.
 
 1. Scaffold from the starter kit into this repo. Delete DEMO token amounts and do not ship the echo `privacy_invoke` helper as a product surface.
 2. Pin the versions in section 4 in the new `package.json`.
@@ -72,7 +76,7 @@ Status: pending approval. Testnet-first locally; mainnet txs only after you conf
 5. Graceful degradation: if `supportedWalletApi` is missing or `< 0.10.3`, hide private actions and tell the user to use Ready. Braavos/Privy are unsupported.
 6. Verify against Ready and https://starknet-wallet-account.vercel.app/
 
-## 6. Phase 2 — feature integration
+## 6. Phase 2: feature integration
 
 - Receive: payment link / QR that is a registered pool address, not a new stealth scheme. https://strk20-by-example.org/viewing-keys
 - AVNU private swap from an already-shielded balance. Paymaster API key server-side only. https://docs.avnu.fi/docs/privacy
@@ -81,7 +85,7 @@ Status: pending approval. Testnet-first locally; mainnet txs only after you conf
 - Statement view only via consented `strk20Balances` when we actually show balances.
 - Re-check fee / paymaster UX at build time (gas may be sponsored; pool fee is not).
 
-## 7. Phase 3 — team anonymizers + shadow accounts (tracked)
+## 7. Phase 3: team anonymizers + shadow accounts (tracked)
 
 - **Payroll / card settlement helpers**
   - Entry criterion: Phase 1 live on mainnet and we have a named protocol action with no first-party private path.
