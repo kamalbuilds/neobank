@@ -8,11 +8,24 @@ Grok's subagent panel only lists `spawn_subagent` types (`kimi-coder`, `explore`
 
 `claude --bg` starts an idle PTY and does not consume the prompt.
 
+Model size and thinking effort are separate. Claude Code 2.1.220:
+
+- `--model` `haiku` | `sonnet` | `opus` | `fable`
+- `--effort` `low` | `medium` | `high` | `xhigh` | `max`
+
+Haiku has no adjustable effort. Fable is permanently max. Do not pass `--effort` for either.
+
 ```
-scripts/claude-dispatch.sh LOW    <name> <prompt-file>   # haiku,  effort low
-scripts/claude-dispatch.sh MEDIUM <name> <prompt-file>   # sonnet, effort medium
-scripts/claude-dispatch.sh HIGH   <name> <prompt-file>   # opus,   effort high
+scripts/claude-dispatch.sh SORT      <name> <prompt>   # haiku, no effort
+scripts/claude-dispatch.sh CODE      <name> <prompt>   # sonnet / medium
+scripts/claude-dispatch.sh CODE-HARD <name> <prompt>   # sonnet / high
+scripts/claude-dispatch.sh JUDGE     <name> <prompt>   # opus / high
+scripts/claude-dispatch.sh DEEP      <name> <prompt>   # opus / xhigh
+scripts/claude-dispatch.sh MAX       <name> <prompt>   # fable, no effort
+scripts/claude-dispatch.sh sonnet/high <name> <prompt> # explicit
 ```
+
+Rule of thumb: Sonnet + high often beats Opus + low for specced coding. Save Opus and Fable for judgment.
 
 Watch them in Claude Code: `claude agents --json --cwd /Users/kamal/Desktop/neobank`.
 They will not appear as Grok "kimi" rows. Do not combine `-p` with `--bg`. Auth: Claude Max.
