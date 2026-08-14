@@ -1,4 +1,18 @@
 {
-  "transactions": [],
+  "transactions": [
+    {
+      "hash": "0x02cbfcceac813b17696710fd8f2e52b603e4ba6dabd87e774d1840d20b21a735",
+      "kind": "ready_privacy_account_activation",
+      "network": "mainnet",
+      "status": "ACCEPTED_ON_L2"
+    },
+    {
+      "hash": "0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193",
+      "kind": "enable_private_tokens_first_shield",
+      "network": "mainnet",
+      "status": "ACCEPTED_ON_L2",
+      "note": "First pool use for 0x0101ab74cf27f868fa42f02de17c5fca88697dd63dd850ee6626d74c25ed6a4a. 0.1 STRK shielded. 6 STRK pool fee."
+    }
+  ],
   "contracts": []
 }
