@@ -105,3 +105,7 @@ All of the following, not a subset, per the locked product rules and this note:
 4. No fake BIN, no mock issuer response, no simulated authorization. If sandbox access is not yet granted, the card feature does not ship, full stop.
 
 Nothing in this note authorizes writing card UI or Cairo. That stays out of scope until a Phase 2 kickoff with a signed issuer agreement in hand.
+
+## See also: cancelled-wave salvage
+
+Nine issuer researchers plus one demand/competitor researcher ran ~51 minutes on 2026-08-14 and were cancelled on turn 1 with no dossier. Their fetched pages and mid-flight notes are extracted in `docs/research/salvage-2026-08-14/`. That folder is not a decision doc. Use it when re-opening Rain Visa membership, Reap/Payward, Kulipa dates, Crossmint-as-Rain-wrapper, or Visa/Mastercard settlement pilots.
