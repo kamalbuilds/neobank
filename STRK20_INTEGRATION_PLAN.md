@@ -56,10 +56,11 @@ Pins after 2026-08-14 freshness check:
 
 - `starknet@10.4.0` exact until we re-run the import check on a newer `next` build. Do not leave a floating range against `next`.
 - `@starknet-io/get-starknet-discovery@6.0.4`, `@starknet-io/get-starknet-wallet-standard@6.0.4` (npm `next`; 6.0.3 pin is stale). Compare Wallet API versions with a real semver helper, not string order.
-- `@starknet-io/types-js@0.10.3` for Phase 1 (stable). Do not pin `0.10.4-beta.2` until Ready advertises Wallet API >= 0.10.4
+- `@starknet-io/types-js@0.10.3` for Phase 1 (stable). Do not pin `0.10.4-beta.2` until Ready advertises Wallet API >= 0.10.4. Note: get-starknet 6.0.4 transitively depends on `types-js@0.10.4-beta.2`. Use an override/resolutions field so the app types stay on 0.10.3.
 - `@avnu/avnu-sdk@4.2.0` when Phase 2 starts
 - Test wallet: Ready extension
-- Capability detect: `walletV6.supportedWalletApi` / `supportedSpecs`, treat `>= 0.10.3` as STRK20-capable. Never probe `strk20Balances` to feature-detect
+- Capability detect: `walletV6.supportedWalletApi` via `compareVersions` against `"0.10"` (spec allows `"0.10"` or `"0.10.3"`; a `>= 0.10.3` gate hides a compliant `"0.10"` wallet). Let the wallet return `API_VERSION_NOT_SUPPORTED` on the real call. Never probe `strk20Balances` to feature-detect
+- Private submit path: **paymaster relayed only** (`sponsored_private`). The pool pulls `get_fee_amount` STRK from `tx.caller`. Self-submit publishes a public STRK payment from the user on every private op. Live mainnet fee at block 13275490 was **6 STRK**, admin-settable. Read it at runtime.
 - Canonical pool: `0x040337b1af3c663e86e333bab5a4b28da8d4652a15a69beee2b677776ffe812a`
 - Cairo later (Phase 3 only): Scarb + Starknet Foundry. Not in Phase 1
 
@@ -73,7 +74,7 @@ Sprint floor (must work by Aug 31): Ready connect, shield, private send to a sec
 2. Pin the versions in section 4 in the new `package.json`.
 3. Connect via get-starknet v6. Construct `WalletAccountV6`. Fetch the current API before coding: https://starknet-js.com/docs/next/guides/account/walletAccount/#with-get-starknet-v6 and https://strk20-by-example.org/starknet-wallet-api/starknet-js (React: https://strk20-by-example.org/starknet-wallet-api/starknet-start-hook)
 4. Wire shield / private transfer / unshield. Label the two-step deposit (`approve` then deposit). Show the ~10 block maturity wait before a follow-up spend. Subtract the pool fee (`get_fee_amount`) from MAX.
-5. Graceful degradation: if `supportedWalletApi` is missing or `< 0.10.3`, hide private actions and tell the user to use Ready. Braavos/Privy are unsupported.
+5. Graceful degradation: if `supportedWalletApi` is missing or `compareVersions` says below `"0.10"`, hide private actions and tell the user to use Ready. Braavos/Privy are unsupported.
 6. Verify against Ready and https://starknet-wallet-account.vercel.app/
 
 ## 6. Phase 2: feature integration
