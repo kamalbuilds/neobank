@@ -123,7 +123,7 @@ Sprint entry: one PR to the sprint registry. Nothing else to submit. Whatever th
 ## Phase 2 (6 months, real neobank last mile)
 
 1. Card only after an issuer contract: Bridge+Stripe JIT (documented non-custodial pull), or Gnosis Pay Safe, or Rain if we accept program custody.
-2. Policy: unshield to a fresh issuer funding address per auth when possible. Never imply the merchant cannot see the card or the issuer cannot see KYC.
+2. Policy: unshield to a prefunded standing issuer funding address (wallet, Safe, or reserve contract, per issuer), topped up ahead of expected spend, not rotated per auth. No candidate (Stripe+Bridge, Gnosis Pay, Rain) documents fresh-address-per-auth; see `docs/research/issuer-options.md`. Never imply the merchant cannot see the card or the issuer cannot see KYC.
 3. Cross-chain execution later (NEAR Confidential Intents, private pump / HL) as separate surfaces on the same account. Do not block the money account on them.
 
 ## Revenue (production, not sprint)
