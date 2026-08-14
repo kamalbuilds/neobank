@@ -23,7 +23,7 @@ export interface Strk20Error {
 
 const COPY: Record<Strk20ErrorKind, string> = {
   not_registered:
-    "This address is not registered in the privacy pool yet. It needs to open a STRK20-capable wallet and use it once before it can receive a private transfer - this app cannot register it for them.",
+    "This wallet is not registered in the privacy pool yet. Open Ready, finish privacy activation (Shielded tokens), then retry. A first shield in Ready also registers it. This app cannot register an address.",
   api_version_not_supported:
     "This wallet does not support STRK20 privacy actions. Install or update Ready.",
   insufficient_private_balance:
