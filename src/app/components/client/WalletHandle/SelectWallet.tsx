@@ -57,8 +57,17 @@ export default function SelectWallet({ variant = "ctaBig" }: { variant?: "nav" |
 
   // Connect the picked wallet, choosing the RPC from the wallet's own chainId
   // (mainnet or sepolia), then gate STRK20 actions on a real capability check.
+  // Ready rejects chainId / network reads until the dapp is authorized
+  // ("Not preauthorized"). requestAccounts opens that connect popup first.
   async function handleSelectedWallet(selectedWallet: WalletWithStarknetFeatures) {
     setMyWallet(selectedWallet); // zustand
+
+    const result = await walletV6.requestAccounts(selectedWallet);
+    if (typeof (result) == "string") {
+      throw new Error("This wallet returned an unexpected response to requestAccounts.");
+    }
+    const addr = validateAndParseAddress(result[0]);
+    setAddressAccount(addr); // zustand
 
     const chainId = (await walletV6.requestChainId(selectedWallet)) as string;
     const network = networkForChainId(chainId);
@@ -69,13 +78,6 @@ export default function SelectWallet({ variant = "ctaBig" }: { variant?: "nav" |
     const provider = providerFor(network ?? "mainnet");
     const myWA = await WalletAccountV6.connect(provider, selectedWallet);
     setMyWalletAccount(myWA);
-
-    const result = await walletV6.requestAccounts(selectedWallet);
-    if (typeof (result) == "string") {
-      throw new Error("This wallet returned an unexpected response to requestAccounts.");
-    }
-    const addr = validateAndParseAddress(result[0]);
-    setAddressAccount(addr); // zustand
 
     const isConnectedWallet: boolean = await walletV6.getPermissions(selectedWallet).then((res: any) => (res as WALLET_API.Permission[]).includes(WALLET_API.Permission.ACCOUNTS));
     setConnected(isConnectedWallet); // zustand
