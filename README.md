@@ -44,7 +44,7 @@ Connect Ready. Private actions appear only when the wallet advertises Wallet API
 
 ## Status
 
-Floor is in this repo: connect, shield, private send, receive QR/link, unshield, honest private/public labels. `npm run typecheck` and `npm run build` pass. Mainnet txs and a public demo go in [`strk20.json`](strk20.json) when they exist.
+Floor is in this repo: connect, shield, private send, receive QR/link, unshield, honest private/public labels. Stretch: AVNU private swap from an already-shielded balance. The paymaster key stays in `AVNU_PAYMASTER_API_KEY` on the server. `npm run typecheck` and `npm run build` pass. Mainnet txs and a public demo go in [`strk20.json`](strk20.json) when they exist.
 
 ## License
 
