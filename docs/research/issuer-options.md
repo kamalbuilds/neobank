@@ -29,6 +29,21 @@ Do not treat Community Cards or Base as our issuer, and do not copy Ready's new 
 
 Local path `/Users/kamal/Desktop/BlankCard`, upstream `github.com/altaga/BlankCard`. This is a 2024 hackathon zero-knowledge anti-cloning demo on Base, not a card issuer. The Noir circuit hardcodes a single PAN (`6268857032070713`). The NFC flow accepts a fixed UID (`01020304`) and injects a pre-built canned proof rather than proving against live card state. There is no BIN, no Visa settlement rail, and no Starknet integration anywhere in the repo (graph scan: 203 nodes, zero issuer node). Reject this code outright; it does not belong in any issuer evaluation.
 
+## Rejected live: Brahma / Swype.fun / HypurrFi Card
+
+Checked in the `neobank` Brave profile on 2026-08-14 (`bhn neobank`). Not a drop-in issuer for this repo.
+
+**Swype.fun** (`https://swype.fun/`): banner reads "Discontinued · April 2026". "Brahma.fi, the team behind Swype.fun, has been acquired by Polymarket. Swype Cards now operate under hypurrfi.com." Buttons: Continue on HypurrFi, Read announcement. No apply form on that page.
+
+**HypurrFi Card** (`https://hypurrfi.com/` then `https://app.hypurrfi.com/card`):
+- Marketing: spend against crypto without selling. "Spending with the Credit Card borrows directly from your collateralized positions in real time." Hyperliquid / HyperEVM. "Contact today to whitelabel a card of your own."
+- Apply is `https://app.hypurrfi.com/card`. Flow: Connect and Verify (wallet + identity check), Collateralize, Tap and Spend. Eligibility: connect wallet, then points gate ("Users with enough points will be granted direct access to the card beta").
+- Wallet picker is Privy: 586 wallets (Brave, MetaMask, Phantom first). No Ready. No Starknet.
+- Footer: "HypurrFi Card is not affiliated with the HypurrFi Protocol and subject to separate terms provided by Issuer."
+- FAQ (opened live): "When you tap your card, it borrows against your collateral in real time."
+
+This is the Brahma JIT pattern moved under HypurrFi: public, liquid, borrowable collateral on an EVM/HyperEVM venue, then Visa. Same architecture as Rain-backed Swype. It cannot debit a STRK20 note. Completing their verifier would mean connecting an EVM wallet and doing their KYC. That does not create a Starknet issuer and was not submitted.
+
 ## Candidate: Stripe Issuing + Bridge stablecoin cards
 
 Best structural analogue to what Ready Card was trying to do. Live docs, re-read 2026-08-14:
@@ -79,6 +94,8 @@ Re-checked 2026-08-14: the only production-grade, officially maintained Next.js-
 | Gnosis Pay | Self-custodial Safe | Gnosis Chain only | Not listed; needs bridge hop from Starknet, no direct CCTP domain | Sumsub | Public REST + `account-kit`, but multi-hop bridging required |
 | Rain | Program custody (Rain-Managed) or partner-held (Partner-Managed) | Base, Polygon, Optimism, Avalanche, Arbitrum, ZKsync, Solana, Ethereum, Stellar | Not listed | Rain-run, detail UNVERIFIED without NDA docs | No official SDK, NDA-gated docs |
 | Reap | UNVERIFIED | UNVERIFIED | Not listed | UNVERIFIED | No official SDK, consumer fit UNVERIFIED |
+| Brahma / Swype (dead) | Non-custodial borrow rights | Base, HyperEVM | None | Sumsub (historical) | Wound down April 2026 after Polymarket acquired Brahma |
+| HypurrFi Card (Swype successor) | JIT borrow vs on-chain collateral | Hyperliquid / HyperEVM | None. Privy wallet list, no Ready | Identity check after wallet connect, plus points gate | Live apply at app.hypurrfi.com/card. Separate issuer terms. Not a Starknet path |
 
 Common thread across every candidate: none support Starknet natively. Every path requires unshielding to public USDC on an already-supported EVM chain or Solana before the issuer can touch it. None of them can debit a STRK20 note directly, confirming the locked product rule.
 
@@ -105,6 +122,19 @@ All of the following, not a subset, per the locked product rules and this note:
 4. No fake BIN, no mock issuer response, no simulated authorization. If sandbox access is not yet granted, the card feature does not ship, full stop.
 
 Nothing in this note authorizes writing card UI or Cairo. That stays out of scope until a Phase 2 kickoff with a signed issuer agreement in hand.
+
+## bhn session 2026-08-14
+
+Profile `neobank` on port 9381. Pages opened:
+
+| URL | Result |
+|---|---|
+| https://swype.fun/ | Discontinued April 2026. Redirects successor to hypurrfi.com. No form. |
+| https://hypurrfi.com/ | Apply Now -> app.hypurrfi.com/card |
+| https://app.hypurrfi.com/card | Verifier is Privy connect (586 wallets, no Ready) then identity check then points. Not submitted. |
+| https://docs.stripe.com/issuing/bridge-stablecoin-cards | Still marked Private preview. Onboard after signing addendum. Create account is dashboard.stripe.com/register/issuing (Stripe login, not a public waitlist). |
+
+No issuer agreement was created. No KYC was started. No card UI was added to the app.
 
 ## See also: cancelled-wave salvage
 
