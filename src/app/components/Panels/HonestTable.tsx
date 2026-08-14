@@ -31,7 +31,7 @@ export default function HonestTable() {
         </div>
       </div>
       <div className={styles.subLine} style={{ marginTop: 12 }}>
-        <span>A private transfer needs a recipient already registered in the pool. This app cannot register one for them.</span>
+        <span>A private transfer needs a recipient already registered. Your own first shield in this app registers you. This app cannot register someone else.</span>
       </div>
     </div>
   );
