@@ -72,6 +72,16 @@ Re-checked 2026-08-14: the only production-grade, officially maintained Next.js-
 
 Common thread across every candidate: none support Starknet natively. Every path requires unshielding to public USDC on an already-supported EVM chain or Solana before the issuer can touch it. None of them can debit a STRK20 note directly, confirming the locked product rule.
 
+## Funding topology: two ways to land public USDC at the issuer
+
+Paper topology only, UNVERIFIED against any live integration. Two candidate routes from the STRK20 pool to an issuer funding address.
+
+**Path A: Wallet API unshield, then a second hop.** Unshield via the Wallet API (this app today) lands public USDC on Starknet. A second hop (CCTP or an aggregator) then moves it to Base, Solana, or Gnosis Chain. Public SN USDC sits in the app's own address between the two hops.
+
+**Path B: Privacy Bridge outbound.** `cashOut` / `bridgeOutToWallet`, one proven pool tx: withdraw to OutboundAnonymizer then CCTP burn, with `mint_recipient` set to the issuer EOA or Safe. No public SN USDC sits around at any point. Note the inbound side of Privacy Bridge funds the POOL (payday in), not the card; `fundAccountFromPool` lands a derived Polygon trading EOA, wrong destination for a BIN.
+
+Constraints on Path B: the consumer dapp still must not hold a viewing key, so this stays a later CardSettle helper or a wallet-mediated outbound, not `@starkware-libs/starknet-privacy-bridge` pulled into the Next app directly. That package is 0.1.x and not pinned. Amounts stay public on both paths, only the source address differs. Prefer Path B only if the signed issuer accepts Circle USDC arriving on a Privacy Bridge destination domain. A Solana-first Bridge JIT integration stays Path A plus a hop, since Privacy Bridge does not name Solana as a destination.
+
 ## Plan correction
 
 `docs/PRODUCTION_BUILD_PLAN.md` Phase 2 currently reads: "unshield to a fresh issuer funding address per auth when possible." Re-reading Stripe's Bridge stablecoin card docs, no such per-authorization fresh-address feature is documented; the model is one wallet approval mapped to one card, with JIT pulls against that same standing wallet at each authorization. Gnosis Pay is a single standing Safe. Rain's two program shapes are both a standing collateral contract or a standing partner-held reserve, not a fresh address per swipe. This line should be corrected to: unshield to a prefunded standing issuer funding address (wallet, Safe, or reserve contract, depending on issuer), topped up ahead of expected spend, not rotated per authorization. Applied below.
