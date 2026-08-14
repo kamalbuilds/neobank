@@ -3,7 +3,7 @@ import { useState } from "react";
 import { validateAndParseAddress } from "starknet";
 import styles from "../../uni.module.css";
 import { useStoreWallet } from "../Wallet/walletContext";
-import { TOKENS, type TokenSymbol, type NetworkKey } from "@/utils/constants";
+import { TOKENS, getPublicBalance, type TokenSymbol, type NetworkKey } from "@/utils/constants";
 import { toBaseUnits, fromBaseUnits } from "../lib/format";
 import { submitStrk20, waitStrk20Transaction, readPrivateBalance } from "../lib/strk20";
 import { usePoolFee } from "../lib/useFee";
@@ -63,6 +63,20 @@ export default function UnshieldPanel({ network }: { network: NetworkKey }) {
     } catch (err: any) {
       setResult(errorResult(err.message));
       return;
+    }
+    if (address && fee !== undefined) {
+      try {
+        const publicStrk = await getPublicBalance(network, TOKENS.STRK.address, address);
+        if (publicStrk < fee) {
+          setResult(errorResult(
+            `Need at least ${fromBaseUnits(fee, TOKENS.STRK.decimals)} public STRK for the pool fee. This wallet has ${fromBaseUnits(publicStrk, TOKENS.STRK.decimals)} public STRK. Ready will refuse the unshield until you top up.`,
+          ));
+          return;
+        }
+      } catch (err: any) {
+        setResult(errorResult(err?.message ?? "Could not read public STRK before unshield."));
+        return;
+      }
     }
     setSubmitting(true);
     const submission = await submitStrk20(myWalletAccount, [
