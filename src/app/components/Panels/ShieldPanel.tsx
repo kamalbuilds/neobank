@@ -62,6 +62,26 @@ export default function ShieldPanel({ network }: { network: NetworkKey }) {
       setResult(errorResult("Connect a wallet first."));
       return;
     }
+    if (fee === undefined || fee === null) {
+      setResult(errorResult("Could not read the pool fee. Try again."));
+      return;
+    }
+    let publicStrk: bigint;
+    try {
+      publicStrk = await getPublicBalance(network, TOKENS.STRK.address, myWalletAccount.address);
+    } catch (err: any) {
+      setResult(errorResult(err?.message ?? "Could not read your public STRK balance."));
+      return;
+    }
+    if (publicStrk < fee) {
+      setResult(
+        errorResult(
+          `You need at least ${fromBaseUnits(fee, TOKENS.STRK.decimals)} public STRK to cover the pool fee` +
+            `${token === "STRK" ? " on top of the amount you're shielding" : ""}. Your wallet has ${fromBaseUnits(publicStrk, TOKENS.STRK.decimals)} STRK. Top up and try again.`
+        )
+      );
+      return;
+    }
     setSubmitting(true);
     setResult({
       status: "pending",
@@ -148,6 +168,15 @@ export default function ShieldPanel({ network }: { network: NetworkKey }) {
       </div>
 
       <FeeRow fee={fee} />
+
+      {token === "USDC" && (
+        <div className={styles.warn} style={{ color: "var(--muted)" }}>
+          The pool fee is still public STRK, paid from your wallet, not deducted from this deposit. Separately,
+          Ready has been observed reserving a small amount from the shielded asset itself (0.2 USDC in resulted
+          in 0.0395 USDC noted) - that reservation is wallet-side behavior we&apos;ve seen, not a fee this app
+          charges or a formula we can guarantee.
+        </div>
+      )}
 
       {!strk20Capable && (
         <div className={styles.warn}>This wallet does not support STRK20 privacy actions. Install or update Ready.</div>

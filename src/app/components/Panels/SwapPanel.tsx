@@ -3,10 +3,11 @@ import { useEffect, useState } from "react";
 import { getQuotes, type Quote } from "@avnu/avnu-sdk";
 import styles from "../../uni.module.css";
 import { useStoreWallet } from "../Wallet/walletContext";
-import { TOKENS, type NetworkKey, type TokenSymbol } from "@/utils/constants";
+import { TOKENS, getPublicBalance, type NetworkKey, type TokenSymbol } from "@/utils/constants";
 import { fromBaseUnits, toBaseUnits } from "../lib/format";
 import { waitStrk20Transaction } from "../lib/strk20";
 import { avnuConfigured, clientAvnuOptions, fetchPrivateSwapFee, proveAndSubmitPrivateSwap } from "../lib/avnu";
+import { useMaturity, useShieldedBalances } from "../lib/usePrivateBalance";
 import TokenSelect from "./TokenSelect";
 import FeeRow from "./FeeRow";
 import { ResultCard, errorResult, receiptToResult, type ActionResult } from "./ActionResult";
@@ -40,6 +41,9 @@ export default function SwapPanel({ network }: { network: NetworkKey }) {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<ActionResult | null>(null);
   const [feeAmount, setFeeAmount] = useState<bigint | undefined>(undefined);
+
+  const maturity = useMaturity(sellToken);
+  const shielded = useShieldedBalances();
 
   useEffect(() => {
     let cancelled = false;
@@ -114,6 +118,14 @@ export default function SwapPanel({ network }: { network: NetworkKey }) {
     try {
       const { fee, feeMode } = await fetchPrivateSwapFee(network, TOKENS.STRK.address);
       setFeeAmount(fee.amount);
+      const publicStrk = await getPublicBalance(network, TOKENS.STRK.address, address);
+      if (publicStrk < fee.amount) {
+        setResult(errorResult(
+          `Need at least ${fromBaseUnits(fee.amount, TOKENS.STRK.decimals)} public STRK for the pool fee. This wallet has ${fromBaseUnits(publicStrk, TOKENS.STRK.decimals)} public STRK. Ready will refuse the swap until you top up.`,
+        ));
+        setSubmitting(false);
+        return;
+      }
       const txHash = await proveAndSubmitPrivateSwap({
         network,
         walletAccount: myWalletAccount,
@@ -158,7 +170,7 @@ export default function SwapPanel({ network }: { network: NetworkKey }) {
 
       {configured === false && (
         <div className={styles.warn}>
-          AVNU private swap is not configured on this server. Add `AVNU_PAYMASTER_API_KEY` to `.env` (server-side only, from the AVNU portal) and restart.
+          AVNU private swap is not configured on this server. Set `AVNU_PAYMASTER_API_KEY` in the server env; this app never puts the key in the browser.
         </div>
       )}
 
@@ -182,6 +194,32 @@ export default function SwapPanel({ network }: { network: NetworkKey }) {
           <span>Buying {buyToken} · 5% slippage</span>
         </div>
       </div>
+
+      <div className={styles.subLine}>
+        <button className={styles.tab} onClick={shielded.revealed ? shielded.hide : shielded.reveal} disabled={shielded.loading || !myWalletAccount}>
+          {shielded.loading ? "reading shielded balances…" : shielded.revealed ? "Hide shielded balances" : "Show shielded STRK/USDC"}
+        </button>
+      </div>
+      {shielded.error ? <div className={styles.warn}>{shielded.error}</div> : null}
+      {shielded.revealed && (
+        <div className={styles.subLine}>
+          <span className={styles.subMono}>
+            {shielded.balances[sellToken] !== undefined
+              ? `${fromBaseUnits(shielded.balances[sellToken]!, TOKENS[sellToken].decimals)} ${sellToken} shielded`
+              : "…"}
+          </span>
+        </div>
+      )}
+
+      {maturity.locked && (
+        <div className={styles.warn}>
+          {maturity.blocksRemaining === undefined
+            ? `Notes from your last ${sellToken} shield mature about 10 blocks after the deposit.`
+            : `Notes from your last ${sellToken} shield are still maturing: ~${maturity.blocksRemaining} block${
+                maturity.blocksRemaining === 1 ? "" : "s"
+              } left before they can be spent.`}
+        </div>
+      )}
 
       {feeAmount === undefined ? (
         <div className={styles.feeRow}>
@@ -207,14 +245,14 @@ export default function SwapPanel({ network }: { network: NetworkKey }) {
 
       <button
         className={styles.btnCta}
-        disabled={!strk20Capable || quoting || !amount}
+        disabled={!strk20Capable || quoting || !amount || configured === false || maturity.locked}
         onClick={handleQuote}
       >
-        {quoting ? "Quoting…" : "Get quote"}
+        {quoting ? "Quoting…" : configured === false ? "AVNU not configured" : maturity.locked ? "Notes maturing…" : "Get quote"}
       </button>
       <button
         className={styles.btnCta}
-        disabled={!strk20Capable || submitting || !quote || configured === false}
+        disabled={!strk20Capable || submitting || !quote || configured === false || maturity.locked}
         onClick={handleSwap}
       >
         {submitting ? "Swapping privately…" : "Swap privately"}
