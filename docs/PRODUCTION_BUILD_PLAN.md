@@ -98,11 +98,11 @@ Ship a mainnet private money account. Three real txs. Public repo. `strk20.json`
 
 Floor (must work):
 
-1. Connect Ready. Detect wallet API >= 0.10.3 with a real semver compare. Degrade honestly if not.
+1. Connect Ready. Detect wallet API with `compareVersions` against `"0.10"`. Degrade honestly if missing or below. Do not gate at 0.10.3: a spec-legal `"0.10"` string would hide every private action.
 2. Shield USDC or STRK (do not bundle with the next action). Fund and confirm a mainnet deposit a week before any stage demo.
 3. Private transfer to a second Ready wallet that is already registered. Receive via QR / payment link. Unregistered recipient is a pending state, not a silent fail.
 
-Stretch: AVNU private swap from an already-shielded balance. Paymaster key stays on a rate-limited server route, never in the browser. Vesu waits on a verified helper instance address (class hash is not enough).
+Stretch: AVNU private swap from an already-shielded balance. Every private op is paymaster-relayed (`sponsored_private`). Self-submit is a privacy leak (public STRK fee from the user). Paymaster key stays on a rate-limited server route, never in the browser. Vesu is not on mainnet: class `0x3751128d...` is undeclared there (error 28). Off every dated phase.
 
 Cut from the floor: viewing-key income statement PDF, payroll, card, shadow accounts, Madu, Eth712.
 
