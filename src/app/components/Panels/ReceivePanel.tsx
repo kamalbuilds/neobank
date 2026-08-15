@@ -57,7 +57,7 @@ export default function ReceivePanel() {
   return (
     <div className={styles.panel}>
       <div className={styles.warn} style={{ color: "var(--muted)" }}>
-        This is your registered pool address, not a new stealth scheme. The sender must
+        This is your registered pool address, not a gift-card stealth scheme. The sender must
         already be registered and must send a private transfer. This app cannot register
         anyone.
       </div>
