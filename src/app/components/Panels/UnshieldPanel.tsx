@@ -7,6 +7,7 @@ import { TOKENS, type TokenSymbol, type NetworkKey } from "@/utils/constants";
 import { toBaseUnits, fromBaseUnits } from "../lib/format";
 import { submitStrk20, waitStrk20Transaction, readPrivateBalance } from "../lib/strk20";
 import { usePoolFee } from "../lib/useFee";
+import { useMaturity, useShieldedBalances } from "../lib/usePrivateBalance";
 import TokenSelect from "./TokenSelect";
 import FeeRow from "./FeeRow";
 import { ResultCard, errorResult, receiptToResult, walletErrorResult, type ActionResult } from "./ActionResult";
@@ -25,6 +26,8 @@ export default function UnshieldPanel({ network }: { network: NetworkKey }) {
 
   const { fee } = usePoolFee(network);
   const tokenConfig = TOKENS[token];
+  const maturity = useMaturity(token);
+  const shielded = useShieldedBalances();
 
   async function useMax() {
     if (!myWalletAccount) return;
@@ -129,16 +132,51 @@ export default function UnshieldPanel({ network }: { network: NetworkKey }) {
 
       <FeeRow fee={fee} />
 
+      <div className={styles.subLine}>
+        <button
+          className={styles.tab}
+          onClick={shielded.revealed ? shielded.hide : shielded.reveal}
+          disabled={shielded.loading || !myWalletAccount}
+        >
+          {shielded.loading
+            ? "reading shielded balances…"
+            : shielded.revealed
+            ? "Hide shielded balances"
+            : "Show shielded STRK/USDC"}
+        </button>
+      </div>
+      {shielded.error ? <div className={styles.warn}>{shielded.error}</div> : null}
+      {shielded.revealed && (
+        <div className={styles.subLine} style={{ gap: 16 }}>
+          <span className={styles.subMono}>
+            {shielded.balances.STRK !== undefined ? fromBaseUnits(shielded.balances.STRK, TOKENS.STRK.decimals) : "…"} STRK
+          </span>
+          <span className={styles.subMono}>
+            {shielded.balances.USDC !== undefined ? fromBaseUnits(shielded.balances.USDC, TOKENS.USDC.decimals) : "…"} USDC
+          </span>
+        </div>
+      )}
+
+      {maturity.locked && (
+        <div className={styles.warn}>
+          {maturity.blocksRemaining === undefined
+            ? `Notes from your last ${token} shield mature about 10 blocks after the deposit.`
+            : `Notes from your last ${token} shield are still maturing: ~${maturity.blocksRemaining} block${
+                maturity.blocksRemaining === 1 ? "" : "s"
+              } left before they can be spent.`}
+        </div>
+      )}
+
       {!strk20Capable && (
         <div className={styles.warn}>This wallet does not support STRK20 privacy actions. Install or update Ready.</div>
       )}
 
       <button
         className={styles.btnCta}
-        disabled={!strk20Capable || submitting || !amount}
+        disabled={!strk20Capable || submitting || !amount || maturity.locked}
         onClick={handleUnshield}
       >
-        {submitting ? "Unshielding…" : "Unshield"}
+        {submitting ? "Unshielding…" : maturity.locked ? "Notes maturing…" : "Unshield"}
       </button>
 
       {result ? <ResultCard r={result} network={network} /> : null}

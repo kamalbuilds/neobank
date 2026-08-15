@@ -2,6 +2,8 @@
 
 Hold and send on the live STRK20 pool without publishing salary or net worth. Yield is planned, not in this repo.
 
+First mainnet shield is live: [`0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193`](https://voyager.online/tx/0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193).
+
 This is a non-custodial Starknet app. It is not a licensed bank and not a mixer. The dapp never holds a viewing key. Ready does the proving.
 
 ## What is private, what is not
@@ -18,8 +20,12 @@ A Visa that spends a shielded note is not in v0. No issuer does that.
 ## Sprint floor
 
 1. Connect Ready. Detect Wallet API with `compareVersions` against `"0.10"`.
-2. Shield USDC or STRK. Two wallet prompts: approve, then deposit. Notes mature about 10 blocks.
+2. Shield USDC or STRK (deploy account, then deposit). Two wallet prompts: approve, then deposit. Notes mature about 10 blocks.
 3. Private send to a second Ready wallet that is already registered.
+4. Receive by QR or link, to a registered pool address.
+5. Unshield back to a public balance.
+
+Card is later, not in this repo.
 
 Stretch: AVNU private swap from an already-shielded balance, paymaster-relayed only. Self-submit publishes a public STRK fee from the user on every private op. Live pool fee is read from `get_fee_amount` (6 STRK at the last mainnet read).
 
@@ -44,7 +50,9 @@ Connect Ready. Private actions appear only when the wallet advertises Wallet API
 
 ## Status
 
-Floor is in this repo: connect, shield, private send, receive QR/link, unshield, honest private/public labels. Stretch: AVNU private swap from an already-shielded balance. The paymaster key stays in `AVNU_PAYMASTER_API_KEY` on the server. `npm run typecheck` and `npm run build` pass. Mainnet txs and a public demo go in [`strk20.json`](strk20.json) when they exist.
+Floor is in this repo and live on mainnet: connect, shield (deploy account + deposit), private send, receive QR/link, unshield, honest private/public labels. First shielded mainnet tx: [`0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193`](https://voyager.online/tx/0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193), logged in [`strk20.json`](strk20.json). Card is later, not in this repo. Stretch: AVNU private swap from an already-shielded balance. The paymaster key stays in `AVNU_PAYMASTER_API_KEY` on the server, optional. `npm run typecheck` and `npm run build` pass.
+
+Public demo: https://neobank-six.vercel.app
 
 ## License
 

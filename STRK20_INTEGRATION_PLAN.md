@@ -64,9 +64,9 @@ Pins after 2026-08-14 freshness check:
 - Canonical pool: `0x040337b1af3c663e86e333bab5a4b28da8d4652a15a69beee2b677776ffe812a`
 - Cairo later (Phase 3 only): Scarb + Starknet Foundry. Not in Phase 1
 
-## 5. Phase 1: first shielded flow ✅ headless 2026-08-14
+## 5. Phase 1: first shielded flow ✅ live mainnet 2026-08-14
 
-Status: app floor built 2026-08-14. `npm run typecheck` and `npm run build` pass. Mainnet txs and `strk20.json` stay empty until Ready is used in a browser.
+Status: app floor built 2026-08-14. `npm run typecheck` and `npm run build` pass. First shielded mainnet tx landed 2026-08-14: [`0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193`](https://voyager.online/tx/0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193) (DEPLOY_ACCOUNT then strk20 deposit, 0.1 STRK shielded, 6 STRK pool fee). Logged in `strk20.json`.
 
 Sprint floor (must work by Aug 31): Ready connect, shield, private send to a second registered Ready wallet, honest labels. Stretch: AVNU private swap from an already-shielded balance. Cut from the floor: statement PDF, Vesu, payroll, card, shadow accounts.
 

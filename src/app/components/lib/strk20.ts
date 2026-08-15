@@ -185,13 +185,31 @@ export async function readPrivateBalance(
   walletAccount: WalletAccountV6,
   token: string
 ): Promise<bigint> {
-  const entries = await walletAccount.strk20Balances([token]);
-  const entry = entries?.[0] as { balance?: string; amount?: string } | undefined;
-  const raw = entry?.balance ?? entry?.amount;
-  // Never fall back to zero: a shape this code cannot read would silently
-  // present an empty shielded balance as a real one.
-  if (raw === undefined) {
-    throw new Error("The wallet returned a shielded balance this app could not read. Update Ready and try again.");
-  }
-  return BigInt(raw);
+  const [entry] = await readPrivateBalances(walletAccount, [token]);
+  return entry.balance;
+}
+
+export interface PrivateBalanceEntry {
+  token: string;
+  balance: bigint;
+}
+
+// Batched consented private-balance read - one wallet prompt for every token
+// requested. Call only when the UI will show or spend the numbers. Never use
+// this to feature-detect STRK20 support.
+export async function readPrivateBalances(
+  walletAccount: WalletAccountV6,
+  tokens: string[]
+): Promise<PrivateBalanceEntry[]> {
+  const entries = await walletAccount.strk20Balances(tokens);
+  return tokens.map((token, i) => {
+    const entry = entries?.[i] as { balance?: string; amount?: string } | undefined;
+    const raw = entry?.balance ?? entry?.amount;
+    // Never fall back to zero: a shape this code cannot read would silently
+    // present an empty shielded balance as a real one.
+    if (raw === undefined) {
+      throw new Error("The wallet returned a shielded balance this app could not read. Update Ready and try again.");
+    }
+    return { token, balance: BigInt(raw) };
+  });
 }

@@ -10,11 +10,16 @@ import TokenSelect from "./TokenSelect";
 import FeeRow from "./FeeRow";
 import { ResultCard, errorResult, receiptToResult, walletErrorResult, type ActionResult } from "./ActionResult";
 
+// Matches the pool's documented note-maturity window. Applied to a real
+// receipt block_number - never used to fabricate a countdown on its own.
+const MATURITY_BLOCKS = 10;
+
 export default function ShieldPanel({ network }: { network: NetworkKey }) {
   const myWalletAccount = useStoreWallet((s) => s.myWalletAccount);
   const wallet = useStoreWallet((s) => s.StarknetWalletObject);
   const address = useStoreWallet((s) => s.address);
   const strk20Capable = useStoreWallet((s) => s.strk20Capable);
+  const setMaturity = useStoreWallet((s) => s.setMaturity);
 
   const [token, setToken] = useState<TokenSymbol>("STRK");
   const [amount, setAmount] = useState("");
@@ -95,6 +100,10 @@ export default function ShieldPanel({ network }: { network: NetworkKey }) {
         });
       } else {
         setResult(receiptToResult(outcome.receipt, submission.txHash, amountLabel));
+        const blockNumber = (outcome.receipt as { block_number?: number })?.block_number;
+        if (typeof blockNumber === "number") {
+          setMaturity(token, blockNumber + MATURITY_BLOCKS);
+        }
       }
     } else if (outcome.status === "submitted") {
       setResult({
