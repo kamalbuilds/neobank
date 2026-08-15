@@ -54,3 +54,13 @@ Do not start card, Peer, or native mobile today.
 3. Third mainnet tx: unshield of the 0.1 [STRK] once mature.
 4. Public demo URL.
 5. Private send only if a second registered Ready wallet exists.
+
+## Scout results (same day)
+
+- Quietline (gstohl/quietline): Wallet API mail overlay. Helper addresses 0x0. strk20.json empty. Code locally complete, no mainnet txs.
+- Veyl (codeswithroh/veyl): starter-kit rebrand. Hardcoded 10 STRK shield. No trading. Empty strk20.json.
+- Veilcast (zkasuran/veilcast): two-commit starter + prediction-market README. No market contract.
+- offbook (Akinbola247/offbook): empty repo. Name claim on RFP Idea 03.
+- Bajpai: not in this sprint. 2026 public work is Zcash (zecgift, zakura, vizor). zcashtocash is a live cash-out product with no public repo. Steal activity + last-mile honesty, not ZEC.
+
+We are the only Consumer entry with a live mainnet shield in strk20.json.
