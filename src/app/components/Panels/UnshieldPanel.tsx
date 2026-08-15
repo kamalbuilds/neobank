@@ -34,9 +34,8 @@ export default function UnshieldPanel({ network }: { network: NetworkKey }) {
     setMaxLoading(true);
     try {
       const balance = await readPrivateBalance(myWalletAccount, tokenConfig.address);
-      const feeInThisToken = token === "STRK" ? fee ?? 0n : 0n;
-      const max = balance > feeInThisToken ? balance - feeInThisToken : 0n;
-      setAmount(fromBaseUnits(max, tokenConfig.decimals));
+      // Pool fee is public STRK from tx.caller, not taken out of the note.
+      setAmount(fromBaseUnits(balance, tokenConfig.decimals));
     } catch (err: any) {
       setResult(errorResult(err?.message ?? "Could not read your shielded balance."));
     } finally {
