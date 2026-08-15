@@ -12,6 +12,13 @@
       "network": "mainnet",
       "status": "ACCEPTED_ON_L2",
       "note": "Same txs a first Shield in this app now submits: DEPLOY_ACCOUNT then strk20 deposit. 0.1 STRK shielded. 6 STRK pool fee."
+    },
+    {
+      "hash": "0x059eb6c1bdddd048006f372b4db6602560dbfc722536b94d59ece8abb865586e",
+      "kind": "shield_usdc",
+      "network": "mainnet",
+      "status": "ACCEPTED_ON_L2",
+      "note": "0.2 public USDC in, 0.0395 [USDC] remaining after Ready took the privacy fee from the deposit."
     }
   ],
   "contracts": []
