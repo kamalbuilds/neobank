@@ -2,7 +2,7 @@
 import { create } from "zustand";
 import { ProviderInterface, AccountInterface, type WalletAccountV6 } from "starknet";
 import { type WalletWithStarknetFeatures } from "@starknet-io/get-starknet-wallet-standard/features";
-import type { NetworkKey } from "@/utils/constants";
+import type { NetworkKey, TokenSymbol } from "@/utils/constants";
 
 export interface WalletState {
     StarknetWalletObject: WalletWithStarknetFeatures | undefined,
@@ -28,6 +28,11 @@ export interface WalletState {
     // Wallet API >= 0.10 per compareVersions - the STRK20 capability gate.
     strk20Capable: boolean,
     setStrk20Capable: (capable: boolean) => void,
+    // Block number at which a token's freshly-deposited notes finish maturing.
+    // Set from a real receipt's block_number after a confirmed shield - never guessed.
+    maturity: Partial<Record<TokenSymbol, number>>,
+    setMaturity: (token: TokenSymbol, matureAtBlock: number) => void,
+    clearMaturity: (token: TokenSymbol) => void,
     // Clears everything set on connect. Called on disconnect.
     resetWallet: () => void,
 }
@@ -55,6 +60,17 @@ export const useStoreWallet = create<WalletState>()(set => ({
     setWalletApiList: (walletApi: string[]) => { set(state => ({ walletApiList: walletApi })) },
     strk20Capable: false,
     setStrk20Capable: (strk20Capable: boolean) => { set(state => ({ strk20Capable })) },
+    maturity: {},
+    setMaturity: (token: TokenSymbol, matureAtBlock: number) => {
+        set(state => ({ maturity: { ...state.maturity, [token]: matureAtBlock } }))
+    },
+    clearMaturity: (token: TokenSymbol) => {
+        set(state => {
+            const next = { ...state.maturity };
+            delete next[token];
+            return { maturity: next };
+        })
+    },
     resetWallet: () => { set({
         StarknetWalletObject: undefined,
         address: "",
@@ -66,5 +82,6 @@ export const useStoreWallet = create<WalletState>()(set => ({
         isConnected: false,
         walletApiList: [],
         strk20Capable: false,
+        maturity: {},
     }) },
 }));
