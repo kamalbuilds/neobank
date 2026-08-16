@@ -7,7 +7,8 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@avnu/avnu-sdk": "^4.2.0",
@@ -26,7 +27,8 @@
     "@types/node": "24.10.2",
     "@types/qrcode": "^1.5.5",
     "@types/react": "19.2.7",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.7"
   },
   "overrides": {
     "@starknet-io/types-js": "0.10.3"
