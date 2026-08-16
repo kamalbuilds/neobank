@@ -2,7 +2,9 @@
 import { useEffect, useMemo, useState } from "react";
 import styles from "./uni.module.css";
 import { useStoreWallet } from "./components/Wallet/walletContext";
-import { DEFAULT_NETWORK } from "@/utils/constants";
+import { DEFAULT_NETWORK, TOKENS, getPublicBalance, type NetworkKey } from "@/utils/constants";
+import { fromBaseUnits } from "./components/lib/format";
+import { useShieldedBalances } from "./components/lib/usePrivateBalance";
 import { BtcCoin, EthCoin, StrkCoin, UsdcCoin } from "./components/TokenIcons";
 import AppNav from "./components/Panels/AppNav";
 import ShieldPanel from "./components/Panels/ShieldPanel";
@@ -24,6 +26,75 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "swap", label: "Swap" },
   { id: "activity", label: "Activity" },
 ];
+
+function BalancesStrip({ network }: { network: NetworkKey }) {
+  const address = useStoreWallet((s) => s.address);
+  const [publicStrk, setPublicStrk] = useState<bigint | undefined>(undefined);
+  const [publicUsdc, setPublicUsdc] = useState<bigint | undefined>(undefined);
+  const { revealed, loading, error, balances, reveal, hide } = useShieldedBalances();
+
+  useEffect(() => {
+    if (!address) return;
+    let cancelled = false;
+    Promise.all([
+      getPublicBalance(network, TOKENS.STRK.address, address),
+      getPublicBalance(network, TOKENS.USDC.address, address),
+    ])
+      .then(([strk, usdc]) => {
+        if (cancelled) return;
+        setPublicStrk(strk);
+        setPublicUsdc(usdc);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setPublicStrk(undefined);
+        setPublicUsdc(undefined);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [network, address]);
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        alignItems: "center",
+        gap: 12,
+        margin: "0 auto 18px",
+        width: "min(520px, calc(100vw - 32px))",
+        fontSize: 13,
+        opacity: 0.85,
+      }}
+    >
+      <span>
+        STRK {publicStrk === undefined ? "…" : fromBaseUnits(publicStrk, TOKENS.STRK.decimals)}
+      </span>
+      <span>
+        USDC {publicUsdc === undefined ? "…" : fromBaseUnits(publicUsdc, TOKENS.USDC.decimals)}
+      </span>
+      {revealed ? (
+        <>
+          <span>
+            Shielded STRK {balances.STRK === undefined ? "…" : fromBaseUnits(balances.STRK, TOKENS.STRK.decimals)}
+          </span>
+          <span>
+            Shielded USDC {balances.USDC === undefined ? "…" : fromBaseUnits(balances.USDC, TOKENS.USDC.decimals)}
+          </span>
+          <button onClick={hide} style={{ fontSize: 12 }}>
+            Hide
+          </button>
+        </>
+      ) : (
+        <button onClick={reveal} disabled={loading} style={{ fontSize: 12 }}>
+          {loading ? "Revealing…" : "Reveal shielded"}
+        </button>
+      )}
+      {error ? <span style={{ color: "var(--pink-text)" }}>{error}</span> : null}
+    </div>
+  );
+}
 
 function readTab(raw: string | null): Tab {
   if (
@@ -113,6 +184,7 @@ export default function Home() {
             </div>
           ) : (
             <>
+              <BalancesStrip network={network} />
               <div className={styles.tabs}>
                 {TABS.map((t) => (
                   <button

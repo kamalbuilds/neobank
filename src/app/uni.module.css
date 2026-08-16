@@ -467,3 +467,51 @@
 @media (prefers-reduced-motion: reduce) {
   .btn, .connectPill, .btnCta, .tab { transition: none; }
 }
+
+/* --- Responsive: tablet and down (<=768px) ------------------------------ */
+@media (max-width: 768px) {
+  .nav { padding: 14px 16px; flex-wrap: wrap; gap: 8px; }
+  .hero { margin: 32px auto 24px; padding: 0 16px; }
+  .heroTitle { font-size: clamp(32px, 9vw, 56px); }
+  .heroSub { font-size: 15px; padding: 0 8px; }
+  .panel { width: 100%; padding: 0 16px; box-sizing: border-box; }
+  .inputBlock { padding: 16px 14px 14px; }
+  .bigValue { font-size: 32px; }
+  .feeRow { flex-wrap: wrap; row-gap: 6px; }
+
+  .tabs {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { flex: none; }
+
+  .btn, .connectPill, .addrPill {
+    min-height: 44px;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+  }
+  .btnCta { min-height: 48px; box-sizing: border-box; }
+}
+
+/* --- Responsive: phone (<=390px) ----------------------------------------- */
+@media (max-width: 400px) {
+  .heroTitle { font-size: clamp(28px, 11vw, 38px); }
+  .heroSub { font-size: 14px; max-width: 300px; }
+  .bigValue { font-size: 26px; }
+  .inputMain { flex-wrap: wrap; gap: 8px; }
+  .tokenPill { font-size: 14px; padding: 6px 12px 6px 7px; }
+  .inputBlock { padding: 14px 12px 12px; border-radius: 16px; }
+  .feeRow { flex-direction: column; align-items: flex-start; gap: 6px; padding: 12px 14px; }
+  .feeVal { flex-wrap: wrap; }
+  .subLine { flex-wrap: wrap; row-gap: 4px; }
+  .receiptRow { flex-wrap: wrap; }
+  .verdictRow { flex-wrap: wrap; }
+  .btnCta { padding: 14px; font-size: 15px; }
+  .tab { padding: 8px 12px; font-size: 13px; }
+}

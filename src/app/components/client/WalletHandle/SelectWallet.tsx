@@ -30,6 +30,7 @@ export default function SelectWallet({ variant = "ctaBig" }: { variant?: "nav" |
 
   const setWalletApi = useStoreWallet(state => state.setWalletApiList);
   const setStrk20Capable = useStoreWallet(state => state.setStrk20Capable);
+  const strk20Capable = useStoreWallet(state => state.strk20Capable);
 
   const setChain = useStoreWallet(state => state.setChain);
   const setNetwork = useStoreWallet(state => state.setNetwork);
@@ -168,15 +169,22 @@ export default function SelectWallet({ variant = "ctaBig" }: { variant?: "nav" |
   if (variant === "nav") {
     if (isConnected && address) {
       return (
-        <button
-          className={styles.addrPill}
-          onClick={disconnect}
-          title="Disconnect"
-        >
-          <span className={styles.addrDot} />
-          {shortAddr}
-          <span className={styles.addrDisconnect}>Disconnect</span>
-        </button>
+        <>
+          <button
+            className={styles.addrPill}
+            onClick={disconnect}
+            title="Disconnect"
+          >
+            <span className={styles.addrDot} />
+            {shortAddr}
+            <span className={styles.addrDisconnect}>Disconnect</span>
+          </button>
+          {strk20Capable ? (
+            <span className={styles.walletHint}>
+              First shield in this app deploys your account if needed and registers you. Same pair of txs as Ready&apos;s Activate / Enable private tokens.
+            </span>
+          ) : null}
+        </>
       );
     }
     return (

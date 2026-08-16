@@ -3,9 +3,9 @@ import { useState } from "react";
 import { validateAndParseAddress } from "starknet";
 import styles from "../../uni.module.css";
 import { useStoreWallet } from "../Wallet/walletContext";
-import { TOKENS, type TokenSymbol, type NetworkKey } from "@/utils/constants";
+import { TOKENS, getPublicBalance, type TokenSymbol, type NetworkKey } from "@/utils/constants";
 import { toBaseUnits, fromBaseUnits } from "../lib/format";
-import { submitStrk20, waitStrk20Transaction } from "../lib/strk20";
+import { submitStrk20, waitStrk20Transaction, readPrivateBalance } from "../lib/strk20";
 import { usePoolFee } from "../lib/useFee";
 import { useMaturity, useShieldedBalances } from "../lib/usePrivateBalance";
 import TokenSelect from "./TokenSelect";
@@ -20,11 +20,13 @@ export default function SendPanel({
   initialRecipient?: string;
 }) {
   const myWalletAccount = useStoreWallet((s) => s.myWalletAccount);
+  const address = useStoreWallet((s) => s.address);
   const strk20Capable = useStoreWallet((s) => s.strk20Capable);
 
   const [token, setToken] = useState<TokenSymbol>("STRK");
   const [amount, setAmount] = useState("");
   const [recipient, setRecipient] = useState(initialRecipient);
+  const [maxLoading, setMaxLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<ActionResult | null>(null);
 
@@ -32,6 +34,20 @@ export default function SendPanel({
   const tokenConfig = TOKENS[token];
   const maturity = useMaturity(token);
   const shielded = useShieldedBalances();
+
+  async function useMax() {
+    if (!myWalletAccount) return;
+    setMaxLoading(true);
+    try {
+      const balance = await readPrivateBalance(myWalletAccount, tokenConfig.address);
+      // Pool fee is public STRK from tx.caller, not taken out of the note.
+      setAmount(fromBaseUnits(balance, tokenConfig.decimals));
+    } catch (err: any) {
+      setResult(errorResult(err?.message ?? "Could not read your shielded balance."));
+    } finally {
+      setMaxLoading(false);
+    }
+  }
 
   async function handleSend() {
     setResult(null);
@@ -52,6 +68,20 @@ export default function SendPanel({
     } catch (err: any) {
       setResult(errorResult(err.message));
       return;
+    }
+    if (address && fee !== undefined) {
+      try {
+        const publicStrk = await getPublicBalance(network, TOKENS.STRK.address, address);
+        if (publicStrk < fee) {
+          setResult(errorResult(
+            `Need at least ${fromBaseUnits(fee, TOKENS.STRK.decimals)} public STRK for the pool fee. This wallet has ${fromBaseUnits(publicStrk, TOKENS.STRK.decimals)} public STRK. Ready will refuse the send until you top up.`,
+          ));
+          return;
+        }
+      } catch (err: any) {
+        setResult(errorResult(err?.message ?? "Could not read public STRK before sending."));
+        return;
+      }
     }
     setSubmitting(true);
     const submission = await submitStrk20(myWalletAccount, [
@@ -119,9 +149,22 @@ export default function SendPanel({
           value={recipient}
           onChange={(e) => setRecipient(e.target.value)}
         />
+        {initialRecipient ? (
+          <div className={styles.subLine} style={{ color: "var(--muted)" }}>
+            Recipient filled from a receive link.
+          </div>
+        ) : null}
+        <div className={styles.subLine}>
+          <button className={styles.tab} onClick={useMax} disabled={maxLoading || !myWalletAccount}>
+            {maxLoading ? "reading shielded balance…" : "Use max"}
+          </button>
+        </div>
       </div>
 
       <FeeRow fee={fee} />
+      <div className={styles.subLine} style={{ color: "var(--muted)" }}>
+        Fee is public STRK, not taken from this note.
+      </div>
 
       <div className={styles.subLine}>
         <button
@@ -146,6 +189,9 @@ export default function SendPanel({
             {shielded.balances.USDC !== undefined ? fromBaseUnits(shielded.balances.USDC, TOKENS.USDC.decimals) : "…"} USDC
           </span>
         </div>
+      )}
+      {shielded.revealed && shielded.balances[token] === 0n && (
+        <div className={styles.warn}>You have no shielded {token} to send.</div>
       )}
 
       {maturity.locked && (

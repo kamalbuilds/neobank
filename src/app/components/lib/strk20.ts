@@ -28,7 +28,7 @@ const COPY: Record<Strk20ErrorKind, string> = {
   api_version_not_supported:
     "This wallet does not support STRK20 privacy actions. Install or update Ready.",
   insufficient_private_balance:
-    "Not enough shielded balance to cover this amount plus the pool fee.",
+    "Not enough shielded balance to cover this amount.",
   privacy_leak:
     "The wallet refused this action because it would leak information about your shielded balance. Adjust the amount and try again.",
   invalid_request:

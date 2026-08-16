@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { validateAndParseAddress } from "starknet";
 import styles from "../../uni.module.css";
 import { useStoreWallet } from "../Wallet/walletContext";
@@ -28,6 +28,28 @@ export default function UnshieldPanel({ network }: { network: NetworkKey }) {
   const tokenConfig = TOKENS[token];
   const maturity = useMaturity(token);
   const shielded = useShieldedBalances();
+
+  const [publicStrk, setPublicStrk] = useState<bigint | undefined>(undefined);
+
+  useEffect(() => {
+    if (!address) {
+      setPublicStrk(undefined);
+      return;
+    }
+    let cancelled = false;
+    getPublicBalance(network, TOKENS.STRK.address, address)
+      .then((balance) => {
+        if (!cancelled) setPublicStrk(balance);
+      })
+      .catch(() => {
+        if (!cancelled) setPublicStrk(undefined);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [address, network, fee]);
+
+  const feeShortfall = address !== undefined && fee !== undefined && publicStrk !== undefined && publicStrk < fee;
 
   async function useMax() {
     if (!myWalletAccount) return;
@@ -138,12 +160,27 @@ export default function UnshieldPanel({ network }: { network: NetworkKey }) {
         />
         <div className={styles.subLine}>
           <button className={styles.tab} onClick={useMax} disabled={maxLoading || !myWalletAccount}>
-            {maxLoading ? "reading shielded balance…" : "Use max (shielded balance minus fee)"}
+            {maxLoading ? "reading shielded balance…" : "Use max"}
           </button>
         </div>
       </div>
 
       <FeeRow fee={fee} />
+
+      {address && fee !== undefined && (
+        <div className={styles.subLine}>
+          <span className={styles.subMono}>
+            public STRK: {publicStrk !== undefined ? fromBaseUnits(publicStrk, TOKENS.STRK.decimals) : "…"} / fee:{" "}
+            {fromBaseUnits(fee, TOKENS.STRK.decimals)}
+          </span>
+        </div>
+      )}
+      {feeShortfall && (
+        <div className={styles.warn}>
+          Need at least {fromBaseUnits(fee!, TOKENS.STRK.decimals)} public STRK for the pool fee. This wallet has{" "}
+          {fromBaseUnits(publicStrk!, TOKENS.STRK.decimals)} public STRK. Ready will refuse the unshield until you top up.
+        </div>
+      )}
 
       <div className={styles.subLine}>
         <button
@@ -186,7 +223,7 @@ export default function UnshieldPanel({ network }: { network: NetworkKey }) {
 
       <button
         className={styles.btnCta}
-        disabled={!strk20Capable || submitting || !amount || maturity.locked}
+        disabled={!strk20Capable || submitting || !amount || maturity.locked || feeShortfall}
         onClick={handleUnshield}
       >
         {submitting ? "Unshielding…" : maturity.locked ? "Notes maturing…" : "Unshield"}

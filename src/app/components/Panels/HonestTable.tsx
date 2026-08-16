@@ -6,6 +6,7 @@ const ROWS: { hidden: string; visible: string }[] = [
   { hidden: "Private transfer amounts and token type", visible: "That this address touched the pool, and when" },
   { hidden: "Which notes were spent", visible: "The pool's screening decision on a deposit" },
   { hidden: "", visible: "The relayer address as tx sender - never the user" },
+  { hidden: "", visible: "The pool fee, paid in public STRK by tx.caller" },
 ];
 
 export default function HonestTable() {
