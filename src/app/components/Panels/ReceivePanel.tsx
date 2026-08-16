@@ -56,11 +56,19 @@ export default function ReceivePanel() {
 
   return (
     <div className={styles.panel}>
-      <div className={styles.warn} style={{ color: "var(--muted)" }}>
-        This is your registered pool address, not a gift-card stealth scheme. The sender must
-        already be registered and must send a private transfer. This app cannot register
-        anyone.
-      </div>
+      {!strk20Capable ? (
+        <div className={styles.warn}>
+          This wallet does not support STRK20 private transfers yet. You cannot receive private
+          transfers until you install or update a STRK20-capable wallet. The address and payment
+          link below are shown for reference only.
+        </div>
+      ) : (
+        <div className={styles.warn} style={{ color: "var(--muted)" }}>
+          This is your registered pool address, not a gift-card stealth scheme. The sender must
+          already be registered and must send a private transfer. This app cannot register
+          anyone.
+        </div>
+      )}
 
       {qr ? (
         <div style={{ display: "flex", justifyContent: "center", margin: "8px 0 16px" }}>
@@ -85,10 +93,6 @@ export default function ReceivePanel() {
           ) : null}
         </div>
       </div>
-
-      {!strk20Capable && (
-        <div className={styles.warn}>This wallet does not support STRK20 privacy actions. Install or update Ready before expecting a private receive.</div>
-      )}
     </div>
   );
 }

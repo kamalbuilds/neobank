@@ -168,6 +168,9 @@ export default function ShieldPanel({ network }: { network: NetworkKey }) {
       </div>
 
       <FeeRow fee={fee} />
+      <div className={styles.subLine} style={{ color: "var(--muted)" }}>
+        Ready may require a buffer above the live pool fee shown here. The fee itself is still public STRK, not taken from this deposit.
+      </div>
 
       {token === "USDC" && (
         <div className={styles.warn} style={{ color: "var(--muted)" }}>

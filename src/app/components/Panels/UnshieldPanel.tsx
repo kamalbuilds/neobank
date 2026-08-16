@@ -181,6 +181,9 @@ export default function UnshieldPanel({ network }: { network: NetworkKey }) {
           {fromBaseUnits(publicStrk!, TOKENS.STRK.decimals)} public STRK. Ready will refuse the unshield until you top up.
         </div>
       )}
+      <div className={styles.subLine} style={{ color: "var(--muted)" }}>
+        Ready may require a buffer above the live pool fee shown here. The fee itself is still public STRK, not taken from this note.
+      </div>
 
       <div className={styles.subLine}>
         <button
