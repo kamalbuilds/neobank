@@ -172,17 +172,40 @@ server calls. Worth confirming with Ready and stating in the demo rather than as
 Also checked: `@starknet-io/types-js` resolves to 0.10.3 everywhere thanks to the override, so no
 0.10.4-beta shadow types leak in; `.env` is gitignored; no em dashes; no prize amounts.
 
+## Update, since this pass was written: what is live now
+
+Three real mainnet txs exist, all from the same Ready wallet
+[`0x0101ab74cf27f868fa42f02de17c5fca88697dd63dd850ee6626d74c25ed6a4a`](https://voyager.online/contract/0x0101ab74cf27f868fa42f02de17c5fca88697dd63dd850ee6626d74c25ed6a4a),
+logged in [`strk20.json`](../strk20.json):
+
+| Kind | Tx |
+|---|---|
+| Deploy account | [`0x02cbfcceac813b17696710fd8f2e52b603e4ba6dabd87e774d1840d20b21a735`](https://voyager.online/tx/0x02cbfcceac813b17696710fd8f2e52b603e4ba6dabd87e774d1840d20b21a735) |
+| Shield 0.1 STRK | [`0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193`](https://voyager.online/tx/0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193) |
+| Shield 0.2 USDC in, 0.0395 USDC shielded after the pool's privacy fee | [`0x059eb6c1bdddd048006f372b4db6602560dbfc722536b94d59ece8abb865586e`](https://voyager.online/tx/0x059eb6c1bdddd048006f372b4db6602560dbfc722536b94d59ece8abb865586e) |
+
+Still blocked, with the real reason, not a fixture:
+
+- **Unshield.** MAX unshields the full note; the pool fee (6 STRK, read live from `get_fee_amount`)
+  plus whatever buffer Ready needs is paid in public STRK, and the demo wallet does not hold enough
+  public STRK past that fee yet. The code path is real and has not been exercised past that point.
+- **Private send.** Needs a second Ready wallet already registered in the pool as the recipient.
+  Only one wallet has been run through the app so far.
+- **AVNU private swap.** `AVNU_PAYMASTER_API_KEY` is not set on the live deployment.
+  `/api/avnu/status` answers `configured: false` and the Swap tab shows the 503 notice honestly,
+  same behavior verified live in this pass.
+
+No fourth transaction exists and none is claimed. Unshield and private send have not succeeded on
+mainnet.
+
 ## Still user-only
 
 Nothing in this pass can close these.
 
-1. **Ready in a browser.** Every private action, the capability gate against a real wallet, the
-   two-prompt deposit, the ~10 block maturity wait, a real proof, and a screened-deposit revert.
-2. **Mainnet transactions.** The sprint wants three real ones. The repo has none, and no fixture
-   pretends otherwise.
-3. **`strk20.json`.** Still `{"transactions": [], "contracts": []}`. It fills in only after real
-   mainnet txs exist. Leaving it empty is the honest state.
-4. **AVNU key placement.** `AVNU_PAYMASTER_API_KEY` goes in `.env` by hand, from the AVNU portal,
+1. **Ready in a browser, for unshield and private send.** The capability gate, deposit, and shield
+   flow are now exercised live; unshield and private send still need funded public STRK and a
+   second registered wallet respectively.
+2. **AVNU key placement.** `AVNU_PAYMASTER_API_KEY` goes in `.env` by hand, from the AVNU portal,
    server-side only. Until then the Swap tab degrades honestly with a 503 and a visible notice,
    which is verified. Address finding 13 before that key is on a public deployment.
-5. **Deciding whether the demo wallet is burned for correlation**, per the build plan.
+3. **Deciding whether the demo wallet is burned for correlation**, per the build plan.
