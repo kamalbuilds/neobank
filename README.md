@@ -48,11 +48,27 @@ npm run dev
 
 Connect Ready. Private actions appear only when the wallet advertises Wallet API `>= 0.10`. Shielding is two wallet prompts (approve, then deposit). Notes mature about 10 blocks. A private send needs a recipient already registered in the pool.
 
-## Status
-
-Floor is in this repo and live on mainnet: connect, shield (deploy account + deposit), private send, receive QR/link, unshield, honest private/public labels. First shielded mainnet tx: [`0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193`](https://voyager.online/tx/0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193), logged in [`strk20.json`](strk20.json). Card is later, not in this repo. Stretch: AVNU private swap from an already-shielded balance. The paymaster key stays in `AVNU_PAYMASTER_API_KEY` on the server, optional. `npm run typecheck` and `npm run build` pass.
+## Status, for a judge opening the demo
 
 Public demo: https://neobank-six.vercel.app
+Wallet used for the mainnet runs: [`0x0101ab74cf27f868fa42f02de17c5fca88697dd63dd850ee6626d74c25ed6a4a`](https://voyager.online/contract/0x0101ab74cf27f868fa42f02de17c5fca88697dd63dd850ee6626d74c25ed6a4a)
+
+| Live on mainnet | Tx |
+|---|---|
+| Connect Ready, capability gate | no tx |
+| Deploy account | [`0x02cbfcceac813b17696710fd8f2e52b603e4ba6dabd87e774d1840d20b21a735`](https://voyager.online/tx/0x02cbfcceac813b17696710fd8f2e52b603e4ba6dabd87e774d1840d20b21a735) |
+| Shield 0.1 STRK | [`0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193`](https://voyager.online/tx/0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193) |
+| Shield 0.2 USDC in, 0.0395 USDC shielded after the pool's privacy fee | [`0x059eb6c1bdddd048006f372b4db6602560dbfc722536b94d59ece8abb865586e`](https://voyager.online/tx/0x059eb6c1bdddd048006f372b4db6602560dbfc722536b94d59ece8abb865586e) |
+
+All three are logged in [`strk20.json`](strk20.json).
+
+| Blocked, not shipped | Why |
+|---|---|
+| Unshield | The live pool fee is 6 STRK, paid in public STRK plus whatever buffer Ready needs. The demo wallet does not hold enough public STRK past that fee. Code path is real and untested past that point. |
+| Private send | Needs a second Ready wallet already registered in the pool as the recipient. Only one wallet has been run so far. |
+| AVNU private swap | Server route needs `AVNU_PAYMASTER_API_KEY`. Not set on this deployment; `/api/avnu/status` returns `configured: false` and the Swap tab degrades honestly with a 503. |
+
+No unshield or private send tx exists yet, and none is claimed here. Card is later, not in this repo. `npm run typecheck` and `npm run build` pass.
 
 ## License
 
