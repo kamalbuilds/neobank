@@ -22,6 +22,16 @@ export async function avnuConfigured(): Promise<boolean> {
   return Boolean(body.configured);
 }
 
+async function readAvnuError(res: Response, fallback: string): Promise<string> {
+  if (res.status === 503) return "AVNU private swap is not configured on this server.";
+  try {
+    const body = await res.json();
+    return typeof body?.error === "string" ? body.error : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export async function fetchPrivateSwapFee(
   network: NetworkKey,
   poolFeeToken: string
@@ -31,8 +41,8 @@ export async function fetchPrivateSwapFee(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ network, poolFeeToken, tip: "normal" }),
   });
+  if (!res.ok) throw new Error(await readAvnuError(res, "Could not read the AVNU pool fee."));
   const body = await res.json();
-  if (!res.ok) throw new Error(body?.error ?? "Could not read the AVNU pool fee.");
   return {
     fee: {
       token: String(body.token),
@@ -86,9 +96,10 @@ export async function proveAndSubmitPrivateSwap(params: {
       },
     }),
   });
+  if (!res.ok) throw new Error(await readAvnuError(res, "AVNU did not accept the proven swap."));
   const body = await res.json();
-  if (!res.ok || !body?.transactionHash) {
-    throw new Error(body?.error ?? "AVNU did not accept the proven swap.");
+  if (!body?.transactionHash) {
+    throw new Error("AVNU did not accept the proven swap.");
   }
   return String(body.transactionHash);
 }

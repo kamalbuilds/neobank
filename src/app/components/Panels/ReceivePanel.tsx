@@ -19,12 +19,12 @@ export default function ReceivePanel() {
   }, [address]);
 
   useEffect(() => {
-    if (!address) {
+    if (!paymentLink) {
       setQr("");
       return;
     }
     let cancelled = false;
-    QRCode.toDataURL(address, { width: 240, margin: 1, color: { dark: "#0d0e0e", light: "#ffffff" } })
+    QRCode.toDataURL(paymentLink, { width: 240, margin: 1, color: { dark: "#0d0e0e", light: "#ffffff" } })
       .then((data) => {
         if (!cancelled) setQr(data);
       })
@@ -34,7 +34,7 @@ export default function ReceivePanel() {
     return () => {
       cancelled = true;
     };
-  }, [address]);
+  }, [paymentLink]);
 
   async function copy(kind: "address" | "link", value: string) {
     try {
@@ -65,7 +65,7 @@ export default function ReceivePanel() {
       {qr ? (
         <div style={{ display: "flex", justifyContent: "center", margin: "8px 0 16px" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={qr} alt="Receive address QR" width={200} height={200} style={{ borderRadius: 12 }} />
+          <img src={qr} alt="Payment link QR" width={200} height={200} style={{ borderRadius: 12 }} />
         </div>
       ) : null}
 
