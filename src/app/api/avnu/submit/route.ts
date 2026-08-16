@@ -1,6 +1,6 @@
 import { submitPrivateSwap, type PrivateSwapCallAndProof } from "@avnu/avnu-sdk";
 import { TOKENS } from "@/utils/constants";
-import { avnuOptions, jsonError, parseNetwork, requireAvnuKey } from "../lib";
+import { avnuOptions, enforceRateLimit, jsonError, parseNetwork, requireAvnuKey } from "../lib";
 
 function parseCallAndProof(raw: unknown): PrivateSwapCallAndProof {
   const value = raw as {
@@ -25,6 +25,7 @@ function parseCallAndProof(raw: unknown): PrivateSwapCallAndProof {
 
 export async function POST(request: Request) {
   try {
+    enforceRateLimit(request, "submit");
     const body = await request.json();
     const network = parseNetwork(body?.network);
     const key = requireAvnuKey();

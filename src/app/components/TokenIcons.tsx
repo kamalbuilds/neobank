@@ -9,6 +9,8 @@ function coin(src: string, alt: string) {
       <img
         src={src}
         alt={alt}
+        title={alt}
+        aria-label={alt}
         width={size}
         height={size}
         className={className}

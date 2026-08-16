@@ -163,7 +163,7 @@ export default function SendPanel({
 
       <FeeRow fee={fee} />
       <div className={styles.subLine} style={{ color: "var(--muted)" }}>
-        Fee is public STRK, not taken from this note.
+        Fee is public STRK, not taken from this note. Ready may require a buffer above the live pool fee shown here.
       </div>
 
       <div className={styles.subLine}>

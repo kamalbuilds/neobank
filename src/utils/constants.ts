@@ -41,6 +41,11 @@ export function providerFor(network: NetworkKey): RpcProvider {
 export const explorerTxUrl = (network: NetworkKey, hash: string): string =>
   network === "mainnet" ? `https://voyager.online/tx/${hash}` : `https://sepolia.voyager.online/tx/${hash}`;
 
+export const explorerAddressUrl = (network: NetworkKey, address: string): string =>
+  network === "mainnet"
+    ? `https://voyager.online/contract/${address}`
+    : `https://sepolia.voyager.online/contract/${address}`;
+
 // ─── Tokens ──────────────────────────────────────────────────────────────
 
 export type TokenSymbol = "STRK" | "USDC";
@@ -73,6 +78,7 @@ export function tokenForAddress(address: string): TokenConfig | undefined {
 
 // ─── STRK20 pool ─────────────────────────────────────────────────────────
 
+// Live STRK20 privacy pool on mainnet: https://voyager.online/contract/0x040337b1af3c663e86e333bab5a4b28da8d4652a15a69beee2b677776ffe812a
 export const STRK20_POOL_ADDRESS =
   "0x040337b1af3c663e86e333bab5a4b28da8d4652a15a69beee2b677776ffe812a";
 

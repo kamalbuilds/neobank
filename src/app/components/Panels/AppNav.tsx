@@ -11,7 +11,7 @@ export default function AppNav() {
   return (
     <div className={styles.nav}>
       <div className={styles.brand}>Private money account</div>
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <div className={styles.brand}>
         {isConnected && network ? (
           <span className={`${styles.feeVal}`} style={{ fontSize: 13 }}>
             <span className={`${styles.netDot} ${styles.netOkDot}`} />

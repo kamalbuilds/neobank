@@ -1,9 +1,10 @@
 import { buildPrivateSwapFee } from "@avnu/avnu-sdk";
 import { TOKENS } from "@/utils/constants";
-import { avnuOptions, jsonError, parseNetwork, poolAddress, requireAvnuKey } from "../lib";
+import { avnuOptions, enforceRateLimit, jsonError, parseNetwork, poolAddress, requireAvnuKey } from "../lib";
 
 export async function POST(request: Request) {
   try {
+    enforceRateLimit(request, "fee");
     const body = await request.json();
     const network = parseNetwork(body?.network);
     const key = requireAvnuKey();

@@ -108,6 +108,11 @@ export function ResultCard({ r, network }: { r: ActionResult; network: NetworkKe
           ))}
         </div>
       ) : null}
+      {r.status === "pending" ? (
+        <div className={styles.receiptLabel} style={{ marginTop: 4 }}>
+          Pending is not a failure — paymaster-relayed txs can take a while to land.
+        </div>
+      ) : null}
       {r.note ? <pre className={styles.receiptNote}>{r.note}</pre> : null}
     </div>
   );
