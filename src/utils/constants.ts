@@ -111,3 +111,18 @@ export async function getPublicBalance(
   const high = BigInt(result[1] ?? "0x0");
   return low + (high << 128n);
 }
+
+// ─── Circle CCTP V2 (Starknet mainnet) ──────────────────────────────────
+// Contracts + domains from https://developers.circle.com/cctp/references/starknet-contracts
+// and github.com/circlefin/starknet-cctp. CCTP only burns native USDC
+// (TOKENS.USDC above) - never the bridged USDC.e address.
+
+export type CctpChain = "base" | "solana";
+
+export const CCTP = {
+  starknetDomain: 25,
+  domains: { base: 6, solana: 5 } satisfies Record<CctpChain, number>,
+  tokenMessengerMinter: "0x07d421B9cA8aA32DF259965cDA8ACb93F7599F69209A41872AE84638B2A20F2a",
+  messageTransmitter: "0x02EBB5777B6dD8B26ea11D68Fdf1D2c85cD2099335328Be845a28c77A8AEf183",
+  bridgedUsdcE: "0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8",
+} as const;

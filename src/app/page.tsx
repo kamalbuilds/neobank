@@ -13,10 +13,11 @@ import ReceivePanel from "./components/Panels/ReceivePanel";
 import UnshieldPanel from "./components/Panels/UnshieldPanel";
 import SwapPanel from "./components/Panels/SwapPanel";
 import ActivityPanel from "./components/Panels/ActivityPanel";
+import HopPanel from "./components/Panels/HopPanel";
 import HonestTable from "./components/Panels/HonestTable";
 import SelectWallet from "./components/client/WalletHandle/SelectWallet";
 
-type Tab = "shield" | "send" | "receive" | "unshield" | "swap" | "activity";
+type Tab = "shield" | "send" | "receive" | "unshield" | "swap" | "hop" | "activity";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "shield", label: "Shield" },
@@ -24,6 +25,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "receive", label: "Receive" },
   { id: "unshield", label: "Unshield" },
   { id: "swap", label: "Swap" },
+  { id: "hop", label: "Hop" },
   { id: "activity", label: "Activity" },
 ];
 
@@ -103,6 +105,7 @@ function readTab(raw: string | null): Tab {
     raw === "unshield" ||
     raw === "shield" ||
     raw === "swap" ||
+    raw === "hop" ||
     raw === "activity"
   )
     return raw;
@@ -201,6 +204,7 @@ export default function Home() {
               {tab === "receive" ? <ReceivePanel /> : null}
               {tab === "unshield" ? <UnshieldPanel network={network} /> : null}
               {tab === "swap" ? <SwapPanel network={network} /> : null}
+              {tab === "hop" ? <HopPanel network={network} /> : null}
               {tab === "activity" ? <ActivityPanel network={network} /> : null}
             </>
           )}
