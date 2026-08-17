@@ -123,6 +123,8 @@ All of the following, not a subset, per the locked product rules and this note:
 
 Nothing in this note authorizes writing card UI or Cairo. That stays out of scope until a Phase 2 kickoff with a signed issuer agreement in hand.
 
+The locked last-mile architecture (PYMNTS / Cashi-shaped, Stripe+Bridge as the developer stack, Circle CCTP as the hop we own) is `docs/CARD_LAST_MILE.md`.
+
 ## bhn session 2026-08-14
 
 Profile `neobank` on port 9381. Pages opened:
