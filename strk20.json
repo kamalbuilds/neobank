@@ -1,25 +1,14 @@
 {
   "transactions": [
-    {
-      "hash": "0x02cbfcceac813b17696710fd8f2e52b603e4ba6dabd87e774d1840d20b21a735",
-      "kind": "deploy_account",
-      "network": "mainnet",
-      "status": "ACCEPTED_ON_L2"
-    },
-    {
-      "hash": "0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193",
-      "kind": "first_shield",
-      "network": "mainnet",
-      "status": "ACCEPTED_ON_L2",
-      "note": "Same txs a first Shield in this app now submits: DEPLOY_ACCOUNT then strk20 deposit. 0.1 STRK shielded. 6 STRK pool fee."
-    },
-    {
-      "hash": "0x059eb6c1bdddd048006f372b4db6602560dbfc722536b94d59ece8abb865586e",
-      "kind": "shield_usdc",
-      "network": "mainnet",
-      "status": "ACCEPTED_ON_L2",
-      "note": "0.2 public USDC in, 0.0395 [USDC] remaining after Ready took the privacy fee from the deposit."
-    }
+    "0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193",
+    "0x059eb6c1bdddd048006f372b4db6602560dbfc722536b94d59ece8abb865586e",
+    "0x02cbfcceac813b17696710fd8f2e52b603e4ba6dabd87e774d1840d20b21a735"
   ],
-  "contracts": []
+  "contracts": [],
+  "demo_url": "https://neobank-six.vercel.app",
+  "notes": {
+    "0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193": "first_shield. 0.1 STRK shielded, 6 STRK pool fee. Same txs a first Shield in this app now submits: DEPLOY_ACCOUNT then strk20 deposit.",
+    "0x059eb6c1bdddd048006f372b4db6602560dbfc722536b94d59ece8abb865586e": "shield_usdc. 0.2 public USDC in, 0.0395 remaining after Ready took the privacy fee from the deposit.",
+    "0x02cbfcceac813b17696710fd8f2e52b603e4ba6dabd87e774d1840d20b21a735": "deploy_account. Succeeded on mainnet but emits no pool event, so it does not count toward the three-transaction bar. Listed because it is a real step of the first-shield flow, not as pool proof."
+  }
 }
