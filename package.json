@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "verify:claim": "node scripts/verify-strk20-claim.mjs"
   },
   "dependencies": {
     "@avnu/avnu-sdk": "^4.2.0",
