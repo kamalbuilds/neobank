@@ -80,6 +80,7 @@ export default function ActivityPanel({ network }: { network: NetworkKey }) {
                     Deposit · block {entry.block}
                     <br />
                     {amountLabel}
+                    {entry.amount !== undefined ? " into the pool, pool fee included" : ""}
                   </span>
                   <a
                     className={styles.receiptLink}
