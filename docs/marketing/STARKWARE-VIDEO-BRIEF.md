@@ -22,7 +22,7 @@ Today the on camera loop is money goes in and never comes out. Fix that first.
 
 | Blocker | Fix | Cost |
 |---|---|---|
-| Unshield | Fund the demo wallet with ~10 public STRK, past the live 6 STRK pool fee plus Ready's buffer, then run it | cheapest |
+| Unshield | Fund the demo wallet with ~10 public STRK, clearing the pool fee the app reads live (6 STRK at the 2026-08-22 mainnet read) plus Ready's buffer, then run it | cheapest |
 | Private send | Second Ready wallet, shield once to register it, then send between the two | one tx |
 | AVNU private swap | Set `AVNU_PAYMASTER_API_KEY` on the Vercel deployment and redeploy | needs a key |
 
@@ -36,7 +36,7 @@ commit.
 
 > Hey Adithya, yes, in for 15. Free [2 to 3 slots, IST plus UTC]. Send a link.
 >
-> What I've got: a private money account on the live STRK20 pool. Hold and send without
+> What I've got: a private money account on the live STRK20 pool. Hold, send, and spend without
 > publishing your salary or net worth. Non custodial, Ready does the proving, the dapp never
 > touches a viewing key. Live at neobank-six.vercel.app with mainnet transactions on Voyager.
 >
@@ -51,27 +51,35 @@ That last line is a commitment. Only send it if the fixes above are done.
 ## On camera, 90 seconds
 
 1. **Open.** The 15 or 30 second version from `POSITIONING.md`. Never improvise this.
-2. **The honest table, 20s.** Put the private vs public table from `README.md:11` on screen.
+2. **The honest table, 15s.** Put the private vs public table from `README.md:11` on screen.
    Private: who paid whom, transfer size, your shielded book. Public: deposit and withdrawal
    amounts, that an address touched the pool, the screening decision. Saying the limits out loud
    is what makes everything else credible.
 3. **Two lines verbatim.** "The dapp never holds a viewing key. Ready does the proving." And:
    "It is not a bank and it is not a mixer."
-4. **Live loop, 40s.** Connect, capability gate unlocks the panels, shield, private send to the
+4. **Live loop, 30s.** Connect, capability gate unlocks the panels, shield, private send to the
    second wallet, unshield. Voyager tabs open behind.
-5. **The gate, 10s.** The app reads Ready's advertised Wallet API version and runs
+5. **The differentiator, 15s.** Say what one transaction can do: pay a recipient, open a DeFi
+   position with the remainder, reshield the change, atomically. And batched payroll: ten
+   people, one call, one pool fee. Describe the primitive and point at `docs/CARD_LAST_MILE.md`.
+   Do not demo it unless it is wired into the app that day.
+6. **The gate, 10s.** The app reads Ready's advertised Wallet API version and runs
    `compareVersions` against `"0.10"`. Below that, private panels never render. A real feature
    gate, not a banner. Integrators doing this correctly is something StarkWare cares about.
-6. **Close.** What is not built. A Visa that spends a shielded note is not in v0 because no
-   issuer does that. Saying it kills the obvious question before anyone asks it.
+7. **Close, 10s.** What is deliberately optional. "Spending privately ships without an issuer:
+   payment links, invoices, batched payouts, programmable spend. A Visa authorizes a public
+   liquid balance in two seconds, so it can never carry the note and never gets that last
+   trick." Saying it as a choice kills the obvious question before anyone asks it.
 
 ## Do not say
 
-Full list in `POSITIONING.md`. The three that would cost you this room specifically:
+Full list in `POSITIONING.md`. The ones that would cost you this room specifically:
 
 - "untraceable" or "anonymous". The anonymity set is small today and their team knows it.
-- Any pool TVL or asset count figure. The community number is UNVERIFIED, single source.
+- Any pool TVL or deposit count figure. Sources disagree with each other. UNVERIFIED,
+  unpublished.
 - Any card capability that does not exist. They will know immediately.
+- Calling a payment request a card number. It is a payment request.
 
 ## Ask before you hang up
 
