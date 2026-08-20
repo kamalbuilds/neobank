@@ -124,15 +124,29 @@ Sprint entry: one PR to the sprint registry. Nothing else to submit. Whatever th
 
 ## Phase 1 (incubator, ~8 weeks)
 
+Track A of `docs/CARD_LAST_MILE.md` lives here: permissionless private spend, no issuer.
+
 1. Privacy Bridge: EVM USDC in, unlinkable EVM out.
-2. Payroll helper: batched (payer, recipient) channels. Aggregate spend public or auditor-visible. Per-recipient encrypted. Recipient income statement via viewing key.
-3. Recurring payouts / invoices (subscriptions RFP, stripped to contractors first).
-4. Org admin: session key scoped to one payroll cycle budget.
-5. Book the STRK20 team call (adiiHQ / Cal.com) with the live mainnet loop, not a deck.
+2. Payroll helper: batched (payer, recipient) channels. Aggregate spend public or auditor-visible. Per-recipient encrypted. Recipient income statement via viewing key. One pool fee per call, not per recipient.
+3. Recurring payouts / invoices (subscriptions RFP, stripped to contractors first). Payment links and QR already exist as Receive; this adds amounts, expiry and a paid state.
+4. Programmable spend: one `privacy_invoke` that pays a recipient, opens a position with the remainder, and reshields the change. This is the capability no card path has, so it is the demo, not a footnote.
+5. Org admin: session key scoped to one payroll cycle budget.
+6. Book the STRK20 team call (adiiHQ / Cal.com) with the live mainnet loop, not a deck.
 
-## Phase 2 (6 months, real neobank last mile)
+## Phase 2 (optional, and only on evidence)
 
-1. Card only after an issuer contract: Bridge+Stripe JIT (documented non-custodial pull), or Gnosis Pay Safe, or Rain if we accept program custody.
+The card is no longer the last mile. Permissionless private spend is Track A in
+`docs/CARD_LAST_MILE.md` and ships in Phase 1: payment links and invoices, batched disbursement
+at one pool fee per call, and programmable spend where a single `privacy_invoke` pays a
+recipient, opens a position with the remainder, and reshields the change. Nothing on the card
+track can do that last one.
+
+Track B, reaching merchants that only take card numbers, stays optional:
+
+1. Card only after an issuer contract, and only if usage shows people need POS and Apple Pay:
+   Bridge+Stripe JIT (documented non-custodial pull), or Gnosis Pay Safe, or Rain if we accept
+   program custody. Third-party no-KYC virtual cards are rejected, not deferred: see B2 in
+   `docs/CARD_LAST_MILE.md` for why we will not point user funds at an unverified provider.
 2. Policy: unshield to a prefunded standing issuer funding address (wallet, Safe, or reserve contract, per issuer), topped up ahead of expected spend, not rotated per auth. No candidate (Stripe+Bridge, Gnosis Pay, Rain) documents fresh-address-per-auth; see `docs/research/issuer-options.md`. Never imply the merchant cannot see the card or the issuer cannot see KYC.
 3. Cross-chain execution later (NEAR Confidential Intents, private pump / HL) as separate surfaces on the same account. Do not block the money account on them.
 
