@@ -13,37 +13,73 @@ import TokenSelect from "./TokenSelect";
 import FeeRow from "./FeeRow";
 import { ResultCard, errorResult, receiptToResult, walletErrorResult, type ActionResult } from "./ActionResult";
 
-interface BatchRow {
+export interface BatchRow {
   recipient: string;
   amount: string;
 }
 
+export interface BatchParseOk {
+  ok: true;
+  rows: BatchRow[];
+}
+
+export interface BatchParseFail {
+  ok: false;
+  errors: string[];
+}
+
+export type BatchParseResult = BatchParseOk | BatchParseFail;
+
 // Parse pasted lines of "address,amount" (one recipient per line) into batch
-// rows. Validation here is early feedback only; handleSend re-validates every
-// row it actually submits.
-function parsePastedRecipients(text: string, decimals: number): BatchRow[] {
+// rows. Pure so it can be exercised without a browser. Every bad line is
+// collected and reported together with its line number, so a 20-line payroll
+// list needs one fix pass instead of one resubmit per error. Blank lines and
+// full-line "# comments" are skipped; line numbers always refer to the pasted
+// text as-is. A repeated address is refused naming the earlier line: a batch
+// is atomic and the pool fee is spent even when it reverts, so a duplicated
+// row would silently pay someone twice. Addresses are stored in the padded,
+// lowercased form validateAndParseAddress returns, which is what makes the
+// duplicate comparison exact across case and padding. Validation here is
+// early feedback only; handleSend re-validates every row it actually submits.
+export function parsePastedRecipients(text: string, decimals: number): BatchParseResult {
+  const errors: string[] = [];
   const rows: BatchRow[] = [];
+  const firstSeenAt = new Map<string, number>();
   const lines = text.split(/\r?\n/);
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
-    if (!line) continue;
+    if (!line || line.startsWith("#")) continue;
     const parts = line.split(",").map((p) => p.trim());
     if (parts.length !== 2 || !parts[0] || !parts[1]) {
-      throw new Error(`Line ${i + 1}: expected "address,amount".`);
+      errors.push(`Line ${i + 1}: expected "address,amount".`);
+      continue;
     }
+    let recipient: string;
     try {
-      validateAndParseAddress(parts[0]);
+      recipient = validateAndParseAddress(parts[0]);
     } catch {
-      throw new Error(`Line ${i + 1}: not a valid Starknet address.`);
+      errors.push(`Line ${i + 1}: not a valid Starknet address.`);
+      continue;
     }
     try {
       toBaseUnits(parts[1], decimals);
     } catch (err: any) {
-      throw new Error(`Line ${i + 1}: ${err.message}`);
+      errors.push(`Line ${i + 1}: ${err.message}`);
+      continue;
     }
-    rows.push({ recipient: parts[0], amount: parts[1] });
+    const firstLine = firstSeenAt.get(recipient);
+    if (firstLine !== undefined) {
+      errors.push(`Line ${i + 1}: duplicate recipient, same address as line ${firstLine}.`);
+      continue;
+    }
+    firstSeenAt.set(recipient, i + 1);
+    rows.push({ recipient, amount: parts[1] });
   }
-  return rows;
+  if (errors.length > 0) return { ok: false, errors };
+  if (rows.length === 0) {
+    return { ok: false, errors: ['Paste at least one line as "address,amount", one recipient per line.'] };
+  }
+  return { ok: true, rows };
 }
 
 export default function SendPanel({
@@ -115,23 +151,20 @@ export default function SendPanel({
   function addFromPaste() {
     setResult(null);
     setPasteNote("");
-    try {
-      const parsed = parsePastedRecipients(batchText, tokenConfig.decimals);
-      if (parsed.length === 0) {
-        setResult(errorResult("Paste at least one line as \"address,amount\", one recipient per line."));
-        return;
-      }
-      // Fully-empty manual rows would block submitting later; drop them but
-      // keep partially filled ones because they carry the user's intent.
-      setRows((prev) => [
-        ...prev.filter((row) => row.recipient.trim() !== "" || row.amount.trim() !== ""),
-        ...parsed,
-      ]);
-      setBatchText("");
-      setPasteNote(`Added ${parsed.length} recipient${parsed.length === 1 ? "" : "s"} from the pasted list.`);
-    } catch (err: any) {
-      setResult(errorResult(err.message));
+    const parsed = parsePastedRecipients(batchText, tokenConfig.decimals);
+    if (!parsed.ok) {
+      // One card, every bad line: the <pre> note keeps the line breaks.
+      setResult(errorResult(parsed.errors.join("\n")));
+      return;
     }
+    // Fully-empty manual rows would block submitting later; drop them but
+    // keep partially filled ones because they carry the user's intent.
+    setRows((prev) => [
+      ...prev.filter((row) => row.recipient.trim() !== "" || row.amount.trim() !== ""),
+      ...parsed.rows,
+    ]);
+    setBatchText("");
+    setPasteNote(`Added ${parsed.rows.length} recipient${parsed.rows.length === 1 ? "" : "s"} from the pasted list.`);
   }
 
   async function handleSend() {
@@ -161,6 +194,24 @@ export default function SendPanel({
         return;
       }
       entries.push({ recipient: recipientAddr, units });
+    }
+    // Last gate before the wallet is asked to approve: the paste parser
+    // refuses duplicates earlier, but rows typed by hand reach this point
+    // unchecked. A batch is all-or-nothing and the pool fee is spent even if
+    // it reverts, so a repeated address would pay someone twice. Entries hold
+    // padded lowercase addresses, so equality here is exact.
+    const firstEntryAt = new Map<string, number>();
+    for (let i = 0; i < entries.length; i++) {
+      const first = firstEntryAt.get(entries[i].recipient);
+      if (first !== undefined) {
+        setResult(
+          errorResult(
+            `Recipient ${first + 1} and Recipient ${i + 1} pay the same address. The whole batch is one transaction, so the duplicate would be paid twice. Remove one of them.`,
+          ),
+        );
+        return;
+      }
+      firstEntryAt.set(entries[i].recipient, i);
     }
     const total = entries.reduce((sum, entry) => sum + entry.units, 0n);
 
