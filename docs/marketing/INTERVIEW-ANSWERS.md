@@ -17,8 +17,9 @@ Answer as one person, not a segment. Source: `docs/PRODUCTION_BUILD_PLAN.md:33`.
 >
 > The second one is small crypto teams doing payroll. A company paying fifteen contractors on
 > Starknet publishes every salary and the full headcount. Phase 1 is a payroll helper: batched
-> channels, aggregate visible to an auditor, per recipient encrypted, and each recipient pulls
-> their own income statement with their viewing key.
+> disbursement in one call at one pool fee instead of one per recipient, aggregate visible to an
+> auditor, per recipient encrypted, and each recipient pulls their own income statement with
+> their viewing key.
 
 The "I'm that user" line does the work. Say it.
 
@@ -30,8 +31,10 @@ Describe a day, not a feature list.
 > ten second action.
 >
 > After that it behaves like an account. Balance stays hidden until you press Reveal. You send a
-> private payment to a teammate, or share a receive link. Idle stables earn. When you need to
-> spend, the funds unshield and hop out toward a card.
+> private payment to a teammate, share a receive link so someone can bill you, or settle an
+> invoice that arrived as a payment request. Idle stables earn. Spending happens inside the
+> pool as another private transfer. Stepping out to a public balance is the exception, and it
+> is optional.
 >
 > The return trigger is the next payday, the next contractor payout, the next yield claim. It is
 > not a dashboard you check.
@@ -51,38 +54,67 @@ Once the loop closes, add: "plus a private send and an unshield, so the full loo
 mainnet."
 
 If a blocker is still open at recording time, name it with its number in one sentence. "Unshield
-needs more public STRK than the demo wallet holds past the live 6 STRK pool fee." A specific
-blocker reads as engineering. A vague one reads as vapor.
+is blocked on public STRK in the demo wallet: the pool fee alone was 6 STRK at the 2026-08-22
+mainnet read, and the app reads it live at call time." A specific blocker reads as engineering.
+A vague one reads as vapor.
 
 ## "How does it make money?"
 
 Source: `docs/PRODUCTION_BUILD_PLAN.md:137`.
 
-> Yield spread on idle shielded stables. A take on private swap. Basis points on payroll volume
-> in Phase 1. Card interchange in Phase 2, and only after a real BIN.
+> Yield spread on idle shielded stables. A take on private swap. Basis points on batched payout
+> volume in Phase 1. Card interchange only if a real issuer ever earns its way in, which is
+> evidence gated, not assumed.
 >
 > Not from prize money.
 
 ## "What about the card?"
 
-The trap question. Source: `docs/CARD_LAST_MILE.md:10`.
+The trap question. Source: `docs/CARD_LAST_MILE.md`. The trap is answering it like an apology.
+It is an architecture decision, so answer it like one.
 
-> No issuer debits a STRK20 note. Visa authorizes in about two seconds against a public liquid
-> balance, and a note is encrypted and needs a proof. So the card is not v0, and I won't fake
-> one.
+> People ask when the card ships. I think that is the wrong question. The right one is: how do
+> you spend from a shielded balance today, with nobody's permission? Payment links and invoices
+> against your registered pool address. Payroll that pays ten contractors in one call for one
+> pool fee instead of ten calls for ten fees. And my favorite: one transaction that pays a
+> person, opens a DeFi position with whatever is left, and reshields the change. Atomically. A
+> card structurally cannot do that last one, because Visa authorizes in about two seconds
+> against a public liquid balance, and an encrypted note needs a proof.
 >
-> The hop I own is real and shipped: unshield to native USDC on Starknet, then a Circle CCTP V2
-> burn on domain 25 out to Base or Solana. Past that it is Stripe Issuing plus Bridge JIT, which
-> is partner gated. The merchant sees a Visa and the issuer sees KYC. I'm not going to claim
-> otherwise.
+> The boundary I will say plainly: this spends to anyone who can receive a Starknet private
+> transfer. Not to an arbitrary merchant. If usage ever shows people genuinely need POS and
+> Apple Pay acceptance, then an issuer conversation starts, evidence gated. Until then, the hop
+> I own is real and shipped: unshield to native USDC on Starknet, then a Circle CCTP V2 burn on
+> domain 25 out to Base or Solana. Past that it is partner territory. The merchant sees a Visa
+> and the issuer sees KYC. I'm not going to claim otherwise.
 
-Refusing to fake the card is the most credible thing available to say. Do not soften it.
+Lead with what ships without an issuer. The refusal to fake a card lands on its own after that.
+
+## "What is the defensible part?"
+
+Source: `docs/CARD_LAST_MILE.md`, Track A.
+
+> Anyone can fork a UI. What they would have to reinvent is the shape of the spend. One
+> `privacy_invoke` pays a recipient, opens a DeFi position with the remainder, and reshields the
+> change in the same atomic call. There is no allowlist gating which contracts compose; the
+> pool checks the target contract address and executes. So batched payroll costs one pool fee
+> per call, and spend plus invest plus reshield is one step where everything else takes three,
+> each one leaking.
+>
+> Every card program runs the opposite direction: authorize a public liquid balance in two
+> seconds, KYC at the issuer, settle later. They cannot retrofit atomic private composition
+> onto that rail. Neither can we lose it by copying them. It falls out of building on notes
+> instead of balances.
+
+This is the answer to give when the room goes quiet. Do not bury it under three examples.
 
 ## "Why Starknet?"
 
 > The pool is live on mainnet with onchain deposit screening and selective disclosure, and it
-> composes: AVNU private swap, lending anonymizers. That combination does not exist elsewhere.
-> Railgun is the closest analogue on EVM and it is not this composability.
+> composes: AVNU private swap, lending anonymizers. Programmable spend is the proof. One
+> private call reaches arbitrary contracts because there is no allowlist in the way. That
+> combination does not exist elsewhere. Railgun is the closest analogue on EVM and it is not
+> this composability.
 >
 > And every shield I bring grows the shared anonymity set, so this is not zero sum with anyone
 > else building here.
@@ -96,9 +128,13 @@ Source: `docs/PRODUCTION_BUILD_PLAN.md:147`. Name them, do not dodge.
 > ether.fi Cash, Kast, and the Ready card all spend from a public wallet, so holdings and
 > history are public. Gnosis Pay is the best self custodial Visa and has no shielded book.
 > Hinkal Pay proves the demand for private stables but it is wallet to wallet on EVM, not a
-> Starknet account with DeFi and a card path. Railgun is the closest protocol analogue.
+> Starknet account with DeFi and a programmable spend path. Railgun is the closest protocol
+> analogue.
 >
-> The demand is proven. What is missing is the account.
+> None of them can run one transaction that pays someone, opens a position with the change, and
+> reshields, because their spend path authorizes a public balance.
+>
+> The demand is proven. What is missing is the account, and this one already spends.
 
 ## "What is hard about this?"
 
@@ -127,7 +163,11 @@ Always have an ask. Pick two:
 
 ## "What is next?"
 
-> Phase 1 is payroll and recurring payouts, plus the Privacy Bridge so EVM users can fund in and
-> get out unlinked. Phase 2 is the card, only after an issuer contract exists.
+> Right now: invoicing and expiry on top of payment requests, batched disbursement as the
+> default payroll path, and the Privacy Bridge so EVM users can fund in and get out unlinked.
+> Programmable spend grows with whatever composes next.
+>
+> The card has no date on any roadmap. It is evidence gated: if people genuinely need POS and
+> Apple Pay acceptance, an issuer conversation starts. Nothing about the product waits on it.
 
 Do not promise the card on a date.
