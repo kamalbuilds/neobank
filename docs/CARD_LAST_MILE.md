@@ -1,42 +1,73 @@
-# Card last mile: stablecoin funding, Visa acceptance
+# Spending privately: the permissionless path, and the card last mile
 
-Date: 2026-08-14.
-Status: architecture locked. Visa credential is not in this repo. The hop we own is.
+Date: 2026-08-22. Supersedes the 2026-08-14 version, which treated a Visa credential as the
+only real spend path and therefore made the whole product wait on an issuer.
 
-This is the same commercial architecture PYMNTS described for Thredd + Cashi (11 Aug 2026): keep the digital dollar on the funding side, keep conventional card rails on the acceptance side, monetize the translation layer. Cashi is a closed HK program. We are not Cashi. The developer-facing stack that implements that same split is Stripe Issuing + Bridge (Lead Bank), not a Visa we invent.
+Status: dual track. Track A is permissionless, ships now, and depends on nobody. Track B is the
+traditional card, and it is optional.
 
-## What unshield is, and what it is not
+## The hard fact, unchanged
 
-Unshield turns a STRK20 note into public native USDC on Starknet. That is necessary. It is not spend at a merchant. Visa authorizes in about 2 seconds against a public, liquid balance or credit line on a chain the issuer lists. A note is encrypted and needs a proof. No issuer, including Brahma/Swype (dead), HypurrFi, Rain, Gnosis Pay, or Stripe+Bridge, debits a STRK20 note.
+No issuer debits a STRK20 note. Visa authorizes in about two seconds against a public, liquid
+balance on a chain the issuer lists. A note is encrypted and needs a proof. That is true of
+Stripe+Bridge, Gnosis Pay, Rain, and every self-custodial card program: each still runs on a
+licensed issuer with a BIN, and the card itself is KYC'd even when the wallet is not.
 
-## The translation layer we will ship
+What changed is the conclusion drawn from it. Waiting for an issuer made the card the product.
+It is not. The product is a private money account, and the permissionless way to spend from one
+already exists.
 
-```
-private note (STRK20 pool)
-  -> unshield (Wallet API, already coded)
-  -> public native USDC on Starknet
-  -> Circle CCTP V2 deposit_for_burn (domain 25)
-  -> native USDC minted on Base (domain 6) or Solana (domain 5)
-  -> standing Bridge-approved wallet on that chain
-  -> Stripe Issuing + Bridge JIT pull at swipe
-  -> Visa / Apple Pay / Google Pay
-```
+## Track A: private payment primitives (ships now, no issuer)
 
-Merchant sees a Visa. Issuer and Bridge see KYC. This app never holds a viewing key. Amounts on the public hops stay public. Copy must say that.
+The permissionless analogue of a card is a private payment request, not a fake card number.
 
-## Why this stack, not Thredd + Cashi
+1. **Private payment links, QR codes, invoices.** The payee publishes a request against their
+   registered pool channel. The payer spends a shielded note through a private transfer. Who
+   paid whom and how much stay inside the pool. This already exists in the app as Receive; the
+   work is invoicing and expiry on top of it.
+2. **Programmable spend in one transaction.** A single `privacy_invoke` can pay a recipient,
+   open a DeFi position with the remainder, and reshield the change, atomically. This is the
+   differentiated capability and nothing on the card track can do it. Verified open: the pool
+   validates only `contract_address.is_non_zero()`, there is no anonymizer registry or
+   allowlist, and the live depositor blocklist is empty.
+3. **Batched disbursement.** The pool charges its fee once per `apply_actions` call regardless
+   of how many actions are in it (`privacy.cairo`, `collect_fee` sits outside the action loop),
+   so paying a team in one call costs one fee instead of one per person. At the live 6 STRK fee,
+   ten recipients is 6 STRK batched against 60 STRK looped.
 
-| Layer | Cashi (PYMNTS example) | Us |
-|---|---|---|
-| Consumer app | Cashi wallet | This Ready dapp + STRK20 |
-| Funding asset | Stablecoin balance | STRK20 note, then native USDC |
-| Processor | Thredd | Stripe Issuing |
-| BIN / bank | Visa program via Thredd | Lead Bank via Bridge |
-| Onchain pull | Cashi's own rails | Bridge JIT on Base or Solana |
+Naming rule: never present any of this as a "card number". A disposable identifier that is
+really a signed transfer intent is a payment request, and calling it a card invites a user to
+type it into a merchant checkout where it will fail. Say what it is.
 
-Thredd + Cashi is live in Hong Kong (virtual Visa + Google Pay) with Mexico later. It is not a self-serve API for a Starknet dapp. Bridge cards are the documented developer product: Phantom, Airtm, Chipper, Fuse. Visa + Bridge (Mar 2026) are expanding that program; cards already live in 18 countries. Starknet is not on Bridge's JIT chain list. Circle CCTP V2 is live on Starknet (domain 25, Dec 2025), so the hop to Base or Solana is a real protocol, not a wrapped bridge.
+Limit, stated plainly: Track A spends to anyone who can receive a Starknet private transfer. It
+does not spend at an arbitrary merchant. That is the honest boundary.
 
-## Contracts we can call today (public, after unshield)
+## Track B: reaching merchants that only take card numbers
+
+Two sub-paths, and they are not equal.
+
+**B1, the hop we own and have shipped.** Unshield to native USDC on Starknet, then Circle CCTP
+V2 `deposit_for_burn` on domain 25 out to Base (6) or Solana (5). Public on both legs, by
+construction. Later, route the outbound leg through the Privacy Bridge's `OutboundAnonymizer` so
+the Starknet wallet and the destination address are not linked.
+
+**B2, third-party no-KYC virtual cards. Not recommended, and not shipping.** The suggestion is
+that a user bridges out privately, then tops up an offshore minimal-KYC virtual card. The
+privacy argument is sound: the pool plus the bridge break the link between the STRK20 identity
+and the card top-up.
+
+The reason it does not ship anyway: we cannot verify any of the named services are solvent,
+legitimate, or durable, and that category has a long history of frozen balances, vanishing
+support, and outright exit scams. Shipping a deep link is an implicit endorsement, and a user
+who loses funds lost them because our product pointed at it. Document the pattern generically if
+users ask. Do not name, integrate, or link a specific provider we have not verified, and do not
+route funds through one.
+
+**B3, a real issuer, only on evidence.** Pursue Stripe+Bridge JIT, Gnosis Pay, or Rain only if
+usage shows people genuinely need POS and Apple Pay acceptance. Even then the CardSettle helper
+stays programmable so the private leg can act before the unshield.
+
+## The hop we can call today (public, after unshield)
 
 From Circle's CCTP Starknet reference, mainnet:
 
@@ -45,50 +76,33 @@ From Circle's CCTP Starknet reference, mainnet:
 | Starknet domain | 25 |
 | TokenMessengerMinterV2 | `0x07d421B9cA8aA32DF259965cDA8ACb93F7599F69209A41872AE84638B2A20F2a` |
 | MessageTransmitterV2 | `0x02EBB5777B6dD8B26ea11D68Fdf1D2c85cD2099335328Be845a28c77A8AEf183` |
-| Native USDC (this app already uses this) | `0x033068f6539f8e6e6b131e6b2b814e6c34a5224bc66947c47dab9dfee93b35fb` |
+| Native USDC (this app uses this) | `0x033068f6539f8e6e6b131e6b2b814e6c34a5224bc66947c47dab9dfee93b35fb` |
 | Bridged USDC.e (do not burn) | `0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8` |
-| Base domain | 6 |
-| Solana domain | 5 |
 
-CCTP only burns native USDC. Our `TOKENS.USDC` is the native address (Circle migration guide, 3 Dec 2025). The 0.0395 [USDC] note in `strk20.json` is this token.
-
-`deposit_for_burn` is a public ERC-20 approve + burn after the note is already unshielded. It does not need a viewing key. Completing the mint on Base/Solana needs Circle's Iris attestation + `receive_message` on the destination. That second half can live in this app as a follow-up call once Iris returns the attestation.
-
-## What is still partner-only
-
-- A Visa PAN, Apple Pay, Google Pay
-- Bridge JIT approval on the destination wallet
-- Stripe Issuing addendum (private preview: first meeting after addendum, ~2 weeks internal, 6-8 weeks external)
-- KYC (Persona on the Stripe+Bridge path)
-
-Outreach URL: https://www.bridge.xyz/requestfreedemo (HubSpot embed; blocked in the `neobank` Brave profile by tracker blocking on 2026-08-14). Stripe Issuing create-account: https://dashboard.stripe.com/register/issuing.
+CCTP burns native USDC only. Completing the mint needs Circle's Iris attestation plus
+`receive_message` on the destination.
 
 ## What we will not ship
 
-- A fake BIN, mock authorize, or simulated Visa
-- A Yield tab against the undeclared Vesu class
-- Burning CCTP from USDC.e
-- Claiming the merchant cannot see the card
+- A fake BIN, a mock authorize, or a simulated Visa.
+- Anything called a card number that is not a card number.
+- A named third-party no-KYC card integration we have not verified.
+- Burning CCTP from USDC.e.
+- Any claim that the merchant cannot see the card, or that the issuer cannot see KYC.
 
-## Product surface in this app
+## Corrections to the 2026-08-22 external research
 
-1. Unshield (exists). Blocked on public STRK for the 6 STRK pool fee.
-2. Hop: public CCTP burn of native USDC to a Base or Solana mint recipient the user types. Honest label: this is the card-funding hop, not a swipe.
-3. Later: Privacy Bridge outbound so the Starknet wallet and the mint recipient are not linked on the public hop.
-4. Later: Stripe+Bridge program once the addendum exists. Then the mint recipient is the user's Bridge-approved wallet, not a random address.
+- The live pool fee is **6 STRK**, read from `get_fee_amount` on mainnet today, not 4. The app
+  reads it live and prose should never hardcode it.
+- Pool size figures are contested across sources and remain **UNVERIFIED**. Do not publish a TVL
+  or deposit count until one is reconciled against the chain.
 
-## Sources (2026-08-14)
+## Sources
 
-- https://www.pymnts.com/cryptocurrency/2026/stablecoin-cards-turn-crypto-last-mile-into-payments-infrastructure-business/
-- https://www.pymnts.com/news/payment-methods/2026/thredd-helps-cashi-launch-stablecoin-card-program/
-- https://mediaconnect.com/thredd-powers-cashis-global-stablecoin-spending-card
-- https://usa.visa.com/about-visa/newsroom/press-releases.releaseId.22206.html
 - https://docs.stripe.com/issuing/bridge-stablecoin-cards
 - https://www.bridge.xyz/product/cards
-- https://www.bridge.xyz/blog/the-last-mile-how-card-programs-are-turning-stablecoins-into-a-real-utility
 - https://developers.circle.com/cctp/references/starknet-contracts
 - https://developers.circle.com/cctp/concepts/supported-chains-and-domains
 - https://www.circle.com/blog/starknet-migration-guide
-- https://www.starknet.io/blog/native-usdc-live-on-starknet/
+- https://github.com/starkware-libs/privacy-bridge
 - https://github.com/circlefin/starknet-cctp
-- https://swype.fun/ and https://app.hypurrfi.com/card (bhn, same day)
