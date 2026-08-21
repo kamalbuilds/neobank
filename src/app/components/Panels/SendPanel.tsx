@@ -1,11 +1,12 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { validateAndParseAddress } from "starknet";
 import styles from "../../uni.module.css";
 import { useStoreWallet } from "../Wallet/walletContext";
 import { TOKENS, getPublicBalance, type TokenSymbol, type NetworkKey } from "@/utils/constants";
 import { toBaseUnits, fromBaseUnits, shortHex } from "../lib/format";
 import { submitStrk20, waitStrk20Transaction, readPrivateBalance, findNotRegisteredRecipient } from "../lib/strk20";
+import { isExpired, readPaymentRequest, type PaymentRequest } from "../lib/paymentRequest";
 import type { WALLET_API } from "@starknet-io/types-js";
 import { usePoolFee } from "../lib/useFee";
 import { useMaturity, useShieldedBalances } from "../lib/usePrivateBalance";
@@ -97,6 +98,8 @@ export default function SendPanel({
   // Row 0 is the original single-recipient flow; extra rows batch into the
   // same transaction.
   const [rows, setRows] = useState<BatchRow[]>([{ recipient: initialRecipient, amount: "" }]);
+  const [request, setRequest] = useState<PaymentRequest | null>(null);
+  const [requestError, setRequestError] = useState("");
   const [pasteOpen, setPasteOpen] = useState(false);
   const [batchText, setBatchText] = useState("");
   const [pasteNote, setPasteNote] = useState("");
@@ -108,6 +111,24 @@ export default function SendPanel({
   const tokenConfig = TOKENS[token];
   const maturity = useMaturity(token);
   const shielded = useShieldedBalances();
+
+  // Same mount-effect pattern page.tsx uses for the `to` prefill: read the
+  // payment request from the URL once on the client, then fill the form. A
+  // decoded request supersedes a bare `to` address.
+  useEffect(() => {
+    const found = readPaymentRequest(window.location.search);
+    if (!found) return;
+    if (!found.ok) {
+      setRequestError(found.error);
+      return;
+    }
+    const req = found.request;
+    setRequest(req);
+    setToken(req.token);
+    setRows([{ recipient: req.recipient, amount: fromBaseUnits(req.units, TOKENS[req.token].decimals) }]);
+  }, []);
+
+  const requestExpired = request !== null && isExpired(request);
 
   function updateRow(index: number, patch: Partial<BatchRow>) {
     setRows((prev) => prev.map((row, i) => (i === index ? { ...row, ...patch } : row)));
@@ -171,6 +192,10 @@ export default function SendPanel({
     setResult(null);
     if (!myWalletAccount) {
       setResult(errorResult("Connect a wallet first."));
+      return;
+    }
+    if (request && isExpired(request)) {
+      setResult(errorResult("This payment request has expired. Ask for a fresh one before paying."));
       return;
     }
     const entries: { recipient: string; units: bigint }[] = [];
@@ -340,11 +365,19 @@ export default function SendPanel({
           value={rows[0].recipient}
           onChange={(e) => updateRow(0, { recipient: e.target.value })}
         />
-        {initialRecipient ? (
+        {request ? (
+          <div className={styles.subLine} style={{ color: "var(--muted)" }}>
+            Payment request loaded: {fromBaseUnits(request.units, TOKENS[request.token].decimals)}{" "}
+            {request.token} to {shortHex(request.recipient)}
+            {request.memo ? `, labeled ${request.memo}` : ""}. Confirm these details instead of
+            retyping them; this is a payment request, not a card.
+          </div>
+        ) : initialRecipient ? (
           <div className={styles.subLine} style={{ color: "var(--muted)" }}>
             Recipient filled from a receive link.
           </div>
         ) : null}
+        {requestError ? <div className={styles.warn}>{requestError}</div> : null}
         <div className={styles.subLine}>
           <button className={styles.tab} onClick={useMax} disabled={maxLoading || !myWalletAccount}>
             {maxLoading ? "reading shielded balance…" : "Use max"}
@@ -475,12 +508,21 @@ export default function SendPanel({
         <div className={styles.warn}>This wallet does not support STRK20 privacy actions. Install or update Ready.</div>
       )}
 
+      {request && requestExpired ? (
+        <div className={styles.warn}>
+          This payment request expired on {new Date((request.expiresAt ?? 0) * 1000).toLocaleString()}. It stays
+          filled so you can see what was asked, but you cannot pay against it. Ask the requester for a fresh
+          link.
+        </div>
+      ) : null}
+
       <button
         className={styles.btnCta}
         disabled={
           !strk20Capable ||
           submitting ||
           maturity.locked ||
+          requestExpired ||
           rows.some((row) => !row.amount || !row.recipient)
         }
         onClick={handleSend}
@@ -489,6 +531,8 @@ export default function SendPanel({
           ? "Sending…"
           : maturity.locked
           ? "Notes maturing…"
+          : requestExpired
+          ? "Request expired"
           : rows.length > 1
           ? `Send privately to ${rows.length} recipients`
           : "Send privately"}
