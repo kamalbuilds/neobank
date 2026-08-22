@@ -3,7 +3,9 @@
 Status: Phase 0 in progress, 2026-08-14. Three real mainnet txs live from one Ready wallet
 (`0x0101ab74cf27f868fa42f02de17c5fca88697dd63dd850ee6626d74c25ed6a4a`, logged in `strk20.json`):
 deploy account, shield 0.1 STRK, shield 0.2 USDC in (0.0395 USDC shielded after the pool's
-privacy fee). Unshield, private send, and AVNU private swap are still blocked, each for a real
+privacy fee). 
+
+Unshield, private send, and AVNU private swap are still blocked, each for a real
 reason and not a fixture: unshield needs more public STRK in the demo wallet past the live 6 STRK
 pool fee plus Ready's buffer; private send needs a second Ready wallet already registered in the
 pool; AVNU swap needs `AVNU_PAYMASTER_API_KEY` set on the live deployment (`/api/avnu/status`
