@@ -19,6 +19,7 @@
  */
 
 import { readFile } from "node:fs/promises";
+import { pathToFileURL } from "node:url";
 
 const POOL = "0x040337b1af3c663e86e333bab5a4b28da8d4652a15a69beee2b677776ffe812a";
 const RPC = process.env.STARKNET_RPC || "https://rpc.starknet.lava.build";
@@ -96,7 +97,7 @@ async function loadClaim() {
   }
 }
 
-async function checkTransaction(hash) {
+export async function checkTransaction(hash) {
   const row = { hash, type: null, execution: null, finality: null, events: 0, poolEvents: 0, pass: false, reason: "" };
 
   if (typeof hash !== "string" || !/^0x[0-9a-fA-F]+$/.test(hash)) {
