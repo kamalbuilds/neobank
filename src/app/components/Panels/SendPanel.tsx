@@ -4,13 +4,47 @@ import { validateAndParseAddress } from "starknet";
 import styles from "../../uni.module.css";
 import { useStoreWallet } from "../Wallet/walletContext";
 import { TOKENS, getPublicBalance, type TokenSymbol, type NetworkKey } from "@/utils/constants";
-import { toBaseUnits, fromBaseUnits } from "../lib/format";
-import { submitStrk20, waitStrk20Transaction, readPrivateBalance } from "../lib/strk20";
+import { toBaseUnits, fromBaseUnits, shortHex } from "../lib/format";
+import { submitStrk20, waitStrk20Transaction, readPrivateBalance, findNotRegisteredRecipient } from "../lib/strk20";
+import type { WALLET_API } from "@starknet-io/types-js";
 import { usePoolFee } from "../lib/useFee";
 import { useMaturity, useShieldedBalances } from "../lib/usePrivateBalance";
 import TokenSelect from "./TokenSelect";
 import FeeRow from "./FeeRow";
 import { ResultCard, errorResult, receiptToResult, walletErrorResult, type ActionResult } from "./ActionResult";
+
+interface BatchRow {
+  recipient: string;
+  amount: string;
+}
+
+// Parse pasted lines of "address,amount" (one recipient per line) into batch
+// rows. Validation here is early feedback only; handleSend re-validates every
+// row it actually submits.
+function parsePastedRecipients(text: string, decimals: number): BatchRow[] {
+  const rows: BatchRow[] = [];
+  const lines = text.split(/\r?\n/);
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    const parts = line.split(",").map((p) => p.trim());
+    if (parts.length !== 2 || !parts[0] || !parts[1]) {
+      throw new Error(`Line ${i + 1}: expected "address,amount".`);
+    }
+    try {
+      validateAndParseAddress(parts[0]);
+    } catch {
+      throw new Error(`Line ${i + 1}: not a valid Starknet address.`);
+    }
+    try {
+      toBaseUnits(parts[1], decimals);
+    } catch (err: any) {
+      throw new Error(`Line ${i + 1}: ${err.message}`);
+    }
+    rows.push({ recipient: parts[0], amount: parts[1] });
+  }
+  return rows;
+}
 
 export default function SendPanel({
   network,
@@ -24,8 +58,12 @@ export default function SendPanel({
   const strk20Capable = useStoreWallet((s) => s.strk20Capable);
 
   const [token, setToken] = useState<TokenSymbol>("STRK");
-  const [amount, setAmount] = useState("");
-  const [recipient, setRecipient] = useState(initialRecipient);
+  // Row 0 is the original single-recipient flow; extra rows batch into the
+  // same transaction.
+  const [rows, setRows] = useState<BatchRow[]>([{ recipient: initialRecipient, amount: "" }]);
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const [batchText, setBatchText] = useState("");
+  const [pasteNote, setPasteNote] = useState("");
   const [maxLoading, setMaxLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<ActionResult | null>(null);
@@ -35,17 +73,64 @@ export default function SendPanel({
   const maturity = useMaturity(token);
   const shielded = useShieldedBalances();
 
+  function updateRow(index: number, patch: Partial<BatchRow>) {
+    setRows((prev) => prev.map((row, i) => (i === index ? { ...row, ...patch } : row)));
+  }
+
   async function useMax() {
     if (!myWalletAccount) return;
     setMaxLoading(true);
     try {
       const balance = await readPrivateBalance(myWalletAccount, tokenConfig.address);
       // Pool fee is public STRK from tx.caller, not taken out of the note.
-      setAmount(fromBaseUnits(balance, tokenConfig.decimals));
+      // Rows after the first are committed to their amounts, so the most the
+      // first row can take is what they leave unspent. With no extra rows
+      // this is exactly the old single-recipient max.
+      const committed = rows.slice(1).reduce((sum, row) => {
+        try {
+          return sum + toBaseUnits(row.amount, tokenConfig.decimals);
+        } catch {
+          return sum;
+        }
+      }, 0n);
+      const head = balance > committed ? balance - committed : 0n;
+      updateRow(0, { amount: fromBaseUnits(head, tokenConfig.decimals) });
     } catch (err: any) {
       setResult(errorResult(err?.message ?? "Could not read your shielded balance."));
     } finally {
       setMaxLoading(false);
+    }
+  }
+
+  function addRow() {
+    setPasteNote("");
+    setRows((prev) => [...prev, { recipient: "", amount: "" }]);
+  }
+
+  function removeRow(index: number) {
+    setPasteNote("");
+    setRows((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function addFromPaste() {
+    setResult(null);
+    setPasteNote("");
+    try {
+      const parsed = parsePastedRecipients(batchText, tokenConfig.decimals);
+      if (parsed.length === 0) {
+        setResult(errorResult("Paste at least one line as \"address,amount\", one recipient per line."));
+        return;
+      }
+      // Fully-empty manual rows would block submitting later; drop them but
+      // keep partially filled ones because they carry the user's intent.
+      setRows((prev) => [
+        ...prev.filter((row) => row.recipient.trim() !== "" || row.amount.trim() !== ""),
+        ...parsed,
+      ]);
+      setBatchText("");
+      setPasteNote(`Added ${parsed.length} recipient${parsed.length === 1 ? "" : "s"} from the pasted list.`);
+    } catch (err: any) {
+      setResult(errorResult(err.message));
     }
   }
 
@@ -55,18 +140,49 @@ export default function SendPanel({
       setResult(errorResult("Connect a wallet first."));
       return;
     }
-    let recipientAddr: string;
+    const entries: { recipient: string; units: bigint }[] = [];
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const prefix = rows.length === 1 ? "" : `Recipient ${i + 1}: `;
+      let recipientAddr: string;
+      try {
+        recipientAddr = validateAndParseAddress(row.recipient);
+      } catch {
+        setResult(
+          errorResult(rows.length === 1 ? "Enter a valid Starknet address." : `${prefix}enter a valid Starknet address.`),
+        );
+        return;
+      }
+      let units: bigint;
+      try {
+        units = toBaseUnits(row.amount, tokenConfig.decimals);
+      } catch (err: any) {
+        setResult(errorResult(`${prefix}${err.message}`));
+        return;
+      }
+      entries.push({ recipient: recipientAddr, units });
+    }
+    const total = entries.reduce((sum, entry) => sum + entry.units, 0n);
+
+    // Same consented private-balance read the Use-max path uses. The wallet
+    // still enforces this authoritatively at submit time; this check just
+    // fails before the user is asked to approve anything.
+    let privateUnits: bigint;
     try {
-      recipientAddr = validateAndParseAddress(recipient);
-    } catch {
-      setResult(errorResult("Enter a valid Starknet address."));
+      privateUnits = await readPrivateBalance(myWalletAccount, tokenConfig.address);
+    } catch (err: any) {
+      setResult(errorResult(err?.message ?? "Could not read your shielded balance."));
       return;
     }
-    let units: bigint;
-    try {
-      units = toBaseUnits(amount, tokenConfig.decimals);
-    } catch (err: any) {
-      setResult(errorResult(err.message));
+    if (total > privateUnits) {
+      setResult(
+        errorResult(
+          `This batch sends ${fromBaseUnits(total, tokenConfig.decimals)} ${token} but you have ${fromBaseUnits(
+            privateUnits,
+            tokenConfig.decimals,
+          )} shielded ${token}. Reduce the amounts and try again.`,
+        ),
+      );
       return;
     }
     if (address && fee !== undefined) {
@@ -84,23 +200,46 @@ export default function SendPanel({
       }
     }
     setSubmitting(true);
-    const submission = await submitStrk20(myWalletAccount, [
-      { type: "transfer", token: tokenConfig.address, amount: `0x${units.toString(16)}`, recipient: recipientAddr },
-    ]);
+    // Exactly one invoke for the whole batch: one transfer action per
+    // recipient, pool fee charged once for the call.
+    const actions: WALLET_API.STRK20_ACTION[] = entries.map((entry) => ({
+      type: "transfer",
+      token: tokenConfig.address,
+      amount: `0x${entry.units.toString(16)}`,
+      recipient: entry.recipient,
+    }));
+    const submission = await submitStrk20(myWalletAccount, actions);
     if (!submission.ok || !submission.txHash) {
       if (submission.error?.kind === "not_registered") {
-        setResult({
-          status: "error",
-          title: "Recipient not registered in the privacy pool",
-          note: submission.error.message,
-        });
+        if (entries.length === 1) {
+          setResult({
+            status: "error",
+            title: "Recipient not registered in the privacy pool",
+            note: submission.error.message,
+          });
+        } else {
+          // A batch is all-or-nothing: name the recipient the wallet rejected.
+          const culprit = findNotRegisteredRecipient(submission.error.raw, entries.map((entry) => entry.recipient));
+          setResult({
+            status: "error",
+            title: culprit
+              ? `Recipient not registered in the privacy pool: ${shortHex(culprit)}`
+              : "Recipient not registered in the privacy pool",
+            note: culprit
+              ? `${submission.error.message}\n\nNothing was sent: one unregistered recipient rejects the whole batch. This one is not registered: ${culprit}`
+              : `${submission.error.message}\n\nNothing was sent: one unregistered recipient rejects the whole batch, and the wallet error did not say which one. Check every recipient.\n\nWallet reported:\n${submission.error.raw}`,
+          });
+        }
       } else {
         setResult(walletErrorResult(submission.error));
       }
       setSubmitting(false);
       return;
     }
-    const amountLabel = `${amount} ${token} (private)`;
+    const amountLabel =
+      entries.length === 1
+        ? `${rows[0].amount} ${token} (private)`
+        : `${entries.length} transfers, total ${fromBaseUnits(total, tokenConfig.decimals)} ${token} (private)`;
     setResult({
       status: "pending",
       title: "Waiting for confirmation…",
@@ -126,7 +265,8 @@ export default function SendPanel({
     <div className={styles.panel}>
       <div className={styles.warn} style={{ color: "var(--muted)" }}>
         The recipient must already be registered in the privacy pool (they need to have used a STRK20-capable
-        wallet at least once). This app cannot register them for you.
+        wallet at least once). This app cannot register them for you. In a batch, every recipient must be
+        registered or the whole batch is refused.
       </div>
 
       <div className={styles.inputBlock}>
@@ -137,8 +277,8 @@ export default function SendPanel({
             style={{ border: "none", outline: "none", background: "transparent", width: "60%" }}
             placeholder="0"
             inputMode="decimal"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            value={rows[0].amount}
+            onChange={(e) => updateRow(0, { amount: e.target.value })}
           />
           <TokenSelect value={token} onChange={setToken} />
         </div>
@@ -146,8 +286,8 @@ export default function SendPanel({
           className={styles.subMono}
           style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px", width: "100%", marginTop: 8, background: "#fff" }}
           placeholder="Recipient address (0x…)"
-          value={recipient}
-          onChange={(e) => setRecipient(e.target.value)}
+          value={rows[0].recipient}
+          onChange={(e) => updateRow(0, { recipient: e.target.value })}
         />
         {initialRecipient ? (
           <div className={styles.subLine} style={{ color: "var(--muted)" }}>
@@ -159,12 +299,88 @@ export default function SendPanel({
             {maxLoading ? "reading shielded balance…" : "Use max"}
           </button>
         </div>
+
+        {rows.slice(1).map((row, i) => (
+          <div key={i + 1} className={styles.subLine} style={{ marginTop: 8 }}>
+            <input
+              className={styles.subMono}
+              style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px", flex: 3, minWidth: 0, background: "#fff" }}
+              placeholder={`Recipient ${i + 2} address (0x…)`}
+              value={row.recipient}
+              onChange={(e) => updateRow(i + 1, { recipient: e.target.value })}
+            />
+            <input
+              className={styles.subMono}
+              style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px", flex: 2, minWidth: 0, background: "#fff" }}
+              placeholder="Amount"
+              inputMode="decimal"
+              value={row.amount}
+              onChange={(e) => updateRow(i + 1, { amount: e.target.value })}
+            />
+            <button className={styles.tab} onClick={() => removeRow(i + 1)}>
+              Remove
+            </button>
+          </div>
+        ))}
+
+        <div className={styles.subLine}>
+          <button className={styles.tab} onClick={addRow}>
+            Add another recipient
+          </button>
+          <button
+            className={styles.tab}
+            onClick={() => {
+              setPasteNote("");
+              setPasteOpen((v) => !v);
+            }}
+          >
+            {pasteOpen ? "Hide paste box" : "Paste a batch list"}
+          </button>
+        </div>
+        {pasteOpen && (
+          <>
+            <textarea
+              className={styles.subMono}
+              rows={4}
+              style={{
+                border: "1px solid var(--line)",
+                borderRadius: 12,
+                padding: "10px 12px",
+                width: "100%",
+                background: "#fff",
+                resize: "vertical",
+                boxSizing: "border-box",
+              }}
+              placeholder={"0x…,25\n0x…,0.5"}
+              value={batchText}
+              onChange={(e) => setBatchText(e.target.value)}
+            />
+            <div className={styles.subLine}>
+              <button className={styles.tab} onClick={addFromPaste}>
+                Add lines to the batch
+              </button>
+              {pasteNote ? (
+                <span className={styles.subMono} style={{ color: "var(--muted)" }}>
+                  {pasteNote}
+                </span>
+              ) : null}
+            </div>
+          </>
+        )}
       </div>
 
       <FeeRow fee={fee} />
       <div className={styles.subLine} style={{ color: "var(--muted)" }}>
         Fee is public STRK, not taken from this note. Ready may require a buffer above the live pool fee shown here.
       </div>
+      {rows.length > 1 && fee !== undefined && (
+        <div className={styles.subLine} style={{ color: "var(--muted)" }}>
+          These {rows.length} transfers go in one transaction: the pool fee is charged once (
+          {fromBaseUnits(fee, TOKENS.STRK.decimals)} STRK) instead of {rows.length} times (
+          {fromBaseUnits(fee * BigInt(rows.length), TOKENS.STRK.decimals)} STRK). You save{" "}
+          {fromBaseUnits(fee * BigInt(rows.length - 1), TOKENS.STRK.decimals)} STRK.
+        </div>
+      )}
 
       <div className={styles.subLine}>
         <button
@@ -210,10 +426,21 @@ export default function SendPanel({
 
       <button
         className={styles.btnCta}
-        disabled={!strk20Capable || submitting || !amount || !recipient || maturity.locked}
+        disabled={
+          !strk20Capable ||
+          submitting ||
+          maturity.locked ||
+          rows.some((row) => !row.amount || !row.recipient)
+        }
         onClick={handleSend}
       >
-        {submitting ? "Sending…" : maturity.locked ? "Notes maturing…" : "Send privately"}
+        {submitting
+          ? "Sending…"
+          : maturity.locked
+          ? "Notes maturing…"
+          : rows.length > 1
+          ? `Send privately to ${rows.length} recipients`
+          : "Send privately"}
       </button>
 
       {result ? <ResultCard r={result} network={network} /> : null}

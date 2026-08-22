@@ -60,8 +60,46 @@ export interface SubmitResult {
   error?: Strk20Error;
 }
 
+// Match a wallet's raw not_registered error text against the recipients the
+// caller actually submitted. A STRK20 batch is all-or-nothing: one
+// unregistered recipient rejects every action in the call, and the error
+// text is the only place the offender may be named. The wire form of an
+// address varies (padded or unpadded hex, sometimes decimal), so compare in
+// every form with boundaries. Returns undefined when the text names none of
+// the submitted recipients. Recipients must already be validated felt/hex
+// literals (validateAndParseAddress output).
+export function findNotRegisteredRecipient(
+  rawErrorText: string,
+  submittedRecipients: string[],
+): string | undefined {
+  // Collapse zero-padded hex ("0x00abcd" -> "0xabcd") so padded wire forms
+  // and unpadded prose forms can match the same boundary-checked needle.
+  const text = rawErrorText.replace(/0[xX]0+([0-9a-fA-F]+)/g, "0x$1");
+  for (const recipient of submittedRecipients) {
+    const hexBare = recipient.toLowerCase().replace(/^0x/, "").replace(/^0+/, "") || "0";
+    let decimal = "";
+    try {
+      decimal = BigInt(recipient).toString();
+    } catch {
+      // Not a felt literal; the hex comparison below still applies.
+    }
+    // Boundaries stop a short needle from matching inside a longer unrelated
+    // number; the length floor keeps trivial values out of prose matches.
+    if (hexBare.length >= 10 && new RegExp(`(?<![0-9a-fx])0x${hexBare}(?![0-9a-f])`, "i").test(text)) {
+      return recipient;
+    }
+    if (decimal.length >= 10 && new RegExp(`(?<!\\d)${decimal}(?!\\d)`).test(text)) {
+      return recipient;
+    }
+  }
+  return undefined;
+}
+
 // Submit STRK20 actions through the connected WalletAccountV6. The wallet
-// handles fee approval, proving, and submission.
+// handles fee approval, proving, and submission. Every action rides in one
+// apply_actions call and the pool charges its fee once per call, no matter
+// how many actions ride in it - which is why sending to N recipients in one
+// call costs one pool fee instead of N.
 export async function submitStrk20(
   walletAccount: WalletAccountV6,
   actions: WALLET_API.STRK20_ACTION[]
