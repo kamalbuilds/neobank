@@ -150,6 +150,23 @@ Shows depth fast. Source: `docs/PRODUCTION_BUILD_PLAN.md:93`.
 > never the transaction sender, because private transactions are relayed and the sender is the
 > relayer for everybody.
 
+The sharpest version of this answer, if you want one thing rather than three. Source:
+`docs/research/STARKNET_FORUM.md`, thread 116264.
+
+> The one that would have killed us is key rotation. Owner keys on a smart account are designed
+> to rotate, that is the entire point of social recovery. A privacy spending key has to be stable
+> forever, because if it changes, every note encrypted to the old key is permanently unspendable.
+> Recover your wallet, lose your money, with no error message anywhere. A team on the forum hit
+> exactly that and now gates shielding on the seed having a durable anchor that survives device
+> loss.
+>
+> We dodged it by route rather than by cleverness. On the Wallet API the app never holds a viewing
+> key, so the key lifetime problem sits with the wallet, where it belongs. The day we run our own
+> account for a treasury, it becomes our problem on day one.
+
+Saying which problems you avoided by architecture, and naming the one that would bite you next,
+reads as someone who has actually thought past the demo.
+
 ## "What do you need?"
 
 Always have an ask. Pick two:
