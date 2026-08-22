@@ -1,4 +1,4 @@
-import { providerFor, STRK20_POOL_ADDRESS, type NetworkKey } from "@/utils/constants";
+import { providerFor, poolAddressFor, type NetworkKey } from "@/utils/constants";
 
 // starknet_keccak("Deposit") on the STRK20 pool, checked with
 // hash.getSelectorFromName. The event is Deposit{user_addr(key), token(key),
@@ -14,13 +14,20 @@ import { providerFor, STRK20_POOL_ADDRESS, type NetworkKey } from "@/utils/const
 // that was not the account's first.
 const DEPOSIT_SELECTOR = "0x9149d2123147c5f43d258257fef0b7b969db78269369ebcf5ebb9eef8592f2";
 
-// The pool's first Deposit is in block 9,023,083. Asking from block 0 does not
-// return nothing-then-results: the RPC pages by block window, so every page
-// before the pool existed comes back empty but still carries a continuation
-// token. Measured against mainnet, twelve consecutive pages from block 0 were
-// all empty, so a page budget is spent long before any deposit is reached and
-// the panel shows nothing for everybody. Start where the pool starts.
-const POOL_FIRST_BLOCK = 9_000_000;
+// Asking from block 0 does not return nothing-then-results: the RPC pages by
+// block window, so every page before the pool existed comes back empty but
+// still carries a continuation token. Measured against mainnet, twelve
+// consecutive pages from block 0 were all empty, so a page budget is spent long
+// before any deposit is reached and the panel shows nothing for everybody.
+// Start where each pool starts.
+//
+// Mainnet's first Deposit is in block 9,023,083. The Sepolia pool contract was
+// created in Sepolia block 8,271,125, which is that chain's own numbering and
+// not comparable to mainnet's.
+const POOL_FIRST_BLOCK: Record<NetworkKey, number> = {
+  mainnet: 9_000_000,
+  sepolia: 8_200_000,
+};
 
 const PAGE_SIZE = 1000;
 // The pool's life is split into this many block windows, scanned concurrently.
@@ -51,7 +58,7 @@ export async function getPoolActivity(network: NetworkKey, address: string): Pro
   const provider = providerFor(network);
 
   const latest = await provider.getBlockNumber();
-  const first = Math.min(POOL_FIRST_BLOCK, latest);
+  const first = Math.min(POOL_FIRST_BLOCK[network], latest);
   const span = Math.max(1, Math.ceil((latest - first + 1) / WINDOWS));
 
   // One scan per block window, run concurrently. Walking the pool's whole life
@@ -71,7 +78,7 @@ export async function getPoolActivity(network: NetworkKey, address: string): Pro
 
       for (let page = 0; page < MAX_PAGES_PER_WINDOW; page++) {
         const chunk = await provider.getEvents({
-          address: STRK20_POOL_ADDRESS,
+          address: poolAddressFor(network),
           // Second key is the depositor, so the node filters for us. Padded and
           // unpadded forms both match: the RPC normalises felts. The client-side
           // check below stays as defence, not as the primary filter.
