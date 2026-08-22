@@ -19,8 +19,20 @@ export function networkForChainId(chainId: string): NetworkKey | undefined {
   return undefined;
 }
 
-// NEXT_PUBLIC_PROVIDER_URL holds only an Alchemy key suffix. Empty -> public RPCs.
+// Resolution order: an explicit full RPC URL, then an Alchemy key suffix, then
+// a public endpoint.
+//
+// Next.js inlines only NEXT_PUBLIC_* into the browser bundle, and every call
+// here runs client side, so a bare MAINNET_RPC / TESTNET_RPC is invisible at
+// runtime. Both spellings are read so a prefixed value works and an unprefixed
+// one at least works in server components instead of silently doing nothing.
 function rpcUrl(network: NetworkKey): string {
+  const explicit =
+    network === "mainnet"
+      ? process.env.NEXT_PUBLIC_MAINNET_RPC || process.env.MAINNET_RPC
+      : process.env.NEXT_PUBLIC_TESTNET_RPC || process.env.TESTNET_RPC;
+  if (explicit) return explicit;
+
   const alchemyKey = process.env.NEXT_PUBLIC_PROVIDER_URL;
   if (alchemyKey) {
     return network === "mainnet"
