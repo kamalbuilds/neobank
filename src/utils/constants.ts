@@ -27,9 +27,12 @@ function rpcUrl(network: NetworkKey): string {
       ? `https://starknet-mainnet.g.alchemy.com/starknet/version/rpc/v0_10/${alchemyKey}`
       : `https://starknet-sepolia.g.alchemy.com/starknet/version/rpc/v0_10/${alchemyKey}`;
   }
+  // blastapi.io is retired and now answers every call with "Blast API is no
+  // longer available", so the Sepolia fallback silently failed every request.
+  // Both endpoints below were checked against starknet_blockNumber.
   return network === "mainnet"
     ? "https://rpc.starknet.lava.build"
-    : "https://starknet-sepolia.public.blastapi.io/rpc/v0_8";
+    : "https://starknet-sepolia-rpc.publicnode.com";
 }
 
 // A fresh RpcProvider for the given network. Never reuse the WalletAccount's
@@ -78,16 +81,31 @@ export function tokenForAddress(address: string): TokenConfig | undefined {
 
 // ─── STRK20 pool ─────────────────────────────────────────────────────────
 
-// Live STRK20 privacy pool on mainnet: https://voyager.online/contract/0x040337b1af3c663e86e333bab5a4b28da8d4652a15a69beee2b677776ffe812a
-export const STRK20_POOL_ADDRESS =
-  "0x040337b1af3c663e86e333bab5a4b28da8d4652a15a69beee2b677776ffe812a";
+// The pool is deployed on both networks, and Sepolia is where iteration belongs:
+// every mainnet pool action costs the live fee in real STRK, so a testnet run is
+// the difference between rehearsing a flow and paying to rehearse it.
+//
+// mainnet: https://voyager.online/contract/0x040337b1af3c663e86e333bab5a4b28da8d4652a15a69beee2b677776ffe812a
+// sepolia: https://sepolia.voyager.online/contract/0x0254a6b2997ef52e9f830ce1f543f6b29768295e8d17e2267d672c552cfe0d91
+//          verified on chain as "Starknet: Canonical Privacy Pool", class alias Privacy.
+export const STRK20_POOL_ADDRESSES: Record<NetworkKey, string> = {
+  mainnet: "0x040337b1af3c663e86e333bab5a4b28da8d4652a15a69beee2b677776ffe812a",
+  sepolia: "0x0254a6b2997ef52e9f830ce1f543f6b29768295e8d17e2267d672c552cfe0d91",
+};
+
+export function poolAddressFor(network: NetworkKey): string {
+  return STRK20_POOL_ADDRESSES[network];
+}
+
+/** @deprecated Use poolAddressFor(network). Kept so mainnet callers keep working. */
+export const STRK20_POOL_ADDRESS = STRK20_POOL_ADDRESSES.mainnet;
 
 // Pool fee is charged per private operation, always in STRK, and is admin
 // settable (`set_fee_amount`) - read it at runtime, never hardcode a figure.
 export async function getPoolFeeAmount(network: NetworkKey): Promise<bigint> {
   const provider = providerFor(network);
   const result = await provider.callContract({
-    contractAddress: STRK20_POOL_ADDRESS,
+    contractAddress: poolAddressFor(network),
     entrypoint: "get_fee_amount",
     calldata: [],
   });
