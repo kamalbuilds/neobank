@@ -1,0 +1,39 @@
+[package]
+name = "private_payout_anonymizer"
+version = "0.1.0"
+edition = "2024_07"
+
+[dependencies]
+starknet = "2.18.0"
+openzeppelin = "3.0.0"
+
+[dev-dependencies]
+assert_macros = "2.18.0"
+snforge_std = "0.63.0"
+
+[tool.fmt]
+sort-module-level-items = true
+
+[tool.scarb]
+allow-prebuilt-plugins = ["snforge_std"]
+
+[[target.starknet-contract]]
+sierra = true
+casm = true
+casm-add-pythonic-hints = true
+
+[[test]]
+name = "private_payout_anonymizer_unittest"
+build-external-contracts = [
+    "private_payout_anonymizer::test_utils_contracts::mock_erc20::MockERC20",
+    "private_payout_anonymizer::test_utils_contracts::mock_erc20::MockERC20FailingTransfer",
+]
+
+[scripts]
+test = "snforge test"
+
+[profile.dev.cairo]
+unstable-add-statements-functions-debug-info = true
+unstable-add-statements-code-locations-debug-info = true
+inlining-strategy = "avoid"
+panic-backtrace = true
