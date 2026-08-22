@@ -141,9 +141,13 @@ async function main() {
     throw new Error(`${source} is not valid JSON: ${err.message}`);
   }
 
-  // The sprint schema is a flat array of hashes. This repo also carries richer
-  // objects with a `hash` key, so accept both rather than failing on our own file.
+  // The sprint schema is a flat array of hash STRINGS. The official scanner does
+  // `typeof raw === "string" ? raw.trim() : ""` and skips anything else, so a
+  // {hash, note} object silently scores zero however real the transaction is.
+  // This repo shipped that mistake, so the tool reports it loudly rather than
+  // quietly reading the hash out and pretending the submission is fine.
   const entries = Array.isArray(claim.transactions) ? claim.transactions : [];
+  const objectForm = entries.filter((t) => t && typeof t !== "string").length;
   const hashes = entries.map((t) => (typeof t === "string" ? t : t?.hash)).filter(Boolean);
 
   const rows = [];
@@ -152,7 +156,7 @@ async function main() {
   const qualifying = rows.filter((r) => r.pass).length;
   const hasVideo = typeof claim.demo_video === "string" && claim.demo_video.trim() !== "";
   const hasDemoUrl = typeof claim.demo_url === "string" && claim.demo_url.trim() !== "";
-  const scoreable = qualifying >= MIN_QUALIFYING && hasVideo;
+  const scoreable = qualifying >= MIN_QUALIFYING && hasVideo && objectForm === 0;
 
   const report = {
     source,
@@ -163,6 +167,7 @@ async function main() {
     required: MIN_QUALIFYING,
     demo_video: hasVideo,
     demo_url: hasDemoUrl,
+    object_form_entries: objectForm,
     scoreable,
   };
 
@@ -182,6 +187,14 @@ async function main() {
     const detail = r.type ? `${r.type} ${r.execution}/${r.finality}` : "unresolved";
     console.log(`  ${mark}  ${short(r.hash)}  ${detail}`);
     console.log(`        events ${r.events}, from pool ${r.poolEvents}${r.pass ? "" : `  <- ${r.reason}`}`);
+  }
+
+  if (objectForm > 0) {
+    console.log(
+      `\n  SCHEMA: ${objectForm} entr${objectForm === 1 ? "y is" : "ies are"} an object, not a hash string.`,
+    );
+    console.log(`          The official scanner skips these, so they score ZERO however real they are.`);
+    console.log(`          Use "transactions": ["0x...", "0x..."] and keep notes under another key.`);
   }
 
   console.log(`\n  qualifying transactions : ${qualifying} of ${MIN_QUALIFYING} required`);
