@@ -1,0 +1,227 @@
+{
+  "version": 1,
+  "project": {
+    "name": "neobank",
+    "created": "2026-08-25T19:50:48+00:00"
+  },
+  "features": [
+    {
+      "id": "F01",
+      "title": "Scoreable gate: three mainnet pool txs verified",
+      "priority": "high",
+      "tags": [
+        "hackathon"
+      ],
+      "blocked": null,
+      "notes": [
+        {
+          "ts": "2026-08-25T19:57:14+00:00",
+          "text": "Currently 2 qualifying txs; third blocked on wallet funding (user-only)"
+        }
+      ],
+      "criteria": [
+        {
+          "kind": "auto",
+          "name": "verify",
+          "cmd": "npm run verify:claim",
+          "last_run": "2026-08-26T02:39:44+00:00",
+          "last_exit": 1,
+          "duration_ms": 2748,
+          "output_tail": "  PASS  0x059eb6c1...586e  INVOKE SUCCEEDED/ACCEPTED_ON_L1\n        events 15, from pool 3\n  FAIL  0x02cbfcce...a735  DEPLOY_ACCOUNT SUCCEEDED/ACCEPTED_ON_L1\n        events 4, from pool 0  <- succeeded but emitted no STRK20 pool event (DEPLOY_ACCOUNT)\n  qualifying transactions : 2 of 3 required\n  demo_video              : MISSING (required to be scored)\n  demo_url                : present\n  NOT SCOREABLE: fix the items marked above before the deadline."
+        }
+      ]
+    },
+    {
+      "id": "F02",
+      "title": "Cairo suite green",
+      "priority": "high",
+      "tags": [
+        "hackathon"
+      ],
+      "blocked": null,
+      "notes": [],
+      "criteria": [
+        {
+          "kind": "auto",
+          "name": "cairo",
+          "cmd": "cd contracts && scarb build && snforge test",
+          "last_run": "2026-08-26T02:39:53+00:00",
+          "last_exit": 0,
+          "duration_ms": 9807,
+          "output_tail": "[PASS] private_payout_anonymizer::tests::test_programmable_spend_anonymizer::test_position_and_payout_in_one_invoke (l1_gas: ~0, l1_data_gas: ~1440, l2_gas: ~4555962)\n[PASS] private_payout_anonymizer::tests::test_private_spend_anonymizer::test_full_spend_still_returns_a_zero_change_note (l1_gas: ~0, l1_data_gas: ~864, l2_gas: ~2379962)\n[PASS] private_payout_anonymizer::tests::test_private_spend_anonymizer::test_insufficient_balance_panics (l1_gas: ~0, l1_data_gas: ~672, l2_gas: ~1427012)\n[PASS] private_payout_anonymizer::tests::test_private_spend_anonymizer::test_zero_recipient_panics (l1_gas: ~0, l1_data_gas: ~864, l2_gas: ~1627072)\n[PASS] private_payout_anonymizer::tests::test_private_spend_anonymizer::test_pays_recipient_and_returns_change (l1_gas: ~0, l1_data_gas: ~960, l2_gas: ~2397392)\n[PASS] private_payout_anonymizer::tests::test_programmable_spend_anonymizer::test_empty_spend_panics (l1_gas: ~0, l1_data_gas: ~768, l2_gas: ~1465642)\n[PASS] private_payout_anonymizer::tests::test_programmable_spend_anonymizer::test_pays_multiple_recipients_and_returns_change (l1_gas: ~0, l1_data_gas: ~1152, l2_gas: ~3736662)\nTests: 22 passed, 0 failed, 0 ignored, 0 filtered out"
+        }
+      ]
+    },
+    {
+      "id": "F03",
+      "title": "TS unit suite green",
+      "priority": "high",
+      "tags": [
+        "hackathon"
+      ],
+      "blocked": null,
+      "notes": [],
+      "criteria": [
+        {
+          "kind": "auto",
+          "name": "ts",
+          "cmd": "npm test -- --run",
+          "last_run": "2026-08-26T02:39:55+00:00",
+          "last_exit": 0,
+          "duration_ms": 1993,
+          "output_tail": " \u2713 tests/payment-request.test.ts (18 tests) 19ms\n \u2713 tests/classify.test.ts (8 tests) 5ms\n \u2713 tests/batch-parse.test.ts (13 tests) 8ms\n \u2713 tests/history.test.ts (5 tests) 3ms\n Test Files  8 passed (8)\n      Tests  76 passed (76)\n   Start at  08:09:54\n   Duration  976ms (transform 478ms, setup 0ms, collect 1.79s, tests 161ms, environment 1ms, prepare 774ms)"
+        }
+      ]
+    },
+    {
+      "id": "F04",
+      "title": "Typecheck + production build clean",
+      "priority": "high",
+      "tags": [
+        "hackathon"
+      ],
+      "blocked": null,
+      "notes": [],
+      "criteria": [
+        {
+          "kind": "auto",
+          "name": "build",
+          "cmd": "npx tsc --noEmit && npm run build",
+          "last_run": "2026-08-26T02:40:30+00:00",
+          "last_exit": 0,
+          "duration_ms": 34318,
+          "output_tail": "\u251c \u25cb /_not-found\n\u251c \u0192 /api/avnu/fee\n\u251c \u0192 /api/avnu/status\n\u2514 \u0192 /api/avnu/submit\n\u25cb  (Static)   prerendered as static content\n\u0192  (Dynamic)  server-rendered on demand\n\u26a0 Warning: Next.js ignored package-lock.json in /Users/kamal because it is outside the current Git repository (/Users/kamal/Desktop/neobank).\n To use this directory, set `outputFileTracingRoot` in your Next.js config."
+        }
+      ]
+    },
+    {
+      "id": "F05",
+      "title": "Programmable spend: pay + position + reshield in one privacy_invoke",
+      "priority": "high",
+      "tags": [
+        "hackathon"
+      ],
+      "blocked": null,
+      "notes": [],
+      "criteria": [
+        {
+          "kind": "auto",
+          "name": "spend",
+          "cmd": "cd contracts && snforge test programmable",
+          "last_run": "2026-08-26T05:15:02+00:00",
+          "last_exit": 0,
+          "duration_ms": 133257,
+          "output_tail": "[PASS] private_payout_anonymizer::tests::test_programmable_spend_anonymizer::test_length_mismatch_panics (l1_gas: ~0, l1_data_gas: ~768, l2_gas: ~1480102)\n[PASS] private_payout_anonymizer::tests::test_programmable_spend_anonymizer::test_change_too_large_panics (l1_gas: ~0, l1_data_gas: ~960, l2_gas: ~2400432)\n[PASS] private_payout_anonymizer::tests::test_programmable_spend_anonymizer::test_position_and_payout_in_one_invoke (l1_gas: ~0, l1_data_gas: ~1440, l2_gas: ~4555962)\n[PASS] private_payout_anonymizer::tests::test_programmable_spend_anonymizer::test_zero_recipient_panics (l1_gas: ~0, l1_data_gas: ~960, l2_gas: ~1908192)\n[PASS] private_payout_anonymizer::tests::test_programmable_spend_anonymizer::test_zero_vault_is_rejected_at_config_time (l1_gas: ~0, l1_data_gas: ~960, l2_gas: ~1720112)\n[PASS] private_payout_anonymizer::tests::test_programmable_spend_anonymizer::test_total_exceeding_funded_panics (l1_gas: ~0, l1_data_gas: ~960, l2_gas: ~1907382)\n[PASS] private_payout_anonymizer::tests::test_programmable_spend_anonymizer::test_zero_amount_leg_panics (l1_gas: ~0, l1_data_gas: ~960, l2_gas: ~1898252)\nTests: 12 passed, 0 failed, 0 ignored, 10 filtered out"
+        }
+      ]
+    },
+    {
+      "id": "F06",
+      "title": "Sepolia dress rehearsal: shield, private send, programmable spend all executed",
+      "priority": "high",
+      "tags": [
+        "hackathon"
+      ],
+      "blocked": null,
+      "notes": [
+        {
+          "ts": "2026-08-25T20:03:01+00:00",
+          "text": "Replaces doubt with evidence; makes the mainnet run mechanical"
+        }
+      ],
+      "criteria": [
+        {
+          "kind": "auto",
+          "name": "rehearsal",
+          "cmd": "npm run verify:claim -- --network sepolia",
+          "last_run": "2026-08-26T02:40:30+00:00",
+          "last_exit": 1,
+          "duration_ms": 528,
+          "output_tail": "> neobank@0.1.0 verify:claim\n> node scripts/verify-strk20-claim.mjs --network sepolia\n  error: No such file: sepolia"
+        }
+      ]
+    },
+    {
+      "id": "F07",
+      "title": "Stale page.tsx issuer copy removed",
+      "priority": "med",
+      "tags": [
+        "hackathon"
+      ],
+      "blocked": null,
+      "notes": [],
+      "criteria": [
+        {
+          "kind": "auto",
+          "name": "copy",
+          "cmd": "! grep -q 'take it to an issuer' src/app/page.tsx",
+          "last_run": "2026-08-26T02:40:30+00:00",
+          "last_exit": 0,
+          "duration_ms": 40,
+          "output_tail": ""
+        }
+      ]
+    },
+    {
+      "id": "F08",
+      "title": "Registry row upgraded: three verified txs + deployed contracts listed",
+      "priority": "med",
+      "tags": [
+        "hackathon"
+      ],
+      "blocked": null,
+      "notes": [],
+      "criteria": [
+        {
+          "kind": "auto",
+          "name": "registry",
+          "cmd": "node scripts/check-submission.mjs",
+          "last_run": "2026-08-26T02:40:30+00:00",
+          "last_exit": 1,
+          "duration_ms": 95,
+          "output_tail": "  Value : \"https://neobank-six.vercel.app\"\nQualifying Pool Transactions:\n  Total transactions  : 3\n  Known non-pool hashes: 1\n  Qualifying pool txs : 2 / 3\nRESULT: FAIL\n  2 qualifying pool txs: 2/3 - tx 0x02cbfcceac813b17696710fd8f2e52b603e4ba6dabd87e774d1840d20b21a735 emitted NO pool event so the real qualifying count is 2\n  contracts array is empty"
+        }
+      ]
+    },
+    {
+      "id": "F09",
+      "title": "Demo video recorded and linked in registry row",
+      "priority": "high",
+      "tags": [
+        "hackathon"
+      ],
+      "blocked": null,
+      "notes": [],
+      "criteria": [
+        {
+          "kind": "manual",
+          "name": "video-file-and-url"
+        }
+      ]
+    }
+  ],
+  "customers": [],
+  "history": [
+    {
+      "ts": "2026-08-25T20:05:46+00:00",
+      "checked": 1,
+      "failed_criteria": 0
+    },
+    {
+      "ts": "2026-08-26T02:40:30+00:00",
+      "checked": 9,
+      "failed_criteria": 4
+    },
+    {
+      "ts": "2026-08-26T05:09:03+00:00",
+      "checked": 1,
+      "failed_criteria": 1
+    },
+    {
+      "ts": "2026-08-26T05:15:02+00:00",
+      "checked": 1,
+      "failed_criteria": 0
+    }
+  ],
+  "updated": "2026-08-26T05:15:02+00:00"
+}

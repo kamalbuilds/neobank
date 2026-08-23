@@ -27,6 +27,7 @@ name = "private_payout_anonymizer_unittest"
 build-external-contracts = [
     "private_payout_anonymizer::test_utils_contracts::mock_erc20::MockERC20",
     "private_payout_anonymizer::test_utils_contracts::mock_erc20::MockERC20FailingTransfer",
+    "private_payout_anonymizer::test_utils_contracts::mock_vault::MockVault",
 ]
 
 [scripts]
@@ -35,5 +36,6 @@ test = "snforge test"
 [profile.dev.cairo]
 unstable-add-statements-functions-debug-info = true
 unstable-add-statements-code-locations-debug-info = true
+unstable-features = ["safe_dispatcher"]
 inlining-strategy = "avoid"
 panic-backtrace = true
