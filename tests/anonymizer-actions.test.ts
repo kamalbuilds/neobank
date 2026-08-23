@@ -40,51 +40,87 @@ describe("buildPayoutActions", () => {
 });
 
 describe("buildProgrammableSpendActions", () => {
+  const FUNDED = 5n * 10n ** 18n;
   const actions = buildProgrammableSpendActions({
     anonymizer: ANON,
     token: TOKEN,
-    amount: 5n * 10n ** 18n,
-    recipient: TO,
+    funded: FUNDED,
+    positionAmount: 10n ** 18n,
+    legs: [
+      { recipient: TO, amount: 2n * 10n ** 18n },
+      { recipient: ME, amount: 500n * 10n ** 15n },
+    ],
     changeRecipient: ME,
+    extraCalldataTail: ["0x7", "0x8"],
   });
 
   it("orders the legs withdraw, open-note transfer, invoke", () => {
     expect(actions.map((a) => a.type)).toEqual(["withdraw", "transfer", "invoke"]);
   });
 
+  it("funds the contract with exactly the funded amount", () => {
+    const withdraw = actions[0] as any;
+    expect(BigInt(withdraw.token)).toBe(BigInt(TOKEN));
+    expect(BigInt(withdraw.amount)).toBe(FUNDED);
+    expect(BigInt(withdraw.recipient)).toBe(BigInt(ANON));
+  });
+
   it("keeps OPEN a literal string so the wallet can substitute it", () => {
     const transfer = actions[1] as any;
     expect(transfer.amount).toBe("OPEN");
     expect(transfer.amount).not.toMatch(/^0x/);
+    expect(BigInt(transfer.recipient)).toBe(BigInt(ME));
   });
 
-  it("keeps the pool and note placeholders literal, never hex-normalised", () => {
+  it("serialises the full Cairo signature: u256s split, spans length-prefixed", () => {
     const calldata = (actions[2] as any).calldata as string[];
-    expect(calldata).toContain("${poolAddress}");
-    expect(calldata).toContain("${openNoteIds[0]}");
-    for (const placeholder of ["${poolAddress}", "${openNoteIds[0]}"]) {
-      expect(calldata.find((c) => c === placeholder)).toBeDefined();
-    }
-  });
-
-  it("hex-normalises the real token, recipient and amount", () => {
-    const calldata = (actions[2] as any).calldata as string[];
-    expect(calldata[0]).toMatch(/^0x/);
+    // token
     expect(BigInt(calldata[0])).toBe(BigInt(TOKEN));
-    expect(BigInt(calldata[1])).toBe(BigInt(TO));
-    expect(BigInt(calldata[2])).toBe(5n * 10n ** 18n);
+    // funded u256 (fits in low felt)
+    expect(BigInt(calldata[1])).toBe(FUNDED);
+    expect(BigInt(calldata[2])).toBe(0n);
+    // positionAmount u256
+    expect(BigInt(calldata[3])).toBe(10n ** 18n);
+    expect(BigInt(calldata[4])).toBe(0n);
+    // recipients span: len, r1, r2
+    expect(BigInt(calldata[5])).toBe(2n);
+    expect(BigInt(calldata[6])).toBe(BigInt(TO));
+    expect(BigInt(calldata[7])).toBe(BigInt(ME));
+    // amounts span: len, a1.low, a1.high, a2.low, a2.high
+    expect(BigInt(calldata[8])).toBe(2n);
+    expect(BigInt(calldata[9])).toBe(2n * 10n ** 18n);
+    expect(BigInt(calldata[11])).toBe(500n * 10n ** 15n);
+    // note id placeholder stays literal for the wallet to substitute
+    expect(calldata[13]).toBe("\${openNoteIds[0]}");
+    // tail appended after the standard arguments
+    expect(calldata.slice(-2)).toEqual(["0x7", "0x8"]);
   });
 
-  it("appends extra calldata after the standard arguments", () => {
-    const withExtra = buildProgrammableSpendActions({
+  it("splits amounts above the u128 boundary into the high felt", () => {
+    const huge = 1n << 130n; // needs the high felt
+    const withHuge = buildProgrammableSpendActions({
       anonymizer: ANON,
       token: TOKEN,
-      amount: 1n,
-      recipient: TO,
+      funded: huge + 1n,
+      legs: [{ recipient: TO, amount: 1n }],
       changeRecipient: ME,
-      extraCalldata: ["0x7", "0x8"],
     });
-    const calldata = (withExtra[2] as any).calldata as string[];
-    expect(calldata.slice(-2)).toEqual(["0x7", "0x8"]);
+    const calldata = (withHuge[2] as any).calldata as string[];
+    // funded = 2^130 + 1 -> low felt carries the +1, high felt carries 2^130 / 2^128
+    expect(BigInt(calldata[1])).toBe((huge + 1n) & ((1n << 128n) - 1n));
+    expect(BigInt(calldata[2])).toBe(huge >> 128n);
+  });
+
+  it("rejects zero funded and empty spends", () => {
+    expect(() =>
+      buildProgrammableSpendActions({
+        anonymizer: ANON, token: TOKEN, funded: 0n, legs: [{ recipient: TO, amount: 1n }], changeRecipient: ME,
+      }),
+    ).toThrow();
+    expect(() =>
+      buildProgrammableSpendActions({
+        anonymizer: ANON, token: TOKEN, funded: 100n, legs: [], changeRecipient: ME,
+      }),
+    ).toThrow();
   });
 });

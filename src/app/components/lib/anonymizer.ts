@@ -53,31 +53,63 @@ export function buildPayoutActions(p: PayoutInvoke): WALLET_API.STRK20_ACTION[] 
   ] as WALLET_API.STRK20_ACTION[];
 }
 
-/** A round trip: pay someone, and take the remainder back as a fresh note. */
-export interface ProgrammableSpendInvoke extends PayoutInvoke {
-  /** Where the change note lands. The connected account. */
-  changeRecipient: string;
-  /** Extra felts appended after the standard leading arguments. */
-  extraCalldata?: string[];
+/** A payout leg inside a programmable spend. */
+export interface SpendLeg {
+  /** Final recipient, paid by the contract. */
+  recipient: string;
+  /** Base units. */
+  amount: bigint;
 }
 
 /**
  * Actions for a spend that returns change to the pool in the same call.
+ *
+ * Targets our deployed ProgrammableSpendAnonymizer:
+ * `privacy_invoke(token, funded:u256, position_amount:u256, recipients:Span, amounts:Span, note_id)`.
+ * Every felt is spelled out because the wallet does not serialise spans or
+ * u256s for us. `funded` MUST equal the withdraw amount below - the contract
+ * asserts legs + position fit inside it.
  *
  * The helper must return a Span<OpenNoteDeposit> naming the open note created
  * by the transfer below, or the pool rejects the transaction with
  * UNDEPOSITED_OPEN_NOTES: every open note created in a call has to be filled
  * exactly once before it can finalise.
  */
+export interface ProgrammableSpendInvoke {
+  /** Our deployed ProgrammableSpendAnonymizer. */
+  anonymizer: string;
+  token: string;
+  /** Total withdrawn from the pool into the contract for this call. Base units. */
+  funded: bigint;
+  /** Optional deposit into the allowlisted position vault, taken from `funded`. */
+  positionAmount?: bigint;
+  /** Payout legs, executed in order after the position. */
+  legs: SpendLeg[];
+  /** Where the change note lands. The connected account. */
+  changeRecipient: string;
+  /** Extra felts appended after the standard arguments. */
+  extraCalldataTail?: string[];
+}
+
+/** Splits a bigint into the two felts a Cairo u256 serialises as. */
+function u256Felts(value: bigint): [string, string] {
+  const MASK = (1n << 128n) - 1n;
+  return [num.toHex(value & MASK), num.toHex(value >> 128n)];
+}
+
 export function buildProgrammableSpendActions(
   p: ProgrammableSpendInvoke,
 ): WALLET_API.STRK20_ACTION[] {
-  if (p.amount <= 0n) throw new Error("Spend amount must be greater than zero.");
+  if (p.funded <= 0n) throw new Error("Spend funded amount must be greater than zero.");
+  if (p.legs.length === 0 && !(p.positionAmount ?? 0n)) {
+    throw new Error("A spend needs at least one payout leg or a position amount.");
+  }
   const anonymizer = num.toHex(p.anonymizer);
   const token = num.toHex(p.token);
 
   return [
-    { type: "withdraw", token, amount: num.toHex(p.amount), recipient: anonymizer },
+    // Fund the contract with exactly what `funded` claims. This is the leg people miss.
+    { type: "withdraw", token, amount: num.toHex(p.funded), recipient: anonymizer },
     // Creates the open note the helper fills with the change. "OPEN" is a
     // literal the wallet substitutes; never hex-normalise it.
     { type: "transfer", token, amount: "OPEN", recipient: num.toHex(p.changeRecipient) },
@@ -86,12 +118,15 @@ export function buildProgrammableSpendActions(
       contract: anonymizer,
       calldata: [
         token,
-        num.toHex(p.recipient),
-        num.toHex(p.amount),
+        ...u256Felts(p.funded),
+        ...u256Felts(p.positionAmount ?? 0n),
+        num.toHex(p.legs.length),
+        ...p.legs.map((leg) => num.toHex(leg.recipient)),
+        num.toHex(p.legs.length),
+        ...p.legs.flatMap((leg) => u256Felts(leg.amount)),
         // Substituted by the wallet during assembly.
-        "${poolAddress}",
         "${openNoteIds[0]}",
-        ...(p.extraCalldata ?? []),
+        ...(p.extraCalldataTail ?? []),
       ],
     },
   ] as WALLET_API.STRK20_ACTION[];
