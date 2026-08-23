@@ -163,9 +163,11 @@ export default function Home() {
         </h1>
         <p className={styles.heroSub}>
           Shield incoming STRK or USDC and send privately between registered Ready wallets. The pool
-          hides balances and transfers onchain, not what happens after you unshield. When you need to
-          spend, unshield to a public USDC balance and take it to an issuer, same as cashing out any
-          onchain asset today.
+          hides balances and transfers onchain, not what happens after you unshield. Spending works
+          today, inside the pool. Pay a private payment request, or anyone who can receive a
+          Starknet private transfer, from your shielded notes. It does not reach merchants that
+          only accept card payments. Unshield to public USDC when a destination needs a public
+          balance.
         </p>
       </header>
 
