@@ -25,9 +25,13 @@
   },
   "devDependencies": {
     "@starknet-io/types-js": "0.10.3",
+    "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "24.10.2",
     "@types/qrcode": "^1.5.5",
     "@types/react": "19.2.7",
+    "autoprefixer": "^10.5.4",
+    "postcss": "^8.5.26",
+    "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3",
     "vitest": "^3.2.7"
   },
