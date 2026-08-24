@@ -4,7 +4,30 @@
     "0x059eb6c1bdddd048006f372b4db6602560dbfc722536b94d59ece8abb865586e",
     "0x02cbfcceac813b17696710fd8f2e52b603e4ba6dabd87e774d1840d20b21a735"
   ],
-  "contracts": [],
+  "contracts": [
+    {
+      "name": "PrivatePayoutAnonymizer",
+      "class_hash": "0x0349208109fe1f795a2c516acec8b5c1184de828f289a53fb1ee1873d56d927f",
+      "address": "0x042fd2df34df378e33c2c0cbc3e0183974b2ca69c0d222da2326a5bfd64ec2c3",
+      "network": "sepolia",
+      "tx": "0x01bf45bd282dc925a289989376ab63fda6a4557e4977581f44478beb1bda06a6"
+    },
+    {
+      "name": "PrivateSpendAnonymizer",
+      "class_hash": "0x0033ffec44395cf333bb33ead00280e58e9dfa2cd543cc5a349461860de673d8",
+      "address": "0x054d94bbe6640e1258a1961ab1226fcb7cb0a9bfdcd72dab8857195e552dc334",
+      "network": "sepolia",
+      "tx": "0x054621813bf856f9b4386d46de0b58bf87ec9da5810b3c678ff2b7de011abed5"
+    },
+    {
+      "name": "ProgrammableSpendAnonymizer",
+      "class_hash": "0x07526b460dad7f032c1ff2a845041f0faabb9cac5075f8dc61374d14b0f75691",
+      "address": "0x0604a76fd7f50d4856cadbc1b6c45908d3be856fde267435124b7a74a7dcbbb0",
+      "network": "sepolia",
+      "tx": "0x06098a810c73c0a7fe8fc295d0cba1d9913c75f2fc5c1095ab9acd844e338ddf",
+      "owner": "0x071c62dfb692c3821a9ef120919f388b4559cb2d414c7378da62e6bf7f4f494d"
+    }
+  ],
   "demo_url": "https://neobank-six.vercel.app",
   "notes": {
     "0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193": "first_shield. 0.1 STRK shielded, 6 STRK pool fee. Same txs a first Shield in this app now submits: DEPLOY_ACCOUNT then strk20 deposit.",
