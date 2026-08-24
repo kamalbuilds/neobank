@@ -91,14 +91,14 @@ body {
   overflow-x: hidden;
 }
 
-/* Redesigned app is committed to a single light "aurora" theme. */
+/* Redesigned app is committed to a single dark "private banking" theme. */
 html {
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 body {
-  color: #0b0a14;
-  background: #fbf7fd;
+  color: #e9ecf4;
+  background: #06070b;
 }
 
 a {
