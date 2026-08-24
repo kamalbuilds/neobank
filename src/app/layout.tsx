@@ -1,9 +1,10 @@
 import type { Metadata } from 'next'
-import { Inter, Space_Mono } from 'next/font/google'
+import { Inter, Space_Mono, Space_Grotesk } from 'next/font/google'
 import './globals.css'
 
-// Clean neutral grotesque for everything (matches the Uniswap reference); a mono
-// only for hex addresses / hashes.
+// Faces picked on purpose for the Vault design system (see .uicraft-read.json):
+// Space Grotesk carries display type, Inter is the deliberate body face, Space
+// Mono only for hex addresses / hashes.
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-body',
@@ -13,6 +14,11 @@ const spaceMono = Space_Mono({
   subsets: ['latin'],
   weight: ['400', '700'],
   variable: '--font-mono-ui',
+  display: 'swap',
+})
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-display',
   display: 'swap',
 })
 
@@ -30,7 +36,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${spaceMono.variable}`}
+      className={`${inter.variable} ${spaceMono.variable} ${spaceGrotesk.variable}`}
       suppressHydrationWarning
     >
       <body>{children}</body>
