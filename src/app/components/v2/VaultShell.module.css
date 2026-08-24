@@ -345,11 +345,3 @@
     font-size: clamp(32px, 8vw, 44px);
   }
 }
-
-/* Reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation: none !important;
-    transition: none !important;
-  }
-}
