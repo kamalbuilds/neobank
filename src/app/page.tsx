@@ -233,6 +233,14 @@ export default function Home() {
         >
           Canonical pool
         </a>
+        <span className={styles.footerDot}>·</span>
+        <a
+          href="/receipt/0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Proof of payment
+        </a>
       </footer>
     </div>
   );
