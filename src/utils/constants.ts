@@ -1,4 +1,5 @@
 import { RpcProvider, constants as SNconstants } from "starknet";
+import { withRetry } from "@/app/components/lib/rpcRetry";
 
 // ─── Networks ────────────────────────────────────────────────────────────
 
@@ -132,11 +133,11 @@ export async function getPublicBalance(
   account: string
 ): Promise<bigint> {
   const provider = providerFor(network);
-  const result = await provider.callContract({
+  const result = await withRetry(() => provider.callContract({
     contractAddress: token,
     entrypoint: "balanceOf",
     calldata: [account],
-  });
+  }));
   const low = BigInt(result[0]);
   const high = BigInt(result[1] ?? "0x0");
   return low + (high << 128n);
