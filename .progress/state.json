@@ -24,10 +24,10 @@
           "kind": "auto",
           "name": "verify",
           "cmd": "npm run verify:claim",
-          "last_run": "2026-08-26T02:39:44+00:00",
+          "last_run": "2026-08-26T05:33:23+00:00",
           "last_exit": 1,
-          "duration_ms": 2748,
-          "output_tail": "  PASS  0x059eb6c1...586e  INVOKE SUCCEEDED/ACCEPTED_ON_L1\n        events 15, from pool 3\n  FAIL  0x02cbfcce...a735  DEPLOY_ACCOUNT SUCCEEDED/ACCEPTED_ON_L1\n        events 4, from pool 0  <- succeeded but emitted no STRK20 pool event (DEPLOY_ACCOUNT)\n  qualifying transactions : 2 of 3 required\n  demo_video              : MISSING (required to be scored)\n  demo_url                : present\n  NOT SCOREABLE: fix the items marked above before the deadline."
+          "duration_ms": 2898,
+          "output_tail": "  PASS  0x059eb6c1...586e  INVOKE SUCCEEDED/ACCEPTED_ON_L2\n        events 15, from pool 3\n  FAIL  0x02cbfcce...a735  DEPLOY_ACCOUNT SUCCEEDED/ACCEPTED_ON_L1\n        events 4, from pool 0  <- succeeded but emitted no STRK20 pool event (DEPLOY_ACCOUNT)\n  qualifying transactions : 2 of 3 required\n  demo_video              : MISSING (required to be scored)\n  demo_url                : present\n  NOT SCOREABLE: fix the items marked above before the deadline."
         }
       ]
     },
@@ -45,10 +45,10 @@
           "kind": "auto",
           "name": "cairo",
           "cmd": "cd contracts && scarb build && snforge test",
-          "last_run": "2026-08-26T02:39:53+00:00",
+          "last_run": "2026-08-26T05:33:51+00:00",
           "last_exit": 0,
-          "duration_ms": 9807,
-          "output_tail": "[PASS] private_payout_anonymizer::tests::test_programmable_spend_anonymizer::test_position_and_payout_in_one_invoke (l1_gas: ~0, l1_data_gas: ~1440, l2_gas: ~4555962)\n[PASS] private_payout_anonymizer::tests::test_private_spend_anonymizer::test_full_spend_still_returns_a_zero_change_note (l1_gas: ~0, l1_data_gas: ~864, l2_gas: ~2379962)\n[PASS] private_payout_anonymizer::tests::test_private_spend_anonymizer::test_insufficient_balance_panics (l1_gas: ~0, l1_data_gas: ~672, l2_gas: ~1427012)\n[PASS] private_payout_anonymizer::tests::test_private_spend_anonymizer::test_zero_recipient_panics (l1_gas: ~0, l1_data_gas: ~864, l2_gas: ~1627072)\n[PASS] private_payout_anonymizer::tests::test_private_spend_anonymizer::test_pays_recipient_and_returns_change (l1_gas: ~0, l1_data_gas: ~960, l2_gas: ~2397392)\n[PASS] private_payout_anonymizer::tests::test_programmable_spend_anonymizer::test_empty_spend_panics (l1_gas: ~0, l1_data_gas: ~768, l2_gas: ~1465642)\n[PASS] private_payout_anonymizer::tests::test_programmable_spend_anonymizer::test_pays_multiple_recipients_and_returns_change (l1_gas: ~0, l1_data_gas: ~1152, l2_gas: ~3736662)\nTests: 22 passed, 0 failed, 0 ignored, 0 filtered out"
+          "duration_ms": 27672,
+          "output_tail": "[PASS] private_payout_anonymizer::tests::test_programmable_spend_anonymizer::test_full_spend_returns_zero_change_note (l1_gas: ~0, l1_data_gas: ~960, l2_gas: ~2682942)\n[PASS] private_payout_anonymizer::tests::test_programmable_spend_anonymizer::test_position_without_vault_panics (l1_gas: ~0, l1_data_gas: ~960, l2_gas: ~1921632)\n[PASS] private_payout_anonymizer::tests::test_programmable_spend_anonymizer::test_zero_amount_leg_panics (l1_gas: ~0, l1_data_gas: ~960, l2_gas: ~1898252)\n[PASS] private_payout_anonymizer::tests::test_programmable_spend_anonymizer::test_total_exceeding_funded_panics (l1_gas: ~0, l1_data_gas: ~960, l2_gas: ~1907382)\n[PASS] private_payout_anonymizer::tests::test_private_spend_anonymizer::test_pays_recipient_and_returns_change (l1_gas: ~0, l1_data_gas: ~960, l2_gas: ~2397392)\n[PASS] private_payout_anonymizer::tests::test_private_spend_anonymizer::test_zero_note_id_panics (l1_gas: ~0, l1_data_gas: ~864, l2_gas: ~1626772)\n[PASS] private_payout_anonymizer::tests::test_private_spend_anonymizer::test_pay_exceeding_funded_panics (l1_gas: ~0, l1_data_gas: ~864, l2_gas: ~1653262)\nTests: 22 passed, 0 failed, 0 ignored, 0 filtered out"
         }
       ]
     },
@@ -66,10 +66,10 @@
           "kind": "auto",
           "name": "ts",
           "cmd": "npm test -- --run",
-          "last_run": "2026-08-26T02:39:55+00:00",
-          "last_exit": 0,
-          "duration_ms": 1993,
-          "output_tail": " \u2713 tests/payment-request.test.ts (18 tests) 19ms\n \u2713 tests/classify.test.ts (8 tests) 5ms\n \u2713 tests/batch-parse.test.ts (13 tests) 8ms\n \u2713 tests/history.test.ts (5 tests) 3ms\n Test Files  8 passed (8)\n      Tests  76 passed (76)\n   Start at  08:09:54\n   Duration  976ms (transform 478ms, setup 0ms, collect 1.79s, tests 161ms, environment 1ms, prepare 774ms)"
+          "last_run": "2026-08-26T05:34:40+00:00",
+          "last_exit": 1,
+          "duration_ms": 48574,
+          "output_tail": " \u276f tests/payment-request.test.ts:118:3\n    116|   });\n    117| \n    118|   it(\"never throws across random-ish byte mutations of the tail\", () =\u2026\n       |   ^\n    119|     const payload = encodePaymentRequest(req());\n    120|     for (let i = Math.max(0, payload.length - 8); i < payload.length; \u2026\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af[1/1]\u23af"
         }
       ]
     },
@@ -87,9 +87,9 @@
           "kind": "auto",
           "name": "build",
           "cmd": "npx tsc --noEmit && npm run build",
-          "last_run": "2026-08-26T02:40:30+00:00",
+          "last_run": "2026-08-26T05:38:24+00:00",
           "last_exit": 0,
-          "duration_ms": 34318,
+          "duration_ms": 223853,
           "output_tail": "\u251c \u25cb /_not-found\n\u251c \u0192 /api/avnu/fee\n\u251c \u0192 /api/avnu/status\n\u2514 \u0192 /api/avnu/submit\n\u25cb  (Static)   prerendered as static content\n\u0192  (Dynamic)  server-rendered on demand\n\u26a0 Warning: Next.js ignored package-lock.json in /Users/kamal because it is outside the current Git repository (/Users/kamal/Desktop/neobank).\n To use this directory, set `outputFileTracingRoot` in your Next.js config."
         }
       ]
@@ -108,10 +108,10 @@
           "kind": "auto",
           "name": "spend",
           "cmd": "cd contracts && snforge test programmable",
-          "last_run": "2026-08-26T05:15:02+00:00",
+          "last_run": "2026-08-26T05:38:29+00:00",
           "last_exit": 0,
-          "duration_ms": 133257,
-          "output_tail": "[PASS] private_payout_anonymizer::tests::test_programmable_spend_anonymizer::test_length_mismatch_panics (l1_gas: ~0, l1_data_gas: ~768, l2_gas: ~1480102)\n[PASS] private_payout_anonymizer::tests::test_programmable_spend_anonymizer::test_change_too_large_panics (l1_gas: ~0, l1_data_gas: ~960, l2_gas: ~2400432)\n[PASS] private_payout_anonymizer::tests::test_programmable_spend_anonymizer::test_position_and_payout_in_one_invoke (l1_gas: ~0, l1_data_gas: ~1440, l2_gas: ~4555962)\n[PASS] private_payout_anonymizer::tests::test_programmable_spend_anonymizer::test_zero_recipient_panics (l1_gas: ~0, l1_data_gas: ~960, l2_gas: ~1908192)\n[PASS] private_payout_anonymizer::tests::test_programmable_spend_anonymizer::test_zero_vault_is_rejected_at_config_time (l1_gas: ~0, l1_data_gas: ~960, l2_gas: ~1720112)\n[PASS] private_payout_anonymizer::tests::test_programmable_spend_anonymizer::test_total_exceeding_funded_panics (l1_gas: ~0, l1_data_gas: ~960, l2_gas: ~1907382)\n[PASS] private_payout_anonymizer::tests::test_programmable_spend_anonymizer::test_zero_amount_leg_panics (l1_gas: ~0, l1_data_gas: ~960, l2_gas: ~1898252)\nTests: 12 passed, 0 failed, 0 ignored, 10 filtered out"
+          "duration_ms": 5078,
+          "output_tail": "[PASS] private_payout_anonymizer::tests::test_programmable_spend_anonymizer::test_non_owner_cannot_set_vault (l1_gas: ~0, l1_data_gas: ~864, l2_gas: ~1418392)\n[PASS] private_payout_anonymizer::tests::test_programmable_spend_anonymizer::test_zero_vault_is_rejected_at_config_time (l1_gas: ~0, l1_data_gas: ~960, l2_gas: ~1720112)\n[PASS] private_payout_anonymizer::tests::test_programmable_spend_anonymizer::test_empty_spend_panics (l1_gas: ~0, l1_data_gas: ~768, l2_gas: ~1465642)\n[PASS] private_payout_anonymizer::tests::test_programmable_spend_anonymizer::test_pays_multiple_recipients_and_returns_change (l1_gas: ~0, l1_data_gas: ~1152, l2_gas: ~3736662)\n[PASS] private_payout_anonymizer::tests::test_programmable_spend_anonymizer::test_change_too_large_panics (l1_gas: ~0, l1_data_gas: ~960, l2_gas: ~2400432)\n[PASS] private_payout_anonymizer::tests::test_programmable_spend_anonymizer::test_zero_recipient_panics (l1_gas: ~0, l1_data_gas: ~960, l2_gas: ~1908192)\n[PASS] private_payout_anonymizer::tests::test_programmable_spend_anonymizer::test_total_exceeding_funded_panics (l1_gas: ~0, l1_data_gas: ~960, l2_gas: ~1907382)\nTests: 12 passed, 0 failed, 0 ignored, 10 filtered out"
         }
       ]
     },
@@ -134,9 +134,9 @@
           "kind": "auto",
           "name": "rehearsal",
           "cmd": "npm run verify:claim -- --network sepolia",
-          "last_run": "2026-08-26T02:40:30+00:00",
+          "last_run": "2026-08-26T05:38:30+00:00",
           "last_exit": 1,
-          "duration_ms": 528,
+          "duration_ms": 1039,
           "output_tail": "> neobank@0.1.0 verify:claim\n> node scripts/verify-strk20-claim.mjs --network sepolia\n  error: No such file: sepolia"
         }
       ]
@@ -155,9 +155,9 @@
           "kind": "auto",
           "name": "copy",
           "cmd": "! grep -q 'take it to an issuer' src/app/page.tsx",
-          "last_run": "2026-08-26T02:40:30+00:00",
+          "last_run": "2026-08-26T05:38:30+00:00",
           "last_exit": 0,
-          "duration_ms": 40,
+          "duration_ms": 37,
           "output_tail": ""
         }
       ]
@@ -176,9 +176,9 @@
           "kind": "auto",
           "name": "registry",
           "cmd": "node scripts/check-submission.mjs",
-          "last_run": "2026-08-26T02:40:30+00:00",
+          "last_run": "2026-08-26T05:38:30+00:00",
           "last_exit": 1,
-          "duration_ms": 95,
+          "duration_ms": 160,
           "output_tail": "  Value : \"https://neobank-six.vercel.app\"\nQualifying Pool Transactions:\n  Total transactions  : 3\n  Known non-pool hashes: 1\n  Qualifying pool txs : 2 / 3\nRESULT: FAIL\n  2 qualifying pool txs: 2/3 - tx 0x02cbfcceac813b17696710fd8f2e52b603e4ba6dabd87e774d1840d20b21a735 emitted NO pool event so the real qualifying count is 2\n  contracts array is empty"
         }
       ]
@@ -221,7 +221,12 @@
       "ts": "2026-08-26T05:15:02+00:00",
       "checked": 1,
       "failed_criteria": 0
+    },
+    {
+      "ts": "2026-08-26T05:38:30+00:00",
+      "checked": 9,
+      "failed_criteria": 4
     }
   ],
-  "updated": "2026-08-26T05:15:02+00:00"
+  "updated": "2026-08-26T05:38:30+00:00"
 }
