@@ -10,8 +10,8 @@ export const NETWORKS: Record<NetworkKey, { label: string; chainId: string }> = 
   sepolia: { label: "Sepolia", chainId: SNconstants.StarknetChainId.SN_SEPOLIA },
 };
 
-// Mainnet is the sprint default. A connected wallet's own chainId overrides this.
-export const DEFAULT_NETWORK: NetworkKey = "mainnet";
+// Sepolia is the pre-wallet default. A connected wallet's own chainId overrides this.
+export const DEFAULT_NETWORK: NetworkKey = "sepolia";
 
 export function networkForChainId(chainId: string): NetworkKey | undefined {
   for (const key of Object.keys(NETWORKS) as NetworkKey[]) {
@@ -112,6 +112,31 @@ export function poolAddressFor(network: NetworkKey): string {
 
 /** @deprecated Use poolAddressFor(network). Kept so mainnet callers keep working. */
 export const STRK20_POOL_ADDRESS = STRK20_POOL_ADDRESSES.mainnet;
+
+// Our helpers are deployed on Sepolia for rehearsal. Keep mainnet explicitly
+// empty so a mainnet wallet can never invoke a testnet address by accident.
+export const ANONYMIZER_ADDRESSES = {
+  mainnet: {
+    privatePayout: null,
+    privateSpend: null,
+    programmableSpend: null,
+    cardSettlement: null,
+  },
+  sepolia: {
+    privatePayout: "0x042fd2df34df378e33c2c0cbc3e0183974b2ca69c0d222da2326a5bfd64ec2c3",
+    privateSpend: "0x054d94bbe6640e1258a1961ab1226fcb7cb0a9bfdcd72dab8857195e552dc334",
+    programmableSpend: "0x0604a76fd7f50d4856cadbc1b6c45908d3be856fde267435124b7a74a7dcbbb0",
+    cardSettlement: "0x074dcd5ee5e0fbfdcf25a7cbc3408711de19fccdf46e8f53c71d35e795f5390a",
+  },
+} as const satisfies Record<
+  NetworkKey,
+  {
+    privatePayout: string | null;
+    privateSpend: string | null;
+    programmableSpend: string | null;
+    cardSettlement: string | null;
+  }
+>;
 
 // Pool fee is charged per private operation, always in STRK, and is admin
 // settable (`set_fee_amount`) - read it at runtime, never hardcode a figure.
