@@ -153,7 +153,7 @@ export default function UnshieldPanel({ network }: { network: NetworkKey }) {
         </div>
         <input
           className={styles.subMono}
-          style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px", width: "100%", marginTop: 8, background: "#fff" }}
+          style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px", width: "100%", marginTop: 8 }}
           placeholder="Public destination (blank = this wallet)"
           value={recipient}
           onChange={(e) => setRecipient(e.target.value)}

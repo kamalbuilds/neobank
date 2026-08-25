@@ -63,7 +63,7 @@ export default function ReceivePanel() {
       return;
     }
     let cancelled = false;
-    QRCode.toDataURL(requestLink, { width: 240, margin: 1, color: { dark: "#0d0e0e", light: "#ffffff" } })
+    QRCode.toDataURL(requestLink, { width: 240, margin: 1, color: { dark: "#06070b", light: "#eaf0f8" } })
       .then((data) => {
         if (!cancelled) setQr(data);
       })
@@ -129,7 +129,7 @@ export default function ReceivePanel() {
         </div>
         <input
           className={styles.subMono}
-          style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px", width: "100%", marginTop: 8, background: "#fff" }}
+          style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px", width: "100%", marginTop: 8 }}
           placeholder="Label (optional, e.g. Invoice 42)"
           maxLength={60}
           value={memo}
@@ -137,7 +137,7 @@ export default function ReceivePanel() {
         />
         <select
           className={styles.subMono}
-          style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px", width: "100%", marginTop: 8, background: "#fff" }}
+          style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px", width: "100%", marginTop: 8 }}
           value={expiryChoice}
           onChange={(e) => setExpiryChoice(e.target.value)}
           aria-label="Request expiry"

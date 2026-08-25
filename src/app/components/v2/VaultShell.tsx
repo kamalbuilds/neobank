@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { useStoreWallet } from '../Wallet/walletContext';
+import SelectWallet from '../client/WalletHandle/SelectWallet';
 import ShieldPanel from '../Panels/ShieldPanel';
 import SpendPanel from '../Panels/SpendPanel';
 import SendPanel from '../Panels/SendPanel';
@@ -62,7 +64,7 @@ export function VaultShell() {
   ];
 
   return (
-    <div className="vault-bg min-h-screen text-[#eaf0f8] flex flex-col font-[family-name:var(--font-body)]">
+    <div className="vault-bg min-h-[100dvh] text-[#eaf0f8] flex flex-col font-[family-name:var(--font-body)]">
       <header className="sticky top-0 z-40 border-b border-white/[0.06] backdrop-blur-md">
         <div className="max-w-[1280px] mx-auto px-6 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -74,12 +76,15 @@ export function VaultShell() {
               {net}
             </span>
           </div>
-          {address ? (
-            <span className="inline-flex items-center gap-2 font-[family-name:var(--font-mono-ui)] text-[12.5px] text-[#eaf0f8] bg-white/[0.04] border border-white/[0.12] rounded-full px-3 py-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#34d399] shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-              {address.slice(0, 6)}…{address.slice(-4)}
-            </span>
-          ) : null}
+          <div className="flex items-center gap-2">
+            <Link
+              href="/card"
+              className="rounded-full border border-white/[0.1] bg-white/[0.03] px-3 py-2 text-[12px] font-semibold text-[#a3acbd] transition-colors hover:bg-white/[0.07] hover:text-[#eaf0f8]"
+            >
+              Private card
+            </Link>
+            <SelectWallet variant="nav" />
+          </div>
         </div>
       </header>
 
@@ -100,15 +105,15 @@ export function VaultShell() {
                   aria-pressed={revealed}
                   aria-label="Toggle shielded balance visibility"
                 >
-                  {revealed ? (shielded ?? '—') : '••••••'}
+                  {revealed ? (shielded ?? 'Unavailable') : '••••••'}
                 </span>
                 <button
-                  className="grid place-items-center w-9 h-9 rounded-full border border-white/[0.12] bg-white/[0.04] hover:bg-white/[0.09] transition-colors"
+                  className="h-9 rounded-full border border-white/[0.12] bg-white/[0.04] px-3 text-[11px] font-semibold text-[#eaf0f8] hover:bg-white/[0.09] transition-colors"
                   onClick={() => setRevealed((r) => !r)}
                   aria-label="Toggle shielded balance visibility"
                   aria-pressed={revealed}
                 >
-                  {revealed ? '🙈' : '👁'}
+                  {revealed ? 'Hide' : 'Show'}
                 </button>
               </div>
               <div className="mt-2.5 text-[13px] text-[#7a859c]">Shielded STRK{revealed ? '' : ' · hidden until you reveal'}</div>
@@ -118,7 +123,7 @@ export function VaultShell() {
           <div className="rounded-2xl border border-white/[0.07] bg-white/[0.028] backdrop-blur-xl p-5">
             <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7a859c]">Public gas</div>
             <div className="mt-1.5 font-[family-name:var(--font-mono-ui)] text-[16px] tabular-nums">
-              {publicGas ?? '—'} <span className="text-[#7a859c]">STRK</span>
+              {publicGas ?? 'Unavailable'} <span className="text-[#7a859c]">STRK</span>
             </div>
           </div>
 
@@ -140,15 +145,30 @@ export function VaultShell() {
             ))}
           </nav>
 
-          <div className="rounded-3xl border border-white/[0.07] bg-white/[0.028] backdrop-blur-xl p-6 min-h-[380px]">
-            {flow === 'shield' && <ShieldPanel network={net} />}
-            {flow === 'spend' && <SpendPanel network={net} />}
-            {flow === 'send' && <SendPanel network={net} />}
-            {flow === 'receive' && <ReceivePanel />}
-            {flow === 'unshield' && <UnshieldPanel network={net} />}
-            {flow === 'swap' && <SwapPanel network={net} />}
-            {flow === 'hop' && <HopPanel network={net} />}
-          </div>
+          {!myWalletAccount ? (
+            <div className="rounded-3xl border border-white/[0.07] bg-white/[0.028] backdrop-blur-xl p-8 min-h-[380px] flex flex-col items-center justify-center text-center gap-5">
+              <div className="max-w-sm">
+                <div className="font-[family-name:var(--font-display)] text-[22px] font-semibold text-[#eaf0f8]">
+                  Connect a wallet to begin
+                </div>
+                <p className="mt-2 text-[13.5px] leading-relaxed text-[#7a859c]">
+                  Connect Ready to shield {net === 'sepolia' ? 'test ' : ''}STRK or USDC and move value privately. Your
+                  first shield deploys and registers your account. Nothing is signed until you approve it in the wallet.
+                </p>
+              </div>
+              <SelectWallet variant="ctaBig" />
+            </div>
+          ) : (
+            <div className="rounded-3xl border border-white/[0.07] bg-white/[0.028] backdrop-blur-xl p-6 min-h-[380px]">
+              {flow === 'shield' && <ShieldPanel network={net} />}
+              {flow === 'spend' && <SpendPanel network={net} />}
+              {flow === 'send' && <SendPanel network={net} />}
+              {flow === 'receive' && <ReceivePanel />}
+              {flow === 'unshield' && <UnshieldPanel network={net} />}
+              {flow === 'swap' && <SwapPanel network={net} />}
+              {flow === 'hop' && <HopPanel network={net} />}
+            </div>
+          )}
 
           <div className="rounded-3xl border border-white/[0.07] bg-white/[0.028] backdrop-blur-xl p-6">
             <ActivityPanel network={net} />

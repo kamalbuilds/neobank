@@ -19,20 +19,39 @@
  */
 
 import { readFile } from "node:fs/promises";
-import { pathToFileURL } from "node:url";
+import { parseArgs } from "node:util";
 
-const POOL = "0x040337b1af3c663e86e333bab5a4b28da8d4652a15a69beee2b677776ffe812a";
-const RPC = process.env.STARKNET_RPC || "https://rpc.starknet.lava.build";
+const NETWORKS = {
+  mainnet: {
+    pool: "0x040337b1af3c663e86e333bab5a4b28da8d4652a15a69beee2b677776ffe812a",
+    rpc: process.env.STARKNET_RPC || "https://rpc.starknet.lava.build",
+  },
+  sepolia: {
+    pool: "0x0254a6b2997ef52e9f830ce1f543f6b29768295e8d17e2267d672c552cfe0d91",
+    rpc: "https://starknet-sepolia-rpc.publicnode.com",
+  },
+};
 const MIN_QUALIFYING = 3;
 const TIMEOUT_MS = 20_000;
 
-const args = process.argv.slice(2);
-const asJson = args.includes("--json");
-const repoIdx = args.indexOf("--repo");
-const repo = repoIdx === -1 ? null : args[repoIdx + 1];
-// Guard the -1 case: without --repo, repoIdx + 1 is 0 and would eat the path.
-const repoValueIdx = repoIdx === -1 ? -1 : repoIdx + 1;
-const filePath = args.filter((a, i) => !a.startsWith("--") && i !== repoValueIdx)[0] || "strk20.json";
+const { values, positionals } = parseArgs({
+  args: process.argv.slice(2),
+  options: {
+    json: { type: "boolean", default: false },
+    network: { type: "string", default: "mainnet" },
+    repo: { type: "string" },
+  },
+  allowPositionals: true,
+});
+if (!(values.network in NETWORKS)) {
+  throw new Error(`--network must be mainnet or sepolia, got "${values.network}"`);
+}
+const network = values.network;
+const { pool: POOL, rpc: RPC } = NETWORKS[network];
+const asJson = values.json;
+const repo = values.repo ?? null;
+const filePath = positionals[0] || "strk20.json";
+const deploymentCheck = network === "sepolia";
 
 /** Addresses come back with inconsistent zero padding, so compare as numbers. */
 const sameAddress = (a, b) => {
@@ -97,8 +116,18 @@ async function loadClaim() {
   }
 }
 
-export async function checkTransaction(hash) {
-  const row = { hash, type: null, execution: null, finality: null, events: 0, poolEvents: 0, pass: false, reason: "" };
+export async function checkTransaction(hash, expectedAddress) {
+  const row = {
+    hash,
+    type: null,
+    execution: null,
+    finality: null,
+    events: 0,
+    poolEvents: 0,
+    addressEvents: 0,
+    pass: false,
+    reason: "",
+  };
 
   if (typeof hash !== "string" || !/^0x[0-9a-fA-F]+$/.test(hash)) {
     row.reason = "not a hex transaction hash";
@@ -107,7 +136,7 @@ export async function checkTransaction(hash) {
 
   const { result, error } = await rpc("starknet_getTransactionReceipt", [hash]);
   if (error) {
-    row.reason = /not found|TXN_HASH_NOT_FOUND/i.test(error) ? "transaction not found on mainnet" : error;
+    row.reason = /not found|TXN_HASH_NOT_FOUND/i.test(error) ? `transaction not found on ${network}` : error;
     return row;
   }
 
@@ -118,9 +147,20 @@ export async function checkTransaction(hash) {
   const events = Array.isArray(result.events) ? result.events : [];
   row.events = events.length;
   row.poolEvents = events.filter((e) => sameAddress(e.from_address ?? "0x0", POOL)).length;
+  row.addressEvents = expectedAddress
+    ? events.filter((event) => event.data?.some((value) => sameAddress(value, expectedAddress))).length
+    : 0;
 
   if (row.execution !== "SUCCEEDED") {
     row.reason = `execution_status is ${row.execution ?? "unknown"}`;
+    return row;
+  }
+  if (expectedAddress) {
+    if (row.addressEvents === 0) {
+      row.reason = "succeeded but did not emit the claimed contract address";
+      return row;
+    }
+    row.pass = true;
     return row;
   }
   if (row.poolEvents === 0) {
@@ -149,23 +189,34 @@ async function main() {
   // quietly reading the hash out and pretending the submission is fine.
   const entries = Array.isArray(claim.transactions) ? claim.transactions : [];
   const objectForm = entries.filter((t) => t && typeof t !== "string").length;
-  const hashes = entries.map((t) => (typeof t === "string" ? t : t?.hash)).filter(Boolean);
+  const deployments = Array.isArray(claim.contracts)
+    ? claim.contracts.filter((contract) => contract?.network === network && contract?.tx)
+    : [];
+  const checks = deploymentCheck
+    ? deployments.map((contract) => ({ hash: contract.tx, expectedAddress: contract.address }))
+    : entries
+        .map((entry) => ({ hash: typeof entry === "string" ? entry : entry?.hash }))
+        .filter(({ hash }) => Boolean(hash));
 
   const rows = [];
-  for (const hash of hashes) rows.push(await checkTransaction(hash));
+  for (const check of checks) rows.push(await checkTransaction(check.hash, check.expectedAddress));
 
   const qualifying = rows.filter((r) => r.pass).length;
   const hasVideo = typeof claim.demo_video === "string" && claim.demo_video.trim() !== "";
   const hasDemoUrl = typeof claim.demo_url === "string" && claim.demo_url.trim() !== "";
-  const scoreable = qualifying >= MIN_QUALIFYING && hasVideo && objectForm === 0;
+  const scoreable = deploymentCheck
+    ? rows.length > 0 && qualifying === rows.length
+    : qualifying >= MIN_QUALIFYING && hasVideo && objectForm === 0;
 
   const report = {
     source,
+    network,
+    mode: deploymentCheck ? "contract-deployments" : "pool-transactions",
     pool: POOL,
     rpc: RPC,
     transactions: rows,
     qualifying,
-    required: MIN_QUALIFYING,
+    required: deploymentCheck ? rows.length : MIN_QUALIFYING,
     demo_video: hasVideo,
     demo_url: hasDemoUrl,
     object_form_entries: objectForm,
@@ -177,20 +228,25 @@ async function main() {
     return scoreable ? 0 : 1;
   }
 
-  console.log(`\nSTRK20 claim check: ${source}`);
+  console.log(`\nSTRK20 ${deploymentCheck ? "deployment" : "claim"} check: ${source} (${network})`);
   console.log(`pool ${POOL}`);
   console.log(`rpc  ${RPC}\n`);
 
-  if (!rows.length) console.log("  no transactions listed\n");
+  if (!rows.length) {
+    console.log(`  no ${deploymentCheck ? `${network} contract deployments` : "transactions"} listed\n`);
+  }
 
   for (const r of rows) {
     const mark = r.pass ? "PASS" : "FAIL";
     const detail = r.type ? `${r.type} ${r.execution}/${r.finality}` : "unresolved";
     console.log(`  ${mark}  ${short(r.hash)}  ${detail}`);
-    console.log(`        events ${r.events}, from pool ${r.poolEvents}${r.pass ? "" : `  <- ${r.reason}`}`);
+    const evidence = deploymentCheck
+      ? `events ${r.events}, claimed address ${r.addressEvents}`
+      : `events ${r.events}, from pool ${r.poolEvents}`;
+    console.log(`        ${evidence}${r.pass ? "" : `  <- ${r.reason}`}`);
   }
 
-  if (objectForm > 0) {
+  if (!deploymentCheck && objectForm > 0) {
     console.log(
       `\n  SCHEMA: ${objectForm} entr${objectForm === 1 ? "y is" : "ies are"} an object, not a hash string.`,
     );
@@ -198,13 +254,23 @@ async function main() {
     console.log(`          Use "transactions": ["0x...", "0x..."] and keep notes under another key.`);
   }
 
-  console.log(`\n  qualifying transactions : ${qualifying} of ${MIN_QUALIFYING} required`);
-  console.log(`  demo_video              : ${hasVideo ? "present" : "MISSING (required to be scored)"}`);
-  console.log(`  demo_url                : ${hasDemoUrl ? "present" : "absent (optional, auto-detected)"}`);
+  console.log(
+    `\n  ${deploymentCheck ? "verified deployments" : "qualifying transactions"} : ${qualifying} of ${
+      deploymentCheck ? rows.length : MIN_QUALIFYING
+    } required`,
+  );
+  if (!deploymentCheck) {
+    console.log(`  demo_video              : ${hasVideo ? "present" : "MISSING (required to be scored)"}`);
+    console.log(`  demo_url                : ${hasDemoUrl ? "present" : "absent (optional, auto-detected)"}`);
+  }
   console.log(
     scoreable
-      ? "\n  SCOREABLE: this submission meets the transaction and video gates.\n"
-      : "\n  NOT SCOREABLE: fix the items marked above before the deadline.\n",
+      ? deploymentCheck
+        ? `\n  VERIFIED: all listed ${network} contract deployments succeeded.\n`
+        : "\n  SCOREABLE: this submission meets the transaction and video gates.\n"
+      : deploymentCheck
+        ? `\n  NOT VERIFIED: fix the ${network} deployment items marked above.\n`
+        : "\n  NOT SCOREABLE: fix the items marked above before the deadline.\n",
   );
 
   return scoreable ? 0 : 1;

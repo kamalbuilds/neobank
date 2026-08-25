@@ -360,7 +360,7 @@ export default function SendPanel({
         </div>
         <input
           className={styles.subMono}
-          style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px", width: "100%", marginTop: 8, background: "#fff" }}
+          style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px", width: "100%", marginTop: 8 }}
           placeholder="Recipient address (0x…)"
           value={rows[0].recipient}
           onChange={(e) => updateRow(0, { recipient: e.target.value })}
@@ -388,14 +388,14 @@ export default function SendPanel({
           <div key={i + 1} className={styles.subLine} style={{ marginTop: 8 }}>
             <input
               className={styles.subMono}
-              style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px", flex: 3, minWidth: 0, background: "#fff" }}
+              style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px", flex: 3, minWidth: 0 }}
               placeholder={`Recipient ${i + 2} address (0x…)`}
               value={row.recipient}
               onChange={(e) => updateRow(i + 1, { recipient: e.target.value })}
             />
             <input
               className={styles.subMono}
-              style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px", flex: 2, minWidth: 0, background: "#fff" }}
+              style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px", flex: 2, minWidth: 0 }}
               placeholder="Amount"
               inputMode="decimal"
               value={row.amount}
@@ -431,7 +431,6 @@ export default function SendPanel({
                 borderRadius: 12,
                 padding: "10px 12px",
                 width: "100%",
-                background: "#fff",
                 resize: "vertical",
                 boxSizing: "border-box",
               }}

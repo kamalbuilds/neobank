@@ -13,11 +13,8 @@
  */
 
 import { readFile } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
 
-const __dirname = fileURLToPath(new URL(".", import.meta.url));
-
-const STRK20_PATH = new URL("../strk20.json", import.meta.url).pathname;
+const STRK20_PATH = new URL("../strk20.json", import.meta.url);
 
 const KNOWN_NONPOOL_HASHES = [
   "0x02cbfcceac813b17696710fd8f2e52b603e4ba6dabd87e774d1840d20b21a735",
@@ -86,8 +83,7 @@ async function main() {
   console.log("");
 
   console.log("Contracts:");
-  console.log(`  PASS  : contracts array has at least 1 entry`);
-  console.log(`  FAIL  : contracts array is empty`);
+  console.log(`  ${contractsPass ? "PASS" : "FAIL"}  : contracts array has at least 1 entry`);
   console.log(`  Value : ${contracts.length} contract${contracts.length !== 1 ? "s" : ""}`);
   console.log("");
 
@@ -105,7 +101,7 @@ async function main() {
 
   // --- Exit logic ---
   const exitCondition =
-    qualifyingPoolTxs < 3 || contracts.length === 0 || !demoUrlPass;
+    qualifyingPoolTxs < 3 || !contractsPass || !demoUrlPass;
 
   if (exitCondition) {
     console.log("RESULT: FAIL");
@@ -116,7 +112,7 @@ async function main() {
         "0x02cbf..."} emitted NO pool event so the real qualifying count is 2`,
       );
     }
-    if (contracts.length === 0) {
+    if (!contractsPass) {
       console.log("  contracts array is empty");
     }
     if (!demoUrlPass) {

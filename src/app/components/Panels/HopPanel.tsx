@@ -193,7 +193,7 @@ export default function HopPanel({ network }: { network: NetworkKey }) {
 
         <input
           className={styles.subMono}
-          style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px", width: "100%", marginTop: 8, background: "#fff" }}
+          style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px", width: "100%", marginTop: 8 }}
           placeholder={chain === "base" ? "Base mint recipient (0x… EVM address)" : "Solana mint recipient (base58 public key)"}
           value={recipient}
           onChange={(e) => setRecipient(e.target.value)}

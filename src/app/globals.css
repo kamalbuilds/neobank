@@ -6,9 +6,9 @@
   --color-bg: #06070b;
   --color-panel: rgba(255 255 255 / 0.028);
   --color-accent: #2dd4bf;
-  --font-body: var(--font-body);
-  --font-display: var(--font-display);
-  --font-mono: var(--font-mono-ui);
+  --font-body: var(--font-body-face), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display-face), var(--font-body-face), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono-ui), ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 @layer base {
@@ -18,6 +18,22 @@
   
   body {
     @apply bg-bg text-ink font-body;
+    --ink: #eaf0f8;
+    --muted: #7a859c;
+    --bg: #06070b;
+    --card: rgba(255, 255, 255, 0.028);
+    --line: rgba(255, 255, 255, 0.06);
+    --line-strong: rgba(255, 255, 255, 0.12);
+    --inset: rgba(255, 255, 255, 0.04);
+    --inset-2: rgba(255, 255, 255, 0.08);
+    --pink: #2dd4bf;
+    --pink-soft: rgba(45, 212, 191, 0.09);
+    --pink-soft-2: rgba(45, 212, 191, 0.2);
+    --pink-text: #6ee9d5;
+    --green: #34d399;
+    --green-soft: rgba(52, 211, 153, 0.1);
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.1);
   }
 
   * {

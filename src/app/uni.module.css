@@ -1,18 +1,18 @@
-/* Private money account — dark-first design system.
+/* Private money account: dark-first design system.
  * Surfaces are translucent glass over a near-black canvas with one shield-teal
  * accent doing all the talking. Every class name and layout rule from the
  * previous theme is preserved; only the visual layer changed. */
 
 .page {
   /* Token sheet ----------------------------------------------------------- */
-  --ink: #e9ecf4;
-  --muted: #8b94a7;
+  --ink: #eaf0f8;
+  --muted: #7a859c;
   --bg: #06070b;
-  --card: rgba(255, 255, 255, 0.032);
-  --line: rgba(255, 255, 255, 0.08);
-  --line-strong: rgba(255, 255, 255, 0.14);
-  --inset: rgba(255, 255, 255, 0.05);
-  --inset-2: rgba(255, 255, 255, 0.1);
+  --card: rgba(255, 255, 255, 0.028);
+  --line: rgba(255, 255, 255, 0.06);
+  --line-strong: rgba(255, 255, 255, 0.12);
+  --inset: rgba(255, 255, 255, 0.04);
+  --inset-2: rgba(255, 255, 255, 0.08);
   /* Accent kept under legacy var names so every existing rule keeps working. */
   --pink: #2dd4bf;
   --pink-soft: rgba(45, 212, 191, 0.09);
@@ -434,9 +434,15 @@
   border-radius: 999px;
   padding: 8px 15px;
   cursor: pointer;
-  transition: background 140ms, color 140ms;
+  transition: background 140ms, color 140ms, border-color 140ms;
 }
-.tab:hover { color: var(--ink); }
+.tab:not(.tabActive):hover { color: var(--ink); background: var(--inset); }
+.tab:focus-visible,
+.btnCta:focus-visible,
+.tokenPill button:focus-visible {
+  outline: 2px solid var(--pink);
+  outline-offset: 2px;
+}
 .tabActive { color: #052e27; background: linear-gradient(135deg, #2dd4bf, #4fd1c5); font-weight: 650; }
 .tabActive:hover { color: #052e27; }
 
@@ -445,7 +451,9 @@
   border: 1px solid var(--line);
   border-radius: 20px;
   padding: 18px 18px 16px;
+  color: var(--ink);
   backdrop-filter: blur(12px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
 }
 .inputLabel {
   color: var(--pink-text);
@@ -462,6 +470,8 @@
   margin: 8px 0 12px;
 }
 .bigValue {
+  color: var(--ink);
+  caret-color: var(--pink);
   font-size: 42px;
   font-weight: 550;
   letter-spacing: -0.03em;
@@ -495,6 +505,44 @@
   color: var(--muted);
 }
 .subMono { font-family: var(--font-mono-ui), monospace; font-variant-numeric: tabular-nums; }
+
+.inputBlock :is(input, select, textarea).subMono {
+  min-height: 44px;
+  color: var(--ink);
+  background: var(--inset);
+  border: 1px solid var(--line);
+  outline: none;
+  caret-color: var(--pink);
+  transition: background 140ms, border-color 140ms, box-shadow 140ms;
+}
+.inputBlock :is(input, select, textarea).subMono:hover {
+  background: var(--inset-2);
+  border-color: var(--line-strong);
+}
+.inputBlock :is(input, select, textarea).subMono:focus {
+  background: rgba(255, 255, 255, 0.055);
+  border-color: rgba(45, 212, 191, 0.62);
+  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.11);
+}
+.inputBlock input::placeholder,
+.inputBlock textarea::placeholder {
+  color: var(--muted);
+  opacity: 0.78;
+}
+.inputBlock select.subMono {
+  color-scheme: dark;
+}
+.inputBlock select.subMono option {
+  color: var(--ink);
+  background: #0c0e15;
+}
+.inputBlock input:-webkit-autofill,
+.inputBlock input:-webkit-autofill:hover,
+.inputBlock input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--ink);
+  box-shadow: 0 0 0 1000px #0c0e15 inset;
+  caret-color: var(--pink);
+}
 
 .feeRow {
   display: flex;
