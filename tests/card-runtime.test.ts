@@ -1,0 +1,70 @@
+import { constants, ec } from "starknet";
+import { describe, expect, it } from "vitest";
+import {
+  cardRuntimeStatus,
+  deriveHostedViewingKey,
+  isTerminalFinality,
+  parseCardRuntimeConfig,
+} from "@/server/card/runtime";
+
+const pool = "0x0254a6b2997ef52e9f830ce1f543f6b29768295e8d17e2267d672c552cfe0d91";
+
+describe("hosted private account runtime", () => {
+  it("derives a deterministic canonical viewing key from the signer", () => {
+    const privateKey = "0x12345";
+    const first = deriveHostedViewingKey(
+      privateKey,
+      constants.StarknetChainId.SN_SEPOLIA,
+      pool,
+    );
+    const second = deriveHostedViewingKey(
+      privateKey,
+      constants.StarknetChainId.SN_SEPOLIA,
+      pool,
+    );
+
+    expect(first).toBe(second);
+    expect(first).toBeGreaterThan(0n);
+    expect(first).toBeLessThan(ec.starkCurve.CURVE.n >> 1n);
+  });
+
+  it("fails closed and names missing runtime capabilities", () => {
+    const status = cardRuntimeStatus({});
+    expect(status.ready).toBe(false);
+    expect(status.missing).toEqual(
+      expect.arrayContaining([
+        "CARD_RUNTIME_ACCOUNT_ADDRESS",
+        "CARD_RUNTIME_PRIVATE_KEY",
+        "CARD_SETTLEMENT_CONTRACT",
+        "CARD_SETTLEMENT_UNITS_PER_USD",
+        "CARD_WEBHOOK_SECRET",
+      ]),
+    );
+  });
+
+  it("parses a complete Sepolia card runtime config", () => {
+    const config = parseCardRuntimeConfig({
+      CARD_RUNTIME_ACCOUNT_ADDRESS: "0x123",
+      CARD_RUNTIME_PRIVATE_KEY: "0x456",
+      CARD_SETTLEMENT_CONTRACT: "0x789",
+      CARD_SETTLEMENT_TOKEN:
+        "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+      CARD_SETTLEMENT_UNITS_PER_USD: "1000000000000000000",
+      CARD_WEBHOOK_SECRET: "whsec_real",
+      TESTNET_RPC: "https://rpc.example",
+    });
+
+    expect(config.rpcUrl).toBe("https://rpc.example");
+    expect(config.provingUrl).toBe("https://transaction-prover.alpha-sepolia.sw-dev.io");
+    expect(config.indexerUrl).toBe("https://discovery-service.alpha-sepolia.sw-dev.io");
+    expect(config.poolAddress).toBe(pool);
+    expect(config.settlementUnitsPerUsd).toBe(1_000_000_000_000_000_000n);
+  });
+
+  it("does not report pre-confirmed receipts as terminal", () => {
+    expect(isTerminalFinality("PRE_CONFIRMED")).toBe(false);
+    expect(isTerminalFinality("ACCEPTED_ON_L2")).toBe(true);
+    expect(isTerminalFinality("ACCEPTED_ON_L1")).toBe(true);
+    expect(isTerminalFinality("REJECTED")).toBe(true);
+  });
+});
