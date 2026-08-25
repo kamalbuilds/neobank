@@ -26,6 +26,22 @@
       "network": "sepolia",
       "tx": "0x06098a810c73c0a7fe8fc295d0cba1d9913c75f2fc5c1095ab9acd844e338ddf",
       "owner": "0x071c62dfb692c3821a9ef120919f388b4559cb2d414c7378da62e6bf7f4f494d"
+    },
+    {
+      "name": "CardSettlementAnonymizer",
+      "class_hash": "0x0171adbc7406d03218f163ba52e9113e1035ea81e449206258fa3591e56d9c5",
+      "address": "0x074dcd5ee5e0fbfdcf25a7cbc3408711de19fccdf46e8f53c71d35e795f5390a",
+      "network": "sepolia",
+      "tx": "0x02f7910ec2eefdd18afeed76e3c4d44bbd985c1d664314c06c5d6568f0f2f2ad",
+      "owner": "0x071c62dfb692c3821a9ef120919f388b4559cb2d414c7378da62e6bf7f4f494d",
+      "privacy_pool": "0x0254a6b2997ef52e9f830ce1f543f6b29768295e8d17e2267d672c552cfe0d91",
+      "settlement_recipient": "0x071c62dfb692c3821a9ef120919f388b4559cb2d414c7378da62e6bf7f4f494d",
+      "settlement_token": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+      "max_per_transaction": "1000000000000000000",
+      "daily_limit": "5000000000000000000",
+      "first_settlement_tx": "0x063b3fe7e13e9baca4d0a9ca9616b7b5e71504b38ed02bb3b98512935988acf4",
+      "first_settlement_block": 14083493,
+      "first_settlement_amount": "500000000000000000"
     }
   ],
   "demo_url": "https://neobank-six.vercel.app",
