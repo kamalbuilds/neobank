@@ -1,13 +1,13 @@
 import type { Metadata } from 'next'
-import { Inter, Space_Mono, Space_Grotesk } from 'next/font/google'
+import { Geist, Space_Mono, Space_Grotesk } from 'next/font/google'
 import './globals.css'
 
 // Faces picked on purpose for the Vault design system (see .uicraft-read.json):
-// Space Grotesk carries display type, Inter is the deliberate body face, Space
+// Space Grotesk carries display type, Geist is the deliberate body face, Space
 // Mono only for hex addresses / hashes.
-const inter = Inter({
+const geist = Geist({
   subsets: ['latin'],
-  variable: '--font-body',
+  variable: '--font-body-face',
   display: 'swap',
 })
 const spaceMono = Space_Mono({
@@ -18,7 +18,7 @@ const spaceMono = Space_Mono({
 })
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
-  variable: '--font-display',
+  variable: '--font-display-face',
   display: 'swap',
 })
 
@@ -36,7 +36,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${spaceMono.variable} ${spaceGrotesk.variable}`}
+      className={`${geist.variable} ${spaceMono.variable} ${spaceGrotesk.variable}`}
       suppressHydrationWarning
     >
       <body>{children}</body>

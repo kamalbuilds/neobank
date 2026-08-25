@@ -120,7 +120,7 @@ describe("damaged payloads are rejected cleanly", () => {
     for (let i = Math.max(0, payload.length - 8); i < payload.length; i++) {
       const chars = payload.split("");
       chars[i] = "-";
-      expect(() => decodePaymentRequest(chars.join("")).ok === false).not.toThrow();
+      expect(decodePaymentRequest(chars.join("")).ok).toBe(false);
     }
   });
 });

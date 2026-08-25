@@ -17,7 +17,7 @@ export default function HonestTable() {
         <div style={{ flex: 1, minWidth: 220 }}>
           <div className={styles.subMono} style={{ color: "var(--green)", fontWeight: 700, marginBottom: 8 }}>PRIVATE</div>
           {ROWS.filter((r) => r.hidden).map((r) => (
-            <div key={r.hidden} style={{ fontSize: 13, color: "var(--ink)", padding: "6px 0", borderTop: "1px solid rgba(0,0,0,0.06)" }}>
+            <div key={r.hidden} style={{ fontSize: 13, color: "var(--ink)", padding: "6px 0", borderTop: "1px solid var(--line)" }}>
               {r.hidden}
             </div>
           ))}
@@ -25,7 +25,7 @@ export default function HonestTable() {
         <div style={{ flex: 1, minWidth: 220 }}>
           <div className={styles.subMono} style={{ color: "var(--pink-text)", fontWeight: 700, marginBottom: 8 }}>PUBLIC</div>
           {ROWS.map((r) => (
-            <div key={r.visible} style={{ fontSize: 13, color: "var(--ink)", padding: "6px 0", borderTop: "1px solid rgba(0,0,0,0.06)" }}>
+            <div key={r.visible} style={{ fontSize: 13, color: "var(--ink)", padding: "6px 0", borderTop: "1px solid var(--line)" }}>
               {r.visible}
             </div>
           ))}

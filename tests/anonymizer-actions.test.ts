@@ -1,10 +1,27 @@
 import { describe, it, expect } from "vitest";
 import { buildPayoutActions, buildProgrammableSpendActions } from "@/app/components/lib/anonymizer";
+import { ANONYMIZER_ADDRESSES } from "@/utils/constants";
+import claim from "../strk20.json";
 
 const ANON = "0x0489133ec1b184109eabff3b0058b503909a7fd2be610b95ef22d7f768fa17a6";
 const TOKEN = "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
 const TO = "0x0101ab74cf27f868fa42f02de17c5fca88697dd63dd850ee6626d74c25ed6a4a";
 const ME = "0x0202bc85df38f979fb53f13de28d6fdb99708ee74ee961ff7737e85d36fe7b5b";
+
+it("wires helpers to the verified Sepolia deployments", () => {
+  const programmable = claim.contracts.find(
+    (contract) => contract.name === "ProgrammableSpendAnonymizer",
+  );
+  const card = claim.contracts.find(
+    (contract) => contract.name === "CardSettlementAnonymizer",
+  );
+  expect(programmable).toBeDefined();
+  expect(card).toBeDefined();
+  expect(BigInt(ANONYMIZER_ADDRESSES.sepolia.programmableSpend)).toBe(
+    BigInt(programmable!.address),
+  );
+  expect(BigInt(ANONYMIZER_ADDRESSES.sepolia.cardSettlement)).toBe(BigInt(card!.address));
+});
 
 describe("buildPayoutActions", () => {
   const actions = buildPayoutActions({
