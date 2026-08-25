@@ -2,6 +2,9 @@
   "name": "neobank",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
@@ -9,12 +12,17 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "verify:claim": "node scripts/verify-strk20-claim.mjs"
+    "verify:claim": "node scripts/verify-strk20-claim.mjs",
+    "card:status": "node --env-file=.env scripts/card-account.mjs status",
+    "card:register": "node --env-file=.env scripts/card-account.mjs register",
+    "card:deposit": "node --env-file=.env scripts/card-account.mjs deposit",
+    "card:balance": "node --env-file=.env scripts/card-account.mjs balance"
   },
   "dependencies": {
     "@avnu/avnu-sdk": "^4.2.0",
     "@starknet-io/get-starknet-discovery": "6.0.4",
     "@starknet-io/get-starknet-wallet-standard": "6.0.4",
+    "@starkware-libs/starknet-privacy-sdk": "file:vendor/starkware-libs-starknet-privacy-sdk-0.14.3-rc.5.tgz",
     "ethers": "^6.17.0",
     "next": "^16.0.8",
     "qrcode": "^1.5.4",
