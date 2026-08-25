@@ -1,58 +1,47 @@
 # Progress
 
-Updated: 2026-08-23. Deadline 2026-08-31 23:59 UTC, 8 days.
+Updated: 2026-08-26. Deadline 2026-08-31 23:59 UTC.
 
-**Gate: NOT SCOREABLE.** The panel needs three mainnet transactions that each emitted a pool
-event, plus a demo video. We have two qualifying transactions and no video. Verified by
-`npm run verify:claim`. Nothing else in this file matters until that line reads SCOREABLE.
+**Gate: NOT SCOREABLE.** Mainnet still has two qualifying pool events and no demo video.
+`npm run verify:claim` is the check. The Sepolia card loop below does not change that.
 
 ## Now
 
 | Item | State | Evidence |
 |---|---|---|
-| Shield STRK and USDC on mainnet | DONE | `0x04c4bea0...`, `0x059eb6c1...`, 4 and 3 pool events |
-| Wallet capability gate | DONE | `tests/capability.test.ts`, 6 pass |
-| Claim verifier CLI | DONE | `npm run verify:claim`; wrong pool address reddens all rows |
-| `strk20.json` schema fix | DONE | object form scored zero on the hub scanner, now hash strings |
-| Pool activity panel | DONE | 2 entries for our wallet, 14.2s against 85.8s sequential |
-| Batched multi-recipient send | DONE | `tests/batch-parse.test.ts`; one pool fee per call, not per recipient |
-| Private payment requests | DONE | `tests/payment-request.test.ts`; amount, memo, expiry in URL |
-| Anonymizer action builders | DONE | `tests/anonymizer-actions.test.ts`, 9 pass, 2 mutations reddened |
-| `PrivatePayoutAnonymizer` Cairo | DONE, NOT DEPLOYED | `snforge test` 4 pass; removing `ZERO_RECIPIENT` reddens 1 |
-| Sepolia support | DONE, UNVERIFIED | pool and RPC verified by hand; no wallet run yet |
-| Unshield | DONE, UNVERIFIED | code path real, never executed on any network |
-| Private send | DONE, UNVERIFIED | needs a second registered wallet |
-| AVNU private swap | BLOCKED | key now in `.env`, not on the deployment |
-| **Programmable spend** | **NOT BUILT** | claimed as the differentiator in `docs/marketing/POSITIONING.md` and `INTERVIEW-ANSWERS.md`. Action builder exists, no contract does pay-plus-position-plus-reshield, nothing calls it |
-| Payroll channels, income statement | NOT BUILT | Phase 1 in `docs/PRODUCTION_BUILD_PLAN.md` |
-| Privacy Bridge, EVM in and out | NOT BUILT | Phase 1 |
-| Org admin session key | NOT BUILT | Phase 1 |
+| Hosted card authorization loop | DONE | Sepolia tx `0x063b3fe7...88acf4`, ACCEPTED_ON_L1, `AuthorizationSettled` 0.5 STRK to `0x071c62...494d`. `/api/card/status/settlements` returns that receipt. `/card` rendered it in deepsurge. |
+| CardSettlementAnonymizer | DONE | Sepolia `0x074dcd5e...5390a`, class `0x0171adb...6d9c5`. Replay map and daily spend read back after the tx. |
+| Stripe-compatible authorize API | DONE | `tests/card-authorization.test.ts`, `tests/card-authorize.test.ts`. Tampered HMAC 401. Policy-blocked merchant does not settle. Already-settled id returns confirmed and does not settle twice. |
+| /card product route | DONE | Runtime Ready, all four probes Healthy, live 0.5 STRK feed, 500 USD swipe cap from server env. |
+| Settlement event parser | DONE | Live event shape test. Using `keys[0]` (selector) instead of `keys[1]` reddened; restore greened. |
+| Ready spend path | PARTIAL | Direct STRK20 withdraw, hex amount. Payment-request prefill restored. Not re-executed on chain this session. |
+| Programmable spend anonymizer | DONE | Deployed Sepolia `0x0604a76f...cbbb0`. Separate from the card loop. |
+| Shield STRK and USDC on mainnet | DONE | `0x04c4bea0...`, `0x059eb6c1...` |
+| Stripe Issuing sandbox | NOT BUILT | Webhook schema is Stripe Issuing. No issuer account is wired. Demo button signs locally when `CARD_DEMO_AUTHORIZE=1`. |
+| Chain-abstraction / JIT USDC | NOT BUILT | First proof settles test STRK. USDC conversion is the next slice. |
 | Demo video | NOT BUILT | required to be scored |
 
 ## Blocked
 
 | Item | Blocked on | Who can clear it |
 |---|---|---|
-| Third pool transaction | ~6 STRK for the live fee. Wallet holds 6.846 STRK, about $0.19 | user only, money and signature |
-| Private send on mainnet | a second Ready wallet, registered by one shield | user only |
-| AVNU swap live | `AVNU_PAYMASTER_API_KEY` on the Vercel deployment | user only, deploy |
-| RPC env vars reaching the browser | rename to `NEXT_PUBLIC_MAINNET_RPC` / `NEXT_PUBLIC_TESTNET_RPC` | user only, `.env` |
+| Third mainnet pool transaction | live STRK for the pool fee plus a demo video | user only, money and recording |
+| Real issuer sandbox | Stripe Issuing or Lithic credentials | user only, account |
+| Second live demo authorize | 2 STRK pool fee plus 0.5 STRK settlement from the hosted account | operator, money |
 
 ## Known defects
 
-- `src/app/page.tsx:167` still says "unshield to a public USDC balance and take it to an issuer".
-  Old framing, contradicted by `docs/CARD_LAST_MILE.md`. First screen anyone sees.
-- Marketing docs lead with programmable spend, which is NOT BUILT. Either build it or cut the
-  claim before the StarkWare call. Do not say that line on camera until one of those is done.
+- Vault tabs do not preview their panel until a wallet is connected. Spend/Send copy is hidden behind the connect wall.
+- Marketing docs still disagree with the card-loop architecture. Fix the docs or stop quoting them.
 - Pool size and TVL figures disagree across four sources. UNVERIFIED, unpublished.
 
-## Verified 2026-08-23
+## Verified 2026-08-26
 
-- 76 unit tests, 8 files, pass
-- 4 Cairo tests via `snforge`, pass
+- 113 vitest tests pass
 - `npx tsc --noEmit` clean
-- App boots, `HTTP 200`, zero console exceptions, graceful degradation with no wallet installed
-- Sepolia pool `get_fee_amount` returns 2 STRK; mainnet returns 6 STRK
+- GET `/api/card/status/settlements` returned the live 0.5 STRK receipt
+- GET `/api/card/authorize` ready=true with no missing env
+- `/card` in deepsurge at 1470x820: Runtime Ready, four probes Healthy, 0.5 STRK feed, tx link to Voyager
+- Settlement parser mutation: `keys[0]` red, `keys[1]` green
 
-Blind spot: every mainnet claim above rests on two shield transactions from one wallet. No
-unshield, private send, swap, or anonymizer call has ever executed on any network.
+Blind spot: this session did not fire a second live authorization, did not re-run Cairo tests, and did not verify `/card` at a 375 viewport.
