@@ -14,6 +14,7 @@ export type PublicCardPolicy = {
   dailyCap?: string;
   allowedCountries?: string;
   blockedCategories?: string;
+  lendOnRestaurants?: string;
 };
 
 type JsonRecord = Record<string, unknown>;
@@ -350,6 +351,8 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
       const response = await fetch("/api/card/demo-authorize", {
         method: "POST",
         cache: "no-store",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ scene: "dinner" }),
       });
       const data = await readJson(response);
       if (!response.ok) {
@@ -515,11 +518,11 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <h3 className="text-sm font-medium text-[#d8deea]">
-                    Onchain settlements
+                    Real swipes from the pool
                   </h3>
                   <p className="mt-1 text-sm leading-6 text-[#7f899d]">
-                    AuthorizationSettled events from CardSettlementAnonymizer,
-                    newest first.
+                    Restaurant MCC lends into the earn vault in the same
+                    privacy_invoke as the dinner settlement.
                   </p>
                 </div>
                 {demoEnabled && (
@@ -530,8 +533,8 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
                     className="h-11 whitespace-nowrap rounded-2xl border border-[#2dd4bf]/40 bg-[#2dd4bf]/10 px-4 text-sm font-semibold text-[#9ae9da] transition-[background-color,transform] duration-150 hover:bg-[#2dd4bf]/16 active:scale-[0.97] disabled:cursor-wait disabled:opacity-50"
                   >
                     {demo === "running"
-                      ? "Authorizing 50¢"
-                      : "Authorize 50¢ test charge"}
+                      ? "Paying Osteria Nova"
+                      : "Pay dinner at Osteria Nova"}
                   </button>
                 )}
               </div>
@@ -568,6 +571,7 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
                           "explorerTransactionUrl",
                         );
                         const felt = stringValue(item, "authorizationFelt");
+                        const lendAssets = stringValue(item, "lendAssets");
                         return (
                           <li
                             key={`${tx}-${felt}`}
@@ -576,6 +580,12 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
                             <div className="min-w-0">
                               <p className="font-mono text-sm text-[#d8deea]">
                                 {formatSettledAmount(item)}
+                                {lendAssets
+                                  ? ` · lent ${formatSettledAmount({
+                                      amount: lendAssets,
+                                      token: STRK_TOKEN,
+                                    })}`
+                                  : ""}
                               </p>
                               <p
                                 className="mt-1 truncate font-mono text-[11px] text-[#687287]"
@@ -780,6 +790,10 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
                   [
                     "Blocked categories",
                     policyValue(policy.blockedCategories),
+                  ],
+                  [
+                    "Restaurant program",
+                    policyValue(policy.lendOnRestaurants),
                   ],
                 ].map(([label, value]) => (
                   <div

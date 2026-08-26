@@ -192,31 +192,52 @@ describe("card status APIs", () => {
     const provider = {
       getBlockNumber: vi.fn(),
       callContract: vi.fn(),
-      getEvents: vi.fn().mockResolvedValue({
-        events: [
-          {
-            transaction_hash:
-              "0x63b3fe7e13e9baca4d0a9ca9616b7b5e71504b38ed02bb3b98512935988acf4",
-            keys: [
-              "0x25226df400201d50b77f0e509a8b9bb61ef4e5c0d5c64d226df9e6b4a7f9652",
-              "0x46f683bc9a9462554e49104f6fd3109971c11a020c996d97391744947c3fa8",
-            ],
-            data: [
-              "0x71c62dfb692c3821a9ef120919f388b4559cb2d414c7378da62e6bf7f4f494d",
-              "0x4718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
-              "0x6f05b59d3b20000",
-              "0x0",
-              "0x50d3",
-            ],
-            block_number: 14083493,
-          },
-          {
-            transaction_hash: "0xdead",
-            keys: ["0xselector-only"],
-            data: ["0x1"],
-          },
-        ],
-      }),
+      getEvents: vi
+        .fn()
+        .mockResolvedValueOnce({
+          events: [
+            {
+              transaction_hash:
+                "0x63b3fe7e13e9baca4d0a9ca9616b7b5e71504b38ed02bb3b98512935988acf4",
+              keys: [
+                "0x25226df400201d50b77f0e509a8b9bb61ef4e5c0d5c64d226df9e6b4a7f9652",
+                "0x46f683bc9a9462554e49104f6fd3109971c11a020c996d97391744947c3fa8",
+              ],
+              data: [
+                "0x71c62dfb692c3821a9ef120919f388b4559cb2d414c7378da62e6bf7f4f494d",
+                "0x4718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+                "0x6f05b59d3b20000",
+                "0x0",
+                "0x50d3",
+              ],
+              block_number: 14083493,
+            },
+            {
+              transaction_hash: "0xdead",
+              keys: ["0xselector-only"],
+              data: ["0x1"],
+            },
+          ],
+        })
+        .mockResolvedValueOnce({
+          events: [
+            {
+              transaction_hash:
+                "0x63b3fe7e13e9baca4d0a9ca9616b7b5e71504b38ed02bb3b98512935988acf4",
+              keys: [
+                "0xposition",
+                "0x46f683bc9a9462554e49104f6fd3109971c11a020c996d97391744947c3fa8",
+              ],
+              data: [
+                "0x074dcd5ee5e0fbfdcf25a7cbc3408711de19fccdf46e8f53c71d35e795f5390a",
+                "0xde0b6b3a7640000",
+                "0x0",
+                "0xde0b6b3a7640000",
+                "0x0",
+              ],
+            },
+          ],
+        }),
     };
 
     const result = await listSettledAuthorizations({
@@ -237,6 +258,8 @@ describe("card status APIs", () => {
       transactionHash:
         "0x63b3fe7e13e9baca4d0a9ca9616b7b5e71504b38ed02bb3b98512935988acf4",
       day: 20691,
+      lendAssets: "1000000000000000000",
+      lendShares: "1000000000000000000",
     });
   });
 

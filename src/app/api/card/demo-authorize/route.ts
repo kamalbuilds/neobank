@@ -21,14 +21,28 @@ export async function POST(request: Request) {
 
   const config = parseCardRuntimeConfig();
   const now = Math.floor(Date.now() / 1000);
-  const authorizationId = `iauth_demo_${now}`;
+  const body = await request.json().catch(() => ({}));
+  const dinner =
+    body && typeof body === "object" && (body as { scene?: string }).scene === "grocery"
+      ? {
+          authorizationId: `iauth_demo_${now}`,
+          amountMinor: 50,
+          merchantName: "Corner Market",
+          merchantCategory: "grocery_stores",
+        }
+      : {
+          authorizationId: `iauth_dinner_${now}`,
+          amountMinor: 24,
+          merchantName: "Osteria Nova",
+          merchantCategory: "restaurants",
+        };
   const rawBody = buildIssuingAuthorizationEvent({
     eventId: `evt_demo_${now}`,
-    authorizationId,
-    amountMinor: 50,
-    merchantName: "STRK20 Demo Merchant",
+    authorizationId: dinner.authorizationId,
+    amountMinor: dinner.amountMinor,
+    merchantName: dinner.merchantName,
     merchantCountry: "US",
-    merchantCategory: "grocery_stores",
+    merchantCategory: dinner.merchantCategory,
   });
 
   const result = await handleCardAuthorization({
@@ -38,7 +52,12 @@ export async function POST(request: Request) {
     nowMs: now * 1000,
   });
   return Response.json(
-    { ...result.body, authorizationId },
+    {
+      ...result.body,
+      authorizationId: dinner.authorizationId,
+      merchantName: dinner.merchantName,
+      merchantCategory: dinner.merchantCategory,
+    },
     { status: result.httpStatus },
   );
 }

@@ -1,9 +1,14 @@
 import { Account, RpcProvider, cairo, constants, ec, hash } from "starknet";
 import {
   IndexerDiscoveryProvider,
+  Open,
   createPrivateTransfers,
 } from "@starkware-libs/starknet-privacy-sdk";
-import { authorizationIdFelt, type CardAuthorization } from "./authorization.ts";
+import {
+  authorizationIdFelt,
+  lendAmountFor,
+  type CardAuthorization,
+} from "./authorization.ts";
 
 const SEPOLIA_POOL =
   "0x0254a6b2997ef52e9f830ce1f543f6b29768295e8d17e2267d672c552cfe0d91";
@@ -24,6 +29,10 @@ export type CardRuntimeConfig = {
   accountAddress: string;
   privateKey: string;
   settlementContract: string;
+  programContract: string;
+  programmableSpend?: string;
+  settlementRecipient?: string;
+  earnVault?: string;
   settlementToken: string;
   settlementUnitsPerUsd: bigint;
   webhookSecret: string;
@@ -49,6 +58,10 @@ export type CardSettlementResult = {
   finalityStatus: string;
   executionStatus: string;
   blockNumber?: number;
+  settleAmount: string;
+  lendAmount: string;
+  merchantName: string;
+  merchantCategory: string;
   warnings: string[];
 };
 
@@ -74,6 +87,10 @@ export function parseCardRuntimeConfig(
     accountAddress: env.CARD_RUNTIME_ACCOUNT_ADDRESS!,
     privateKey: env.CARD_RUNTIME_PRIVATE_KEY!,
     settlementContract: env.CARD_SETTLEMENT_CONTRACT!,
+    programContract: env.CARD_PROGRAM_CONTRACT || env.CARD_SETTLEMENT_CONTRACT!,
+    programmableSpend: env.CARD_PROGRAMMABLE_SPEND,
+    settlementRecipient: env.CARD_SETTLEMENT_RECIPIENT,
+    earnVault: env.CARD_EARN_VAULT,
     settlementToken: env.CARD_SETTLEMENT_TOKEN!,
     settlementUnitsPerUsd: BigInt(env.CARD_SETTLEMENT_UNITS_PER_USD!),
     webhookSecret: env.CARD_WEBHOOK_SECRET!,
@@ -160,28 +177,68 @@ export async function executeHostedCardSettlement(
   });
 
   const head = await provider.getBlockNumber();
-  const amount =
+  const settleAmount =
     (BigInt(authorization.amountMinor) * config.settlementUnitsPerUsd) / 100n;
-  if (amount <= 0n) throw new Error("Authorization amount rounds to zero settlement units.");
-  const amountU256 = cairo.uint256(amount);
+  if (settleAmount <= 0n) {
+    throw new Error("Authorization amount rounds to zero settlement units.");
+  }
+  const lendAmount = lendAmountFor(authorization, env);
+  const usesProgrammable =
+    lendAmount > 0n && Boolean(config.programmableSpend && config.settlementRecipient);
+  if (lendAmount > 0n && !usesProgrammable) {
+    throw new Error("Restaurant lend requires CARD_PROGRAMMABLE_SPEND and CARD_SETTLEMENT_RECIPIENT.");
+  }
+  const changeDust = usesProgrammable ? 1n : 0n;
+  const funded = settleAmount + lendAmount + changeDust;
+  const settleU256 = cairo.uint256(settleAmount);
+  const lendU256 = cairo.uint256(lendAmount);
+  const fundedU256 = cairo.uint256(funded);
   const authId = authorizationIdFelt(authorization.authorizationId);
+  const helper = usesProgrammable
+    ? config.programmableSpend!
+    : config.programContract;
 
-  const { callAndProof, warnings } = await transfers
+  let builder = transfers
     .build({
       autoDiscover: { notes: "refresh", channels: "refresh" },
       autoSelectNotes: "all",
       provingBlockId: Math.max(0, head - 10),
     })
-    .with(config.settlementToken, (token) =>
-      token
-        .withdraw({ recipient: config.settlementContract, amount })
-        .surplusTo(config.accountAddress, false),
+    .with(config.settlementToken, (token) => {
+      const fundedToken = token
+        .withdraw({ recipient: helper, amount: funded })
+        .surplusTo(config.accountAddress, false);
+      return usesProgrammable
+        ? fundedToken.transfer({ recipient: config.accountAddress, amount: Open })
+        : fundedToken;
+    });
+
+  const { callAndProof, warnings } = await builder
+    .invoke((args) =>
+      usesProgrammable
+        ? {
+            contractAddress: helper,
+            entrypoint: "privacy_invoke",
+            calldata: [
+              config.settlementToken,
+              fundedU256.low,
+              fundedU256.high,
+              lendU256.low,
+              lendU256.high,
+              1n,
+              config.settlementRecipient!,
+              1n,
+              settleU256.low,
+              settleU256.high,
+              args.openNotes[0].noteId,
+            ],
+          }
+        : {
+            contractAddress: helper,
+            entrypoint: "privacy_invoke",
+            calldata: [authId, config.settlementToken, settleU256.low, settleU256.high],
+          },
     )
-    .invoke(() => ({
-      contractAddress: config.settlementContract,
-      entrypoint: "privacy_invoke",
-      calldata: [authId, config.settlementToken, amountU256.low, amountU256.high],
-    }))
     .execute();
 
   const proofDetails = callAndProof.proof.proofFacts.length
@@ -205,6 +262,10 @@ export async function executeHostedCardSettlement(
     finalityStatus: String(receipt.finality_status),
     executionStatus: String(receipt.execution_status),
     blockNumber: "block_number" in receipt ? Number(receipt.block_number) : undefined,
+    settleAmount: settleAmount.toString(),
+    lendAmount: lendAmount.toString(),
+    merchantName: authorization.merchantName,
+    merchantCategory: authorization.merchantCategory,
     warnings: warnings.map((warning) => String(warning.code)),
   };
 }

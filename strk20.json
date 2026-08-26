@@ -41,7 +41,26 @@
       "daily_limit": "5000000000000000000",
       "first_settlement_tx": "0x063b3fe7e13e9baca4d0a9ca9616b7b5e71504b38ed02bb3b98512935988acf4",
       "first_settlement_block": 14083493,
-      "first_settlement_amount": "500000000000000000"
+      "first_settlement_amount": "500000000000000000",
+      "osteria_dinner_tx": "0x18d874052ab9ab7e68e74c6c11b65125ff40c3d917dd58a743136ed0ec6be8a",
+      "osteria_dinner_amount": "240000000000000000"
+    },
+    {
+      "name": "EarnVault",
+      "class_hash": "0x5ff4dcc829e20a3d0e5435bafa6570765e3a14274a56892b5becea638c4d92f",
+      "address": "0x00474c6b220a15919770a58dad4b4ea19c30b9972a3620c5a16cee8f752068bb",
+      "network": "sepolia",
+      "tx": "0x02df5bb47a918d055a078be2ec2cf1021687cdecf81c59bdd87ca0f6484f2253",
+      "asset": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+      "first_deposit_tx": "0x132d3c0d36fd7490489ad5d9fdcec89027676d50ac1a583465a59e79956b2a3"
+    },
+    {
+      "name": "EarnAdapter",
+      "class_hash": "0x4524d4581fe58461994ecf07f5dcd9653aca549fb0cb9e0f22e2c6be8cb6a03",
+      "address": "0x0137d48e53d94333568cedfe8c261b7f3c8ff9206636f6f759c87137da5631f7",
+      "network": "sepolia",
+      "tx": "0x06f15dbb9d73ae0973f0f044d1ccb8dc759ae905ed99ed76c567946261ddc4d8",
+      "vault": "0x00474c6b220a15919770a58dad4b4ea19c30b9972a3620c5a16cee8f752068bb"
     }
   ],
   "demo_url": "https://neobank-six.vercel.app",
