@@ -21,7 +21,12 @@ Updated: 2026-08-27. Deadline 2026-08-31 23:59 UTC.
 | Programmable spend anonymizer | DONE | Deployed Sepolia `0x0604a76f...cbbb0`. Separate from the card loop. |
 | Shield STRK and USDC on mainnet | DONE | `0x04c4bea0...`, `0x059eb6c1...` |
 | Stripe Issuing sandbox | NOT BUILT | Webhook schema is Stripe Issuing. No issuer account is wired. Demo button signs locally when `CARD_DEMO_AUTHORIZE=1`. |
-| Chain-abstraction / JIT USDC | NOT BUILT | First proof settles test STRK. USDC conversion is the next slice. |
+| Chain-abstraction / JIT USDC | NOT BUILT | One pool invoke cannot also be an AVNU private swap. Needs a helper that swaps inside privacy_invoke. `/fund` is outbound CCTP only. |
+| Pay dinner from vault shares | CODED | Runtime redeem path exists. Live fee-estimate reverts `Insufficient ERC20 allowance` on the pool pulling the vToken. Vault `total_assets` still 10 STRK. |
+| Shadow spend identities | CODED | Official Sepolia anonymizer `0x010a…b147` matches the pool. Addresses are deterministic per nonce. No live shadow spend yet. |
+| Viewing-key statements | DONE | `GET /api/card/statement?authorizationId=iauth_dinner_1787803543&full=1` returns the Osteria tx, 0.24 settle, 10 STRK lend. Default omits amounts. |
+| Account routes | DONE | `/` `/convert` `/earn` `/spend` `/fund` `/card` `/statements`. `/earn` shows live 10 STRK `total_assets`. |
+| Checksummed receive strings | DONE | `strk1` / `strkx1` Bech32m in Receive. Not an official Beam product. |
 | Demo video | NOT BUILT | required to be scored |
 
 ## Blocked
