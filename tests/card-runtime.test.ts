@@ -5,9 +5,23 @@ import {
   deriveHostedViewingKey,
   isTerminalFinality,
   parseCardRuntimeConfig,
+  usesVaultSpend,
+  vaultRedeemSharesFor,
 } from "@/server/card/runtime";
+import type { CardAuthorization } from "@/server/card/authorization";
 
 const pool = "0x0254a6b2997ef52e9f830ce1f543f6b29768295e8d17e2267d672c552cfe0d91";
+
+const dinnerAuth: CardAuthorization = {
+  eventId: "evt_1",
+  authorizationId: "iauth_vault_1",
+  amountMinor: 24,
+  amountUsdc: 240_000n,
+  currency: "usd",
+  merchantName: "Osteria Nova",
+  merchantCountry: "US",
+  merchantCategory: "restaurants",
+};
 
 describe("hosted private account runtime", () => {
   it("derives a deterministic canonical viewing key from the signer", () => {
@@ -66,5 +80,28 @@ describe("hosted private account runtime", () => {
     expect(isTerminalFinality("ACCEPTED_ON_L2")).toBe(true);
     expect(isTerminalFinality("ACCEPTED_ON_L1")).toBe(true);
     expect(isTerminalFinality("REJECTED")).toBe(true);
+  });
+
+  it("uses vault spend only when CARD_SPEND_FROM_VAULT=1", () => {
+    expect(usesVaultSpend(dinnerAuth, {})).toBe(false);
+    expect(usesVaultSpend(dinnerAuth, { CARD_SPEND_FROM_VAULT: "0" })).toBe(
+      false,
+    );
+    expect(usesVaultSpend(dinnerAuth, { CARD_SPEND_FROM_VAULT: "1" })).toBe(
+      true,
+    );
+  });
+
+  it("redeem shares prefer CARD_LEND_UNITS and must cover settle", () => {
+    const settle = 240_000_000_000_000_000n;
+    expect(
+      vaultRedeemSharesFor(settle, {
+        CARD_LEND_UNITS: "10000000000000000000",
+      }),
+    ).toBe(10_000_000_000_000_000_000n);
+    expect(vaultRedeemSharesFor(settle, { CARD_LEND_UNITS: "0" })).toBe(settle);
+    expect(() =>
+      vaultRedeemSharesFor(settle, { CARD_LEND_UNITS: "100" }),
+    ).toThrow(/cover the settle amount/);
   });
 });

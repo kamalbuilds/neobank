@@ -60,6 +60,8 @@ export type CardSettlementResult = {
   blockNumber?: number;
   settleAmount: string;
   lendAmount: string;
+  /** Vault shares redeemed when spending from the earn position. */
+  programAmount?: string;
   merchantName: string;
   merchantCategory: string;
   warnings: string[];
@@ -124,6 +126,34 @@ export function isTerminalFinality(finality: string): boolean {
   );
 }
 
+/** Pay dinner by redeeming vault shares when CARD_SPEND_FROM_VAULT=1. */
+export function usesVaultSpend(
+  _authorization: CardAuthorization,
+  env: Environment,
+): boolean {
+  return env.CARD_SPEND_FROM_VAULT === "1";
+}
+
+/**
+ * Shares to redeem for a vault spend. Prefer CARD_LEND_UNITS (the prior open
+ * note size); otherwise redeem exactly settle. Must cover settle for Cairo.
+ */
+export function vaultRedeemSharesFor(
+  settleAmount: bigint,
+  env: Environment,
+): bigint {
+  const raw = env.CARD_LEND_UNITS || "0";
+  if (!/^\d+$/.test(raw)) {
+    throw new Error("Invalid CARD_LEND_UNITS.");
+  }
+  const configured = BigInt(raw);
+  const shares = configured > 0n ? configured : settleAmount;
+  if (shares < settleAmount) {
+    throw new Error("Vault redeem shares must cover the settle amount.");
+  }
+  return shares;
+}
+
 async function waitForTerminalReceipt(
   provider: RpcProvider,
   transactionHash: string,
@@ -174,6 +204,9 @@ export async function executeHostedCardSettlement(
       config.poolAddress,
     ),
     poolContractAddress: config.poolAddress,
+    shadowAccountAnonymizerAddress:
+      env.CARD_SHADOW_ANONYMIZER ||
+      "0x010a2285310c107c731d997afc147afb7495daff6397c2d242133d9fe8d9b147",
   });
 
   const head = await provider.getBlockNumber();
@@ -182,10 +215,22 @@ export async function executeHostedCardSettlement(
   if (settleAmount <= 0n) {
     throw new Error("Authorization amount rounds to zero settlement units.");
   }
-  const lendAmount = lendAmountFor(authorization, env);
+  const spendFromVault = usesVaultSpend(authorization, env);
+  if (
+    spendFromVault &&
+    !(env.CARD_PROGRAM_CONTRACT && config.earnVault)
+  ) {
+    throw new Error(
+      "Vault spend requires CARD_PROGRAM_CONTRACT and CARD_EARN_VAULT.",
+    );
+  }
+  const lendAmount = spendFromVault ? 0n : lendAmountFor(authorization, env);
   const usesCardProgram =
-    lendAmount > 0n && Boolean(env.CARD_PROGRAM_CONTRACT && config.earnVault);
+    !spendFromVault &&
+    lendAmount > 0n &&
+    Boolean(env.CARD_PROGRAM_CONTRACT && config.earnVault);
   const usesProgrammable =
+    !spendFromVault &&
     lendAmount > 0n &&
     !usesCardProgram &&
     Boolean(config.programmableSpend && config.settlementRecipient);
@@ -194,26 +239,45 @@ export async function executeHostedCardSettlement(
       "Restaurant lend requires CARD_PROGRAM_CONTRACT and CARD_EARN_VAULT.",
     );
   }
+  const programAmount = spendFromVault
+    ? vaultRedeemSharesFor(settleAmount, env)
+    : lendAmount;
   const changeDust = usesProgrammable ? 1n : 0n;
   const funded = settleAmount + lendAmount + changeDust;
   const settleU256 = cairo.uint256(settleAmount);
   const lendU256 = cairo.uint256(lendAmount);
+  const programU256 = cairo.uint256(programAmount);
   const fundedU256 = cairo.uint256(funded);
   const authId = authorizationIdFelt(authorization.authorizationId);
-  const helper = usesCardProgram
-    ? config.programContract
-    : usesProgrammable
-      ? config.programmableSpend!
-      : config.programContract;
+  const helper =
+    usesCardProgram || spendFromVault
+      ? config.programContract
+      : usesProgrammable
+        ? config.programmableSpend!
+        : config.programContract;
 
-  let builder = transfers
-    .build({
-      autoSetup: true,
-      autoDiscover: { notes: "refresh", channels: "refresh" },
-      autoSelectNotes: "all",
-      provingBlockId: Math.max(0, head - 10),
-    })
-    .with(config.settlementToken, (token) => {
+  const buildOpts = {
+    autoSetup: true,
+    autoDiscover: { notes: "refresh" as const, channels: "refresh" as const },
+    autoSelectNotes: "all" as const,
+    provingBlockId: Math.max(0, head - 10),
+  };
+
+  let builder;
+  if (spendFromVault && config.earnVault) {
+    // Redeem vault shares: withdraw vToken to helper, open STRK leftover note.
+    builder = transfers
+      .build(buildOpts)
+      .with(config.earnVault, (vault) =>
+        vault
+          .withdraw({ recipient: helper, amount: programAmount })
+          .surplusTo(config.accountAddress, false),
+      )
+      .with(config.settlementToken, (token) =>
+        token.transfer({ recipient: config.accountAddress, amount: Open }),
+      );
+  } else {
+    builder = transfers.build(buildOpts).with(config.settlementToken, (token) => {
       const fundedToken = token
         .withdraw({ recipient: helper, amount: funded })
         .surplusTo(config.accountAddress, false);
@@ -222,14 +286,30 @@ export async function executeHostedCardSettlement(
         : fundedToken;
     });
 
-  if (usesCardProgram && config.earnVault) {
-    builder = builder.with(config.earnVault, (vault) =>
-      vault.transfer({ recipient: config.accountAddress, amount: Open }),
-    );
+    if (usesCardProgram && config.earnVault) {
+      builder = builder.with(config.earnVault, (vault) =>
+        vault.transfer({ recipient: config.accountAddress, amount: Open }),
+      );
+    }
   }
 
   const { callAndProof, warnings } = await builder
     .invoke((args) => {
+      if (spendFromVault && config.earnVault) {
+        return {
+          contractAddress: helper,
+          entrypoint: "privacy_invoke",
+          calldata: [
+            authId,
+            config.earnVault,
+            settleU256.low,
+            settleU256.high,
+            programU256.low,
+            programU256.high,
+            args.openNotes[0].noteId,
+          ],
+        };
+      }
       if (usesCardProgram) {
         return {
           contractAddress: helper,
@@ -295,6 +375,9 @@ export async function executeHostedCardSettlement(
     blockNumber: "block_number" in receipt ? Number(receipt.block_number) : undefined,
     settleAmount: settleAmount.toString(),
     lendAmount: lendAmount.toString(),
+    ...(spendFromVault
+      ? { programAmount: programAmount.toString() }
+      : {}),
     merchantName: authorization.merchantName,
     merchantCategory: authorization.merchantCategory,
     warnings: warnings.map((warning) => String(warning.code)),
