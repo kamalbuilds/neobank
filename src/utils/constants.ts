@@ -123,6 +123,8 @@ export const ANONYMIZER_ADDRESSES = {
     cardSettlement: null,
     earnVault: null,
     earnAdapter: null,
+    // Official ShadowAccountAnonymizer (constants only; do not redeploy).
+    shadowAccount: "0x04f33230dc57855c6e7eabe66dfa0fde82c5458fd0e54827cdb7cb4c474888a7",
   },
   sepolia: {
     privatePayout: "0x042fd2df34df378e33c2c0cbc3e0183974b2ca69c0d222da2326a5bfd64ec2c3",
@@ -131,6 +133,8 @@ export const ANONYMIZER_ADDRESSES = {
     cardSettlement: "0x074dcd5ee5e0fbfdcf25a7cbc3408711de19fccdf46e8f53c71d35e795f5390a",
     earnVault: "0x076811f28a950b5c6ddaa02bd323b5fccb572676ff57bbc3b979a430f0acda8b",
     earnAdapter: "0x0137d48e53d94333568cedfe8c261b7f3c8ff9206636f6f759c87137da5631f7",
+    // Official Sepolia ShadowAccountAnonymizer (do not redeploy).
+    shadowAccount: "0x010a2285310c107c731d997afc147afb7495daff6397c2d242133d9fe8d9b147",
   },
 } as const satisfies Record<
   NetworkKey,
@@ -141,6 +145,7 @@ export const ANONYMIZER_ADDRESSES = {
     cardSettlement: string | null;
     earnVault: string | null;
     earnAdapter: string | null;
+    shadowAccount: string | null;
   }
 >;
 
