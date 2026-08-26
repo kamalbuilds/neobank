@@ -8,6 +8,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { ANONYMIZER_ADDRESSES } from "@/utils/constants";
 
 export type PublicCardPolicy = {
   perSwipeCap?: string;
@@ -47,6 +48,8 @@ type TimelineState = "waiting" | "active" | "complete" | "blocked";
 
 const STRK_TOKEN =
   "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
+
+const SHADOW_ANONYMIZER = ANONYMIZER_ADDRESSES.sepolia.shadowAccount;
 
 const AUTHORIZATION_ID = /^[A-Za-z0-9_.:-]{1,128}$/;
 
@@ -344,7 +347,7 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
     }
   }
 
-  async function handleDemoAuthorize() {
+  async function handleDemoAuthorize(scene: "dinner" | "from-vault" = "dinner") {
     setDemo("running");
     setDemoMessage("");
     try {
@@ -352,7 +355,7 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
         method: "POST",
         cache: "no-store",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ scene: "dinner" }),
+        body: JSON.stringify({ scene }),
       });
       const data = await readJson(response);
       if (!response.ok) {
@@ -455,7 +458,7 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
             </button>
           </div>
 
-          <dl className="mt-8 grid gap-x-8 gap-y-5 border-y border-white/[0.06] py-5 sm:grid-cols-2 lg:grid-cols-4">
+          <dl className="mt-8 grid gap-x-8 gap-y-5 border-y border-white/[0.06] py-5 sm:grid-cols-2 lg:grid-cols-5">
             <div>
               <dt className="text-xs text-[#687287]">Runtime</dt>
               <dd
@@ -494,6 +497,21 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
                 {shorten(readiness?.poolAddress)}
               </dd>
             </div>
+            <div className="min-w-0">
+              <dt className="text-xs text-[#687287]">Spend identity</dt>
+              <dd
+                className="mt-1.5 truncate font-mono text-sm text-[#d8deea]"
+                title={
+                  SHADOW_ANONYMIZER
+                    ? `Shadow anonymizer ${SHADOW_ANONYMIZER}`
+                    : undefined
+                }
+              >
+                {SHADOW_ANONYMIZER
+                  ? shorten(SHADOW_ANONYMIZER)
+                  : "Not configured"}
+              </dd>
+            </div>
           </dl>
         </section>
 
@@ -526,16 +544,28 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
                   </p>
                 </div>
                 {demoEnabled && (
-                  <button
-                    type="button"
-                    onClick={() => void handleDemoAuthorize()}
-                    disabled={demo === "running" || !runtimeReady}
-                    className="h-11 whitespace-nowrap rounded-2xl border border-[#2dd4bf]/40 bg-[#2dd4bf]/10 px-4 text-sm font-semibold text-[#9ae9da] transition-[background-color,transform] duration-150 hover:bg-[#2dd4bf]/16 active:scale-[0.97] disabled:cursor-wait disabled:opacity-50"
-                  >
-                    {demo === "running"
-                      ? "Paying Osteria Nova"
-                      : "Pay dinner at Osteria Nova"}
-                  </button>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <button
+                      type="button"
+                      onClick={() => void handleDemoAuthorize("dinner")}
+                      disabled={demo === "running" || !runtimeReady}
+                      className="h-11 whitespace-nowrap rounded-2xl border border-[#2dd4bf]/40 bg-[#2dd4bf]/10 px-4 text-sm font-semibold text-[#9ae9da] transition-[background-color,transform] duration-150 hover:bg-[#2dd4bf]/16 active:scale-[0.97] disabled:cursor-wait disabled:opacity-50"
+                    >
+                      {demo === "running"
+                        ? "Paying Osteria Nova"
+                        : "Pay dinner at Osteria Nova"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleDemoAuthorize("from-vault")}
+                      disabled={demo === "running" || !runtimeReady}
+                      className="h-11 whitespace-nowrap rounded-2xl border border-white/[0.14] bg-white/[0.04] px-4 text-sm font-semibold text-[#d8deea] transition-[background-color,transform] duration-150 hover:bg-white/[0.08] active:scale-[0.97] disabled:cursor-wait disabled:opacity-50"
+                    >
+                      {demo === "running"
+                        ? "Paying from vault"
+                        : "Pay Osteria from vault"}
+                    </button>
+                  </div>
                 )}
               </div>
               {demo === "error" && (
