@@ -46,13 +46,43 @@
       "osteria_dinner_amount": "240000000000000000"
     },
     {
+      "name": "CardProgramAnonymizer",
+      "class_hash": "0x42d287c20e7a6de0b85533c79e178e2f7f19bee8228306454ceb50933662fa1",
+      "address": "0x059524ff1c689a45b92e0ff02c752b261805409ff5940721aa4c382ac6b572a4",
+      "network": "sepolia",
+      "tx": "0x00aa9640bb201671a7894223af8eb8255e7bc4f0b43a7c2e874b84ec7b5328b2",
+      "owner": "0x071c62dfb692c3821a9ef120919f388b4559cb2d414c7378da62e6bf7f4f494d",
+      "privacy_pool": "0x0254a6b2997ef52e9f830ce1f543f6b29768295e8d17e2267d672c552cfe0d91",
+      "settlement_recipient": "0x071c62dfb692c3821a9ef120919f388b4559cb2d414c7378da62e6bf7f4f494d",
+      "settlement_token": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+      "vault": "0x076811f28a950b5c6ddaa02bd323b5fccb572676ff57bbc3b979a430f0acda8b",
+      "max_per_transaction": "10000000000000000000",
+      "daily_limit": "100000000000000000000",
+      "osteria_dinner_lend_tx": "0x4d94fa79724d3e997604e4a42a54daab3cc68f4ec17672b3ca9644a843e2639",
+      "osteria_dinner_lend_block": 14109923,
+      "settle_amount": "240000000000000000",
+      "lend_amount": "10000000000000000000"
+    },
+    {
       "name": "EarnVault",
+      "class_hash": "0x779c101f9a1a18bd156e3d51e28f112d8c1aa0a07cba42addae4e4917e0d038",
+      "address": "0x076811f28a950b5c6ddaa02bd323b5fccb572676ff57bbc3b979a430f0acda8b",
+      "network": "sepolia",
+      "tx": "0x043c80a5bb2d9d1c0e21e7810836ecd343ca77abad8083d6a5fdcc716dfeb5c8",
+      "asset": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+      "declare_tx": "0x4500bab3f6a697184f2714304df5de7e4c63075b884e30a40bf4cbf4dab063f",
+      "first_private_deposit_tx": "0x4d94fa79724d3e997604e4a42a54daab3cc68f4ec17672b3ca9644a843e2639",
+      "retired_without_allowance": "0x00474c6b220a15919770a58dad4b4ea19c30b9972a3620c5a16cee8f752068bb"
+    },
+    {
+      "name": "EarnVaultRetired",
       "class_hash": "0x5ff4dcc829e20a3d0e5435bafa6570765e3a14274a56892b5becea638c4d92f",
       "address": "0x00474c6b220a15919770a58dad4b4ea19c30b9972a3620c5a16cee8f752068bb",
       "network": "sepolia",
       "tx": "0x02df5bb47a918d055a078be2ec2cf1021687cdecf81c59bdd87ca0f6484f2253",
       "asset": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
-      "first_deposit_tx": "0x132d3c0d36fd7490489ad5d9fdcec89027676d50ac1a583465a59e79956b2a3"
+      "first_deposit_tx": "0x132d3c0d36fd7490489ad5d9fdcec89027676d50ac1a583465a59e79956b2a3",
+      "retired_reason": "pool calls allowance; this class has no allowance entrypoint"
     },
     {
       "name": "EarnAdapter",

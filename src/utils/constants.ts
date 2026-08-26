@@ -129,7 +129,7 @@ export const ANONYMIZER_ADDRESSES = {
     privateSpend: "0x054d94bbe6640e1258a1961ab1226fcb7cb0a9bfdcd72dab8857195e552dc334",
     programmableSpend: "0x0604a76fd7f50d4856cadbc1b6c45908d3be856fde267435124b7a74a7dcbbb0",
     cardSettlement: "0x074dcd5ee5e0fbfdcf25a7cbc3408711de19fccdf46e8f53c71d35e795f5390a",
-    earnVault: "0x00474c6b220a15919770a58dad4b4ea19c30b9972a3620c5a16cee8f752068bb",
+    earnVault: "0x076811f28a950b5c6ddaa02bd323b5fccb572676ff57bbc3b979a430f0acda8b",
     earnAdapter: "0x0137d48e53d94333568cedfe8c261b7f3c8ff9206636f6f759c87137da5631f7",
   },
 } as const satisfies Record<

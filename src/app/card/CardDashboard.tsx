@@ -440,8 +440,8 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
               </h1>
               <p className="mt-4 max-w-2xl text-[15px] leading-7 text-[#909aae]">
                 Stripe-compatible requests are verified and policy-approved
-                immediately. A hosted STRK20 account settles asynchronously
-                through CardSettlementAnonymizer on Starknet Sepolia.
+                immediately. A hosted STRK20 account then settles the swipe and
+                can open a vault position in the same privacy_invoke on Sepolia.
               </p>
             </div>
 

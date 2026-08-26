@@ -12,11 +12,18 @@ function publicValue(name: string): string | undefined {
   return value || undefined;
 }
 
+function lendOnRestaurantsLabel(): string | undefined {
+  const units = publicValue("CARD_LEND_UNITS");
+  if (!units) return undefined;
+  const whole = BigInt(units) / 1_000_000_000_000_000_000n;
+  return `${whole.toString()} STRK to earn vault`;
+}
+
 export default function CardPage() {
   const policy: PublicCardPolicy = {
     perSwipeCap: publicValue("CARD_MAX_PER_TX_USDC"),
-    dailyCap: publicValue("CARD_DAILY_CAP_LABEL") || "5 STRK onchain",
-    lendOnRestaurants: publicValue("CARD_LEND_UNITS") ? "1 STRK to earn vault" : undefined,
+    dailyCap: publicValue("CARD_DAILY_CAP_LABEL") || "100 STRK onchain",
+    lendOnRestaurants: lendOnRestaurantsLabel(),
     allowedCountries: publicValue("CARD_ALLOWED_COUNTRIES"),
     blockedCategories: publicValue("CARD_BLOCKED_MERCHANT_CATEGORIES"),
   };
