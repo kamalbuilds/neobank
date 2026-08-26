@@ -5,6 +5,7 @@ import {
   cardPolicyFromEnv,
   evaluateCardPolicy,
   isDemoAuthorizeEnabled,
+  lendAmountFor,
   parseStripeAuthorization,
   stripeSignatureHeader,
   verifyStripeSignature,
@@ -76,6 +77,39 @@ describe("card authorization trust boundary", () => {
     expect(isDemoAuthorizeEnabled({})).toBe(false);
     expect(isDemoAuthorizeEnabled({ CARD_DEMO_AUTHORIZE: "true" })).toBe(false);
     expect(isDemoAuthorizeEnabled({ CARD_DEMO_AUTHORIZE: "1" })).toBe(true);
+  });
+
+  it("lends only on restaurant categories and stays zero otherwise", () => {
+    const dinner = parseStripeAuthorization(
+      JSON.stringify({
+        id: "evt_dinner",
+        type: "issuing_authorization.request",
+        data: {
+          object: {
+            id: "iauth_dinner",
+            amount: 24,
+            currency: "usd",
+            merchant_data: {
+              name: "Osteria Nova",
+              country: "US",
+              category: "restaurants",
+            },
+          },
+        },
+      }),
+    );
+    expect(
+      lendAmountFor(dinner, { CARD_LEND_UNITS: "1000000000000000000" }),
+    ).toBe(1_000_000_000_000_000_000n);
+    expect(
+      lendAmountFor(dinner, {
+        CARD_LEND_UNITS: "1000000000000000000",
+        CARD_LEND_CATEGORIES: "grocery_stores",
+      }),
+    ).toBe(0n);
+    expect(lendAmountFor(parseStripeAuthorization(raw), { CARD_LEND_UNITS: "1000000000000000000" })).toBe(
+      0n,
+    );
   });
 
   it("enforces per-transaction, country, and merchant-category policy", () => {

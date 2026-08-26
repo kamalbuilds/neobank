@@ -3,6 +3,8 @@ import { authorizationIdFelt } from "./authorization.ts";
 import { cardRuntimeStatus, parseCardRuntimeConfig } from "./runtime.ts";
 
 const AUTHORIZATION_SETTLED_SELECTOR = hash.getSelectorFromName("AuthorizationSettled");
+const POSITION_OPENED_SELECTOR = hash.getSelectorFromName("PositionOpened");
+const PAYOUT_EXECUTED_SELECTOR = hash.getSelectorFromName("PayoutExecuted");
 const EVENT_PAGE_SIZE = 100;
 const MAX_EVENT_PAGES = 20;
 const HEALTH_TIMEOUT_MS = 5_000;
@@ -113,6 +115,9 @@ export type SettledAuthorization = {
   amount: string;
   day: number;
   blockNumber?: number;
+  lendAssets?: string;
+  lendShares?: string;
+  vault?: string;
 };
 
 export function validateAuthorizationId(authorizationId: string): boolean {
@@ -284,11 +289,28 @@ async function findSettlementTransaction(
 }
 
 function settlementContract(env: Environment): string {
-  const value = env.CARD_SETTLEMENT_CONTRACT?.trim();
+  const value =
+    env.CARD_PROGRAM_CONTRACT?.trim() || env.CARD_SETTLEMENT_CONTRACT?.trim();
   if (!value) {
     throw new Error("CARD_SETTLEMENT_CONTRACT missing");
   }
   return value;
+}
+
+function settlementContracts(env: Environment): string[] {
+  const values = [
+    env.CARD_PROGRAM_CONTRACT?.trim(),
+    env.CARD_SETTLEMENT_CONTRACT?.trim(),
+  ].filter((value): value is string => Boolean(value));
+  const seen = new Set<string>();
+  const unique: string[] = [];
+  for (const value of values) {
+    const key = BigInt(value).toString();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(value);
+  }
+  return unique;
 }
 
 function parseSettledEvent(
@@ -311,6 +333,44 @@ function parseSettledEvent(
   };
 }
 
+async function collectEvents(
+  provider: CardStatusProvider,
+  contractAddress: string,
+  selector: string,
+  fromBlock: number,
+): Promise<ChainEvent[]> {
+  const events: ChainEvent[] = [];
+  let continuationToken: string | undefined;
+  for (let page = 0; page < MAX_EVENT_PAGES; page += 1) {
+    const result = await provider.getEvents({
+      from_block: { block_number: fromBlock },
+      to_block: "latest",
+      address: contractAddress,
+      keys: [[selector]],
+      chunk_size: EVENT_PAGE_SIZE,
+      ...(continuationToken ? { continuation_token: continuationToken } : {}),
+    });
+    events.push(...result.events);
+    if (!result.continuation_token) break;
+    continuationToken = result.continuation_token;
+  }
+  return events;
+}
+
+function parsePositionOpened(
+  event: ChainEvent,
+): { authorizationFelt: string; vault: string; lendAssets: string; lendShares: string } | undefined {
+  const authorizationFelt = event.keys?.[1];
+  const data = event.data || [];
+  if (!authorizationFelt || data.length < 5) return undefined;
+  return {
+    authorizationFelt,
+    vault: data[0],
+    lendAssets: uint256(data[1], data[2]).toString(),
+    lendShares: uint256(data[3], data[4]).toString(),
+  };
+}
+
 export async function listSettledAuthorizations(
   options: Omit<StatusOptions, "fetcher"> = {},
 ): Promise<{
@@ -319,31 +379,88 @@ export async function listSettledAuthorizations(
   settlements: SettledAuthorization[];
 }> {
   const env = options.env || process.env;
-  const contractAddress = settlementContract(env);
+  const contracts = settlementContracts(env);
+  if (contracts.length === 0) {
+    throw new Error("CARD_SETTLEMENT_CONTRACT missing");
+  }
   const config = publicRuntimeConfig(env);
   const provider = options.provider || providerFor(config.rpcUrl);
   const fromBlock = deployBlock(env) ?? 0;
   const settlements: SettledAuthorization[] = [];
-  let continuationToken: string | undefined;
 
-  for (let page = 0; page < MAX_EVENT_PAGES; page += 1) {
-    const result = await provider.getEvents({
-      from_block: { block_number: fromBlock },
-      to_block: "latest",
-      address: contractAddress,
-      keys: [[AUTHORIZATION_SETTLED_SELECTOR]],
-      chunk_size: EVENT_PAGE_SIZE,
-      ...(continuationToken ? { continuation_token: continuationToken } : {}),
-    });
-    for (const event of result.events) {
+  for (const contractAddress of contracts) {
+    const [settledEvents, positionEvents] = await Promise.all([
+      collectEvents(provider, contractAddress, AUTHORIZATION_SETTLED_SELECTOR, fromBlock),
+      collectEvents(provider, contractAddress, POSITION_OPENED_SELECTOR, fromBlock),
+    ]);
+    const positions = new Map(
+      positionEvents
+        .map(parsePositionOpened)
+        .filter(
+          (
+            value,
+          ): value is {
+            authorizationFelt: string;
+            vault: string;
+            lendAssets: string;
+            lendShares: string;
+          } => Boolean(value),
+        )
+        .map((value) => [value.authorizationFelt, value]),
+    );
+    for (const event of settledEvents) {
       const parsed = parseSettledEvent(event);
-      if (parsed) settlements.push(parsed);
+      if (!parsed) continue;
+      const position = positions.get(parsed.authorizationFelt);
+      settlements.push(
+        position
+          ? {
+              ...parsed,
+              vault: position.vault,
+              lendAssets: position.lendAssets,
+              lendShares: position.lendShares,
+            }
+          : parsed,
+      );
     }
-    if (!result.continuation_token) break;
-    continuationToken = result.continuation_token;
   }
 
-  settlements.reverse();
+  const programmable = env.CARD_PROGRAMMABLE_SPEND?.trim();
+  if (programmable) {
+    const [payouts, positions] = await Promise.all([
+      collectEvents(provider, programmable, PAYOUT_EXECUTED_SELECTOR, fromBlock),
+      collectEvents(provider, programmable, POSITION_OPENED_SELECTOR, fromBlock),
+    ]);
+    const lendByTx = new Map<string, { vault: string; lendAssets: string }>();
+    for (const event of positions) {
+      const data = event.data || [];
+      if (!event.transaction_hash || data.length < 4) continue;
+      lendByTx.set(event.transaction_hash, {
+        vault: data[0],
+        lendAssets: uint256(data[2], data[3]).toString(),
+      });
+    }
+    for (const event of payouts) {
+      const data = event.data || [];
+      if (!event.transaction_hash || data.length < 4) continue;
+      const lend = lendByTx.get(event.transaction_hash);
+      settlements.push({
+        authorizationFelt: event.transaction_hash,
+        transactionHash: event.transaction_hash,
+        explorerTransactionUrl: `https://sepolia.voyager.online/tx/${event.transaction_hash}`,
+        recipient: data[0],
+        token: data[1],
+        amount: uint256(data[2], data[3]).toString(),
+        day: 0,
+        blockNumber: event.block_number,
+        vault: lend?.vault,
+        lendAssets: lend?.lendAssets,
+      });
+    }
+  }
+
+  settlements.sort((a, b) => (b.blockNumber || 0) - (a.blockNumber || 0));
+  const contractAddress = settlementContract(env);
   return {
     contractAddress,
     explorerContractUrl: `https://sepolia.voyager.online/contract/${contractAddress}`,

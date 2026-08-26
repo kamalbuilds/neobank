@@ -9,6 +9,9 @@ Updated: 2026-08-26. Deadline 2026-08-31 23:59 UTC.
 
 | Item | State | Evidence |
 |---|---|---|
+| Osteria dinner swipe from the pool | DONE | Sepolia tx `0x18d87405...be8a`, ACCEPTED_ON_L2, 0.24 STRK to the acquirer. Merchant string `Osteria Nova`. |
+| Earn vault | DONE | Sepolia `0x00474c6b...68bb`. Public 1 STRK deposit `0x132d3c0d...b2a3`. Adapter `0x0137d48e...31f7` is wired as ProgrammableSpend position vault. |
+| Atomic private dinner+lend | PARTIAL | CardProgramAnonymizer 8/8 Cairo tests. Live invoke still needs the class declared (~16 STRK). ProgrammableSpend path hit `Insufficient ERC20 allowance` because that helper never approves the pool for the change note. |
 | Hosted card authorization loop | DONE | Sepolia tx `0x063b3fe7...88acf4`, ACCEPTED_ON_L1, `AuthorizationSettled` 0.5 STRK to `0x071c62...494d`. `/api/card/status/settlements` returns that receipt. `/card` rendered it in deepsurge. |
 | CardSettlementAnonymizer | DONE | Sepolia `0x074dcd5e...5390a`, class `0x0171adb...6d9c5`. Replay map and daily spend read back after the tx. |
 | Stripe-compatible authorize API | DONE | `tests/card-authorization.test.ts`, `tests/card-authorize.test.ts`. Tampered HMAC 401. Policy-blocked merchant does not settle. Already-settled id returns confirmed and does not settle twice. |

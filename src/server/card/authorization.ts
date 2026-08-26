@@ -194,3 +194,20 @@ export function isDemoAuthorizeEnabled(
 ): boolean {
   return env.CARD_DEMO_AUTHORIZE === "1";
 }
+
+export function lendAmountFor(
+  authorization: CardAuthorization,
+  env: Readonly<Record<string, string | undefined>> = process.env,
+): bigint {
+  const raw = env.CARD_LEND_UNITS || "0";
+  if (!/^\d+$/.test(raw)) {
+    throw new Error("Invalid CARD_LEND_UNITS.");
+  }
+  const units = BigInt(raw);
+  if (units <= 0n) return 0n;
+  const categories = csvSet(
+    env.CARD_LEND_CATEGORIES,
+    "restaurants,eating_places_restaurants",
+  );
+  return categories.has(authorization.merchantCategory) ? units : 0n;
+}
