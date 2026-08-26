@@ -3,9 +3,15 @@ import { useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
 import styles from "../../uni.module.css";
 import { useStoreWallet } from "../Wallet/walletContext";
-import { TOKENS, type TokenSymbol } from "@/utils/constants";
+import {
+  DEFAULT_NETWORK,
+  poolAddressFor,
+  TOKENS,
+  type TokenSymbol,
+} from "@/utils/constants";
 import { toBaseUnits, fromBaseUnits } from "../lib/format";
 import { buildPaymentRequestUrl, type PaymentRequest } from "../lib/paymentRequest";
+import { encodePublicAddress, encodeShieldedReceiver } from "../lib/beam";
 import TokenSelect from "./TokenSelect";
 
 const EXPIRY_OPTIONS: { value: string; label: string }[] = [
@@ -16,17 +22,43 @@ const EXPIRY_OPTIONS: { value: string; label: string }[] = [
   { value: "2592000", label: "Expires in 30 days" },
 ];
 
+type CopyKind = "address" | "pool" | "strk" | "strkx" | "link" | "";
+
 export default function ReceivePanel() {
   const address = useStoreWallet((s) => s.address);
+  const network = useStoreWallet((s) => s.network) ?? DEFAULT_NETWORK;
   const strk20Capable = useStoreWallet((s) => s.strk20Capable);
   const [token, setToken] = useState<TokenSymbol>("STRK");
   const [amount, setAmount] = useState("");
   const [memo, setMemo] = useState("");
   const [expiryChoice, setExpiryChoice] = useState("0");
-  const [copied, setCopied] = useState<"address" | "link" | "">("");
+  const [copied, setCopied] = useState<CopyKind>("");
   const [qr, setQr] = useState<string>("");
 
   const tokenConfig = TOKENS[token];
+  const poolHex = poolAddressFor(network);
+
+  const checksummed = useMemo(() => {
+    if (!address) return "";
+    try {
+      return encodePublicAddress(address);
+    } catch {
+      return "";
+    }
+  }, [address]);
+
+  const shieldedReceiver = useMemo(() => {
+    if (!address) return "";
+    try {
+      return encodeShieldedReceiver({
+        version: 0,
+        pool: poolHex,
+        account: address,
+      });
+    } catch {
+      return "";
+    }
+  }, [address, poolHex]);
 
   const amountState = useMemo(() => {
     if (!amount.trim()) return { units: undefined as bigint | undefined, error: "" };
@@ -75,7 +107,8 @@ export default function ReceivePanel() {
     };
   }, [requestLink]);
 
-  async function copy(kind: "address" | "link", value: string) {
+  async function copy(kind: Exclude<CopyKind, "">, value: string) {
+    if (!value) return;
     try {
       await navigator.clipboard.writeText(value);
       setCopied(kind);
@@ -180,12 +213,66 @@ export default function ReceivePanel() {
 
         <div style={{ marginTop: 16 }}>
           <div className={styles.inputLabel}>Your receive address</div>
-          <div className={styles.subMono} style={{ wordBreak: "break-all", marginTop: 10, fontSize: 13 }}>
+          <div className={styles.subLine} style={{ color: "var(--muted)", marginTop: 6 }}>
+            Hex pool and account path for private transfers, plus SNIP-42/43 checksummed strings
+            (not an official Beam product).
+          </div>
+
+          <div className={styles.inputLabel} style={{ marginTop: 14 }}>
+            Account (hex)
+          </div>
+          <div className={styles.subMono} style={{ wordBreak: "break-all", marginTop: 8, fontSize: 13 }}>
             {address}
           </div>
-          <div className={styles.subLine} style={{ marginTop: 12 }}>
+          <div className={styles.subLine} style={{ marginTop: 8 }}>
             <button className={styles.tab} onClick={() => copy("address", address)}>
-              {copied === "address" ? "Copied address" : "Copy address"}
+              {copied === "address" ? "Copied account" : "Copy account hex"}
+            </button>
+          </div>
+
+          <div className={styles.inputLabel} style={{ marginTop: 14 }}>
+            Privacy pool (hex)
+          </div>
+          <div className={styles.subMono} style={{ wordBreak: "break-all", marginTop: 8, fontSize: 13 }}>
+            {poolHex}
+          </div>
+          <div className={styles.subLine} style={{ marginTop: 8 }}>
+            <button className={styles.tab} onClick={() => copy("pool", poolHex)}>
+              {copied === "pool" ? "Copied pool" : "Copy pool hex"}
+            </button>
+          </div>
+
+          <div className={styles.inputLabel} style={{ marginTop: 14 }}>
+            Checksummed address (strk)
+          </div>
+          <div className={styles.subMono} style={{ wordBreak: "break-all", marginTop: 8, fontSize: 13 }}>
+            {checksummed || "-"}
+          </div>
+          <div className={styles.subLine} style={{ marginTop: 8 }}>
+            <button
+              className={styles.tab}
+              onClick={() => copy("strk", checksummed)}
+              disabled={!checksummed}
+              style={{ opacity: checksummed ? 1 : 0.5 }}
+            >
+              {copied === "strk" ? "Copied checksummed address" : "Copy checksummed address"}
+            </button>
+          </div>
+
+          <div className={styles.inputLabel} style={{ marginTop: 14 }}>
+            Shielded receiver string (strkx)
+          </div>
+          <div className={styles.subMono} style={{ wordBreak: "break-all", marginTop: 8, fontSize: 13 }}>
+            {shieldedReceiver || "-"}
+          </div>
+          <div className={styles.subLine} style={{ marginTop: 8 }}>
+            <button
+              className={styles.tab}
+              onClick={() => copy("strkx", shieldedReceiver)}
+              disabled={!shieldedReceiver}
+              style={{ opacity: shieldedReceiver ? 1 : 0.5 }}
+            >
+              {copied === "strkx" ? "Copied shielded receiver" : "Copy shielded receiver string"}
             </button>
             <button
               className={styles.tab}
