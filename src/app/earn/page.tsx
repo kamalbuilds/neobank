@@ -1,0 +1,130 @@
+'use client';
+
+import { useCallback, useEffect, useState } from 'react';
+import {
+  ANONYMIZER_ADDRESSES,
+  explorerAddressUrl,
+  providerFor,
+  TOKENS,
+  type NetworkKey,
+} from '@/utils/constants';
+import { withRetry } from '../components/lib/rpcRetry';
+import { fromBaseUnits, shortHex } from '../components/lib/format';
+import { AccountChrome } from '../components/v2/AccountChrome';
+
+const EARN_VAULT = ANONYMIZER_ADDRESSES.sepolia.earnVault;
+const EXPECTED_VAULT =
+  '0x076811f28a950b5c6ddaa02bd323b5fccb572676ff57bbc3b979a430f0acda8b';
+
+async function readTotalAssets(network: NetworkKey, vault: string): Promise<bigint> {
+  const provider = providerFor(network);
+  const result = await withRetry(() =>
+    provider.callContract({
+      contractAddress: vault,
+      entrypoint: 'total_assets',
+      calldata: [],
+    }),
+  );
+  const low = BigInt(result[0]);
+  const high = BigInt(result[1] ?? '0x0');
+  return low + (high << 128n);
+}
+
+export default function EarnPage() {
+  const [totalAssets, setTotalAssets] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(async () => {
+    if (!EARN_VAULT) {
+      setError('Earn vault is not configured on this network.');
+      setTotalAssets(null);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const assets = await readTotalAssets('sepolia', EARN_VAULT);
+      setTotalAssets(fromBaseUnits(assets, TOKENS.STRK.decimals));
+    } catch (e) {
+      setTotalAssets(null);
+      setError(e instanceof Error ? e.message : 'Failed to read total_assets');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  const vault = EARN_VAULT ?? EXPECTED_VAULT;
+
+  return (
+    <AccountChrome>
+      <div className="rounded-3xl border border-white/[0.07] bg-white/[0.028] backdrop-blur-xl p-6 min-h-[380px] flex flex-col gap-6">
+        <div>
+          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7a859c]">
+            Earn vault
+          </div>
+          <h1 className="mt-2 font-[family-name:var(--font-display)] text-[28px] font-semibold tracking-[-0.02em] text-[#eaf0f8]">
+            Restaurant swipes lend into this vault
+          </h1>
+          <p className="mt-3 max-w-xl text-[14px] leading-relaxed text-[#7a859c]">
+            When a card authorization settles a restaurant swipe, the program lends 10 STRK from
+            the private pool into this earn vault. The figure below is live{' '}
+            <span className="font-[family-name:var(--font-mono-ui)] text-[#a3acbd]">total_assets</span>{' '}
+            from Sepolia RPC. No APY is shown because this vault does not publish a yield rate
+            here.
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-5">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7a859c]">
+            Live total_assets
+          </div>
+          <div className="mt-2 font-[family-name:var(--font-display)] text-[40px] leading-none tracking-[-0.02em] tabular-nums bg-gradient-to-r from-[#2dd4bf] via-[#5eead4] to-[#67e8f9] bg-clip-text text-transparent">
+            {loading ? '…' : (totalAssets ?? 'Unavailable')}
+            {!loading && totalAssets !== null ? (
+              <span className="ml-2 text-[18px] text-[#7a859c]">STRK</span>
+            ) : null}
+          </div>
+          {error ? (
+            <p className="mt-3 text-[13px] text-[#f87171]">{error}</p>
+          ) : (
+            <p className="mt-3 text-[13px] text-[#7a859c]">
+              Read via <span className="font-[family-name:var(--font-mono-ui)]">total_assets()</span>{' '}
+              on Sepolia. Refresh to re-query.
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={refresh}
+            className="mt-4 h-9 rounded-full border border-white/[0.12] bg-white/[0.04] px-4 text-[12px] font-semibold text-[#eaf0f8] hover:bg-white/[0.09] transition-colors"
+          >
+            Refresh
+          </button>
+        </div>
+
+        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-5">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7a859c]">
+            CARD_EARN_VAULT
+          </div>
+          <a
+            href={explorerAddressUrl('sepolia', vault)}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-2 block break-all font-[family-name:var(--font-mono-ui)] text-[13px] text-[#2dd4bf] hover:underline"
+          >
+            {vault}
+          </a>
+          <p className="mt-2 text-[12px] text-[#7a859c]">
+            Short: {shortHex(vault)}. Public vault TVL only; your private share note stays in the
+            pool.
+          </p>
+        </div>
+      </div>
+    </AccountChrome>
+  );
+}
