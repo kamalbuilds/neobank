@@ -189,6 +189,13 @@ fn test_dinner_and_lend_pays_and_returns_vault_shares() {
             .balance_of(harness.anonymizer),
         30,
     );
+    // The STRK20 pool reads allowance before pulling the open-note shares.
+    // This is the postcondition that failed live as ENTRYPOINT_NOT_FOUND.
+    assert_eq!(
+        IMockERC4626Dispatcher { contract_address: harness.vault }
+            .allowance(harness.anonymizer, harness.pool),
+        30,
+    );
     spy
         .assert_emitted(
             @array![

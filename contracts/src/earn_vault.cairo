@@ -15,6 +15,7 @@ pub trait IEarnVault<T> {
         ref self: T, shares: u256, receiver: ContractAddress, owner: ContractAddress,
     ) -> u256;
     fn balance_of(self: @T, account: ContractAddress) -> u256;
+    fn allowance(self: @T, owner: ContractAddress, spender: ContractAddress) -> u256;
     fn approve(ref self: T, spender: ContractAddress, amount: u256) -> bool;
     fn transfer(ref self: T, recipient: ContractAddress, amount: u256) -> bool;
     fn transfer_from(
@@ -120,6 +121,12 @@ pub mod EarnVault {
 
         fn balance_of(self: @ContractState, account: ContractAddress) -> u256 {
             self.balances.read(account)
+        }
+
+        fn allowance(
+            self: @ContractState, owner: ContractAddress, spender: ContractAddress,
+        ) -> u256 {
+            self.allowances.read((owner, spender))
         }
 
         fn approve(ref self: ContractState, spender: ContractAddress, amount: u256) -> bool {
