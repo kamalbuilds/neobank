@@ -183,10 +183,16 @@ export async function executeHostedCardSettlement(
     throw new Error("Authorization amount rounds to zero settlement units.");
   }
   const lendAmount = lendAmountFor(authorization, env);
+  const usesCardProgram =
+    lendAmount > 0n && Boolean(env.CARD_PROGRAM_CONTRACT && config.earnVault);
   const usesProgrammable =
-    lendAmount > 0n && Boolean(config.programmableSpend && config.settlementRecipient);
-  if (lendAmount > 0n && !usesProgrammable) {
-    throw new Error("Restaurant lend requires CARD_PROGRAMMABLE_SPEND and CARD_SETTLEMENT_RECIPIENT.");
+    lendAmount > 0n &&
+    !usesCardProgram &&
+    Boolean(config.programmableSpend && config.settlementRecipient);
+  if (lendAmount > 0n && !usesCardProgram && !usesProgrammable) {
+    throw new Error(
+      "Restaurant lend requires CARD_PROGRAM_CONTRACT and CARD_EARN_VAULT.",
+    );
   }
   const changeDust = usesProgrammable ? 1n : 0n;
   const funded = settleAmount + lendAmount + changeDust;
@@ -194,12 +200,15 @@ export async function executeHostedCardSettlement(
   const lendU256 = cairo.uint256(lendAmount);
   const fundedU256 = cairo.uint256(funded);
   const authId = authorizationIdFelt(authorization.authorizationId);
-  const helper = usesProgrammable
-    ? config.programmableSpend!
-    : config.programContract;
+  const helper = usesCardProgram
+    ? config.programContract
+    : usesProgrammable
+      ? config.programmableSpend!
+      : config.programContract;
 
   let builder = transfers
     .build({
+      autoSetup: true,
       autoDiscover: { notes: "refresh", channels: "refresh" },
       autoSelectNotes: "all",
       provingBlockId: Math.max(0, head - 10),
@@ -213,32 +222,54 @@ export async function executeHostedCardSettlement(
         : fundedToken;
     });
 
+  if (usesCardProgram && config.earnVault) {
+    builder = builder.with(config.earnVault, (vault) =>
+      vault.transfer({ recipient: config.accountAddress, amount: Open }),
+    );
+  }
+
   const { callAndProof, warnings } = await builder
-    .invoke((args) =>
-      usesProgrammable
-        ? {
-            contractAddress: helper,
-            entrypoint: "privacy_invoke",
-            calldata: [
-              config.settlementToken,
-              fundedU256.low,
-              fundedU256.high,
-              lendU256.low,
-              lendU256.high,
-              1n,
-              config.settlementRecipient!,
-              1n,
-              settleU256.low,
-              settleU256.high,
-              args.openNotes[0].noteId,
-            ],
-          }
-        : {
-            contractAddress: helper,
-            entrypoint: "privacy_invoke",
-            calldata: [authId, config.settlementToken, settleU256.low, settleU256.high],
-          },
-    )
+    .invoke((args) => {
+      if (usesCardProgram) {
+        return {
+          contractAddress: helper,
+          entrypoint: "privacy_invoke",
+          calldata: [
+            authId,
+            config.settlementToken,
+            settleU256.low,
+            settleU256.high,
+            lendU256.low,
+            lendU256.high,
+            args.openNotes[0].noteId,
+          ],
+        };
+      }
+      if (usesProgrammable) {
+        return {
+          contractAddress: helper,
+          entrypoint: "privacy_invoke",
+          calldata: [
+            config.settlementToken,
+            fundedU256.low,
+            fundedU256.high,
+            lendU256.low,
+            lendU256.high,
+            1n,
+            config.settlementRecipient!,
+            1n,
+            settleU256.low,
+            settleU256.high,
+            args.openNotes[0].noteId,
+          ],
+        };
+      }
+      return {
+        contractAddress: helper,
+        entrypoint: "privacy_invoke",
+        calldata: [authId, config.settlementToken, settleU256.low, settleU256.high],
+      };
+    })
     .execute();
 
   const proofDetails = callAndProof.proof.proofFacts.length
