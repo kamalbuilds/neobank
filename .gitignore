@@ -39,3 +39,5 @@ A1priv/A1priv.ts
 .gstack/
 # cairo build artifacts
 /cairo/target/
+
+contracts/.snfoundry_cache/

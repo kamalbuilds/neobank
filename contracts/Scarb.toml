@@ -27,6 +27,7 @@ name = "private_payout_anonymizer_unittest"
 build-external-contracts = [
     "private_payout_anonymizer::test_utils_contracts::mock_erc20::MockERC20",
     "private_payout_anonymizer::test_utils_contracts::mock_erc20::MockERC20FailingTransfer",
+    "private_payout_anonymizer::test_utils_contracts::mock_router::MockRouter",
     "private_payout_anonymizer::test_utils_contracts::mock_vault::MockVault",
     "private_payout_anonymizer::test_utils_contracts::mock_erc4626::MockERC4626",
     "private_payout_anonymizer::earn_vault::EarnVault",
