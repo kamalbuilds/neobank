@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { CardDashboard, type PublicCardPolicy } from "./CardDashboard";
 
 export const metadata: Metadata = {
-  title: "Private Card: Programmatic STRK20 Settlement",
+  title: "Sotto: private card runtime",
   description:
     "Monitor Stripe-compatible authorizations and asynchronous private settlement through STRK20 on Starknet Sepolia.",
 };

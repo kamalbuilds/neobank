@@ -14,12 +14,12 @@ export function VaultShell() {
   return (
     <AccountChrome>
       <AccountConnectWall>
-        <div className="rounded-3xl border border-white/[0.07] bg-white/[0.028] backdrop-blur-xl p-6 min-h-[380px]">
+        <div className="rounded-3xl border border-white/[0.07] bg-white/[0.028] backdrop-blur-xl elevate-1 p-6 min-h-[380px]">
           <ShieldPanel network={net} />
         </div>
       </AccountConnectWall>
 
-      <div className="rounded-3xl border border-white/[0.07] bg-white/[0.028] backdrop-blur-xl p-6">
+      <div className="rounded-3xl border border-white/[0.07] bg-white/[0.028] backdrop-blur-xl elevate-1 p-6">
         <ActivityPanel network={net} />
       </div>
     </AccountChrome>

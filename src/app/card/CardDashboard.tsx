@@ -9,6 +9,8 @@ import {
   useState,
 } from "react";
 import { ANONYMIZER_ADDRESSES } from "@/utils/constants";
+import { BankCard, type BankCardStatus } from "../components/v2/BankCard";
+import { Skeleton } from "../components/v2/ui";
 
 export type PublicCardPolicy = {
   perSwipeCap?: string;
@@ -384,6 +386,8 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
   const readiness =
     runtime.phase === "loaded" ? runtime.readiness : undefined;
   const runtimeReady = readiness?.ready === true;
+  const cardStatus: BankCardStatus =
+    runtime.phase === "loading" ? "checking" : runtimeReady ? "ready" : "blocked";
   const runtimeHealth =
     runtime.phase === "loaded" && isRecord(runtime.health?.health)
       ? runtime.health.health
@@ -433,11 +437,21 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
 
       <div className="mx-auto max-w-[1320px] px-5 py-8 sm:px-8 lg:py-10">
         <section className="border-b border-white/[0.07] pb-8">
-          <div className="grid gap-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start">
             <div className="max-w-3xl">
-              <p className="font-mono text-xs uppercase tracking-[0.14em] text-[#2dd4bf]">
-                Programmatic settlement
-              </p>
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <p className="font-mono text-xs uppercase tracking-[0.14em] text-[#2dd4bf]">
+                  Programmatic settlement
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void loadRuntime()}
+                  disabled={runtime.phase === "loading"}
+                  className="min-h-11 rounded-2xl border border-white/[0.1] bg-white/[0.03] px-4 text-sm font-medium text-[#d8deea] transition-[background-color,border-color,transform] duration-150 hover:border-white/[0.18] hover:bg-white/[0.06] active:scale-[0.97] disabled:cursor-wait disabled:opacity-50 lg:hidden"
+                >
+                  {runtime.phase === "loading" ? "Checking runtime" : "Refresh runtime"}
+                </button>
+              </div>
               <h1 className="mt-3 font-display text-[clamp(2rem,4vw,3.75rem)] font-medium leading-[1.02] tracking-[-0.04em]">
                 Card authorization now. Private settlement next.
               </h1>
@@ -446,16 +460,24 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
                 immediately. A hosted STRK20 account then settles the swipe and
                 can open a vault position in the same privacy_invoke on Sepolia.
               </p>
+              <button
+                type="button"
+                onClick={() => void loadRuntime()}
+                disabled={runtime.phase === "loading"}
+                className="mt-5 hidden min-h-11 rounded-2xl border border-white/[0.1] bg-white/[0.03] px-4 text-sm font-medium text-[#d8deea] transition-[background-color,border-color,transform] duration-150 hover:border-white/[0.18] hover:bg-white/[0.06] active:scale-[0.97] disabled:cursor-wait disabled:opacity-50 lg:inline-flex"
+              >
+                {runtime.phase === "loading" ? "Checking runtime" : "Refresh runtime"}
+              </button>
             </div>
 
-            <button
-              type="button"
-              onClick={() => void loadRuntime()}
-              disabled={runtime.phase === "loading"}
-              className="min-h-11 rounded-2xl border border-white/[0.1] bg-white/[0.03] px-4 text-sm font-medium text-[#d8deea] transition-[background-color,border-color,transform] duration-150 hover:border-white/[0.18] hover:bg-white/[0.06] active:scale-[0.97] disabled:cursor-wait disabled:opacity-50"
-            >
-              {runtime.phase === "loading" ? "Checking runtime" : "Refresh runtime"}
-            </button>
+            <div className="mx-auto w-full lg:mx-0">
+              <BankCard
+                accountAddress={readiness?.accountAddress}
+                network={readiness?.network || "Sepolia"}
+                status={cardStatus}
+                dailyCap={policy.dailyCap}
+              />
+            </div>
           </div>
 
           <dl className="mt-8 grid gap-x-8 gap-y-5 border-y border-white/[0.06] py-5 sm:grid-cols-2 lg:grid-cols-5">
@@ -516,7 +538,7 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
         </section>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.72fr)]">
-          <section className="min-w-0 rounded-2xl border border-white/[0.07] bg-white/[0.022] p-5 sm:p-6">
+          <section className="min-w-0 rounded-2xl border border-white/[0.07] bg-white/[0.022] elevate-1 p-5 sm:p-6">
             <div className="flex flex-col gap-2 border-b border-white/[0.06] pb-5 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <h2 className="font-display text-xl font-medium tracking-[-0.02em]">
@@ -575,12 +597,13 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
               )}
               <div aria-live="polite" className="mt-4">
                 {settlements.phase === "loading" && (
-                  <p className="text-sm leading-6 text-[#7f899d]">
-                    Reading settlement receipts from Sepolia.
-                  </p>
+                  <div className="flex flex-col gap-2" aria-busy="true" aria-label="Reading settlement receipts from Sepolia">
+                    <Skeleton className="h-12" />
+                    <Skeleton className="h-12" />
+                  </div>
                 )}
                 {settlements.phase === "error" && (
-                  <p className="text-sm leading-6 text-[#fca5a5]">
+                  <p className="text-sm leading-6 text-[#fca5a5]" role="alert">
                     {settlements.message}
                   </p>
                 )}
@@ -805,7 +828,7 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
           </section>
 
           <aside className="min-w-0 space-y-6">
-            <section className="rounded-2xl border border-white/[0.07] bg-white/[0.022] p-5">
+            <section className="rounded-2xl border border-white/[0.07] bg-white/[0.022] elevate-1 p-5">
               <h2 className="font-display text-lg font-medium tracking-[-0.02em]">
                 Card policy
               </h2>
@@ -843,7 +866,7 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
               </p>
             </section>
 
-            <section className="rounded-2xl border border-white/[0.07] bg-white/[0.022] p-5">
+            <section className="rounded-2xl border border-white/[0.07] bg-white/[0.022] elevate-1 p-5">
               <div className="flex items-center justify-between gap-4">
                 <h2 className="font-display text-lg font-medium tracking-[-0.02em]">
                   Runtime blockers
@@ -903,7 +926,7 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
             </section>
 
             {runtimeHealth && (
-              <section className="rounded-2xl border border-white/[0.07] bg-white/[0.022] p-5">
+              <section className="rounded-2xl border border-white/[0.07] bg-white/[0.022] elevate-1 p-5">
                 <h2 className="font-display text-lg font-medium tracking-[-0.02em]">
                   Runtime probes
                 </h2>
@@ -927,7 +950,7 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
           </aside>
         </div>
 
-        <section className="mt-6 rounded-2xl border border-white/[0.07] bg-white/[0.022] p-5 sm:p-6">
+        <section className="mt-6 rounded-2xl border border-white/[0.07] bg-white/[0.022] elevate-1 p-5 sm:p-6">
           <div className="grid gap-3 border-b border-white/[0.06] pb-5 md:grid-cols-[minmax(0,0.7fr)_minmax(0,1fr)]">
             <h2 className="font-display text-xl font-medium tracking-[-0.02em]">
               Privacy boundary
