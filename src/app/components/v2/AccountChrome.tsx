@@ -21,26 +21,33 @@ function navActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+/**
+ * Pre-connect, a tab still previews what it does: the panel renders and only
+ * its submit controls are gated. Hiding the whole panel left Spend and Send
+ * with no copy at all until a wallet linked.
+ */
 export function AccountConnectWall({ children }: { children: ReactNode }) {
   const myWalletAccount = useStoreWallet((s) => s.myWalletAccount);
-  const network = useStoreWallet((s) => s.network);
-  const net: NetworkKey = network ?? 'sepolia';
-
-  if (myWalletAccount) return <>{children}</>;
 
   return (
-    <div className="rounded-3xl border border-white/[0.07] bg-white/[0.028] backdrop-blur-xl p-8 min-h-[380px] flex flex-col items-center justify-center text-center gap-5">
-      <div className="max-w-sm">
-        <div className="font-[family-name:var(--font-display)] text-[22px] font-semibold text-[#eaf0f8]">
-          Connect a wallet to begin
+    <div className="relative">
+      {!myWalletAccount && (
+        <div className="mb-4 flex flex-col gap-3 rounded-3xl border border-white/[0.07] bg-white/[0.028] backdrop-blur-xl p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="max-w-md">
+            <div className="font-[family-name:var(--font-display)] text-[17px] font-semibold text-[#eaf0f8]">
+              Connect a wallet to use this panel
+            </div>
+            <p className="mt-1 text-[13px] leading-relaxed text-[#7a859c]">
+              The preview below is live. Nothing is signed until you approve it in Ready, and
+              submitting stays disabled until a wallet is linked.
+            </p>
+          </div>
+          <div className="shrink-0">
+            <SelectWallet variant="ctaBig" />
+          </div>
         </div>
-        <p className="mt-2 text-[13.5px] leading-relaxed text-[#7a859c]">
-          Connect Ready to shield {net === 'sepolia' ? 'test ' : ''}STRK or USDC and move value
-          privately. Your first shield deploys and registers your account. Nothing is signed until
-          you approve it in the wallet.
-        </p>
-      </div>
-      <SelectWallet variant="ctaBig" />
+      )}
+      {children}
     </div>
   );
 }
