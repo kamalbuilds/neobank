@@ -3,6 +3,7 @@ import {
   IndexerDiscoveryProvider,
   Open,
   createPrivateTransfers,
+  type Note,
 } from "@starkware-libs/starknet-privacy-sdk";
 import {
   authorizationIdFelt,
@@ -154,6 +155,35 @@ export function vaultRedeemSharesFor(
   return shares;
 }
 
+/**
+ * Pick notes that cover `amount`. Open notes (vault share receipts) are
+ * preferred: autoSelectNotes skips them and the builder then tries a public
+ * transferFrom, which reverts Insufficient ERC20 allowance.
+ */
+export function selectSpendableNotes(
+  notes: readonly Note[],
+  amount: bigint,
+  head: number,
+): Note[] {
+  const mature = notes.filter(
+    (note) => note.created === undefined || Number(note.created) + 10 <= head,
+  );
+  const ordered = [
+    ...mature.filter((note) => note.open),
+    ...mature.filter((note) => !note.open),
+  ];
+  const picked: Note[] = [];
+  let total = 0n;
+  for (const note of ordered) {
+    picked.push(note);
+    total += note.amount;
+    if (total >= amount) return picked;
+  }
+  throw new Error(
+    `Not enough mature notes to cover ${amount.toString()} (found ${total.toString()} across ${notes.length} notes, ${mature.length} mature).`,
+  );
+}
+
 async function waitForTerminalReceipt(
   provider: RpcProvider,
   transactionHash: string,
@@ -265,11 +295,19 @@ export async function executeHostedCardSettlement(
 
   let builder;
   if (spendFromVault && config.earnVault) {
-    // Redeem vault shares: withdraw vToken to helper, open STRK leftover note.
+    const discovered = await transfers.discoverNotes({
+      tokens: [BigInt(config.earnVault)],
+      blockIdentifier: "pre_confirmed",
+    });
+    const vaultNotes = discovered.notes.get(BigInt(config.earnVault)) || [];
+    const inputs = selectSpendableNotes(vaultNotes, programAmount, head);
+    // Redeem vault shares: spend the open vToken note into the helper, then
+    // open a STRK leftover note for whatever redeem returns above settle.
     builder = transfers
       .build(buildOpts)
       .with(config.earnVault, (vault) =>
         vault
+          .inputs(...inputs)
           .withdraw({ recipient: helper, amount: programAmount })
           .surplusTo(config.accountAddress, false),
       )

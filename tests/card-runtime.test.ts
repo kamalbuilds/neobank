@@ -5,9 +5,11 @@ import {
   deriveHostedViewingKey,
   isTerminalFinality,
   parseCardRuntimeConfig,
+  selectSpendableNotes,
   usesVaultSpend,
   vaultRedeemSharesFor,
 } from "@/server/card/runtime";
+import type { Note } from "@starkware-libs/starknet-privacy-sdk";
 import type { CardAuthorization } from "@/server/card/authorization";
 
 const pool = "0x0254a6b2997ef52e9f830ce1f543f6b29768295e8d17e2267d672c552cfe0d91";
@@ -103,5 +105,62 @@ describe("hosted private account runtime", () => {
     expect(() =>
       vaultRedeemSharesFor(settle, { CARD_LEND_UNITS: "100" }),
     ).toThrow(/cover the settle amount/);
+  });
+
+  it("prefers mature open notes so vault-share receipts are spendable", () => {
+    const witness = {} as Note["witness"];
+    const notes: Note[] = [
+      {
+        id: 1n,
+        amount: 10_000_000_000_000_000_000n,
+        created: 100,
+        witness,
+        sender: 1n,
+        open: true,
+      },
+      {
+        id: 2n,
+        amount: 8_000_000_000_000_000_000n,
+        created: 100,
+        witness,
+        sender: 1n,
+        open: false,
+      },
+      {
+        id: 3n,
+        amount: 10_000_000_000_000_000_000n,
+        created: 200,
+        witness,
+        sender: 1n,
+        open: true,
+      },
+    ];
+    const picked = selectSpendableNotes(
+      notes,
+      10_000_000_000_000_000_000n,
+      120,
+    );
+    expect(picked).toHaveLength(1);
+    expect(picked[0]?.id).toBe(1n);
+    expect(picked[0]?.open).toBe(true);
+  });
+
+  it("fails if auto-select would ignore the only open note", () => {
+    const witness = {} as Note["witness"];
+    const onlyOpen: Note[] = [
+      {
+        id: 9n,
+        amount: 10_000_000_000_000_000_000n,
+        created: 1,
+        witness,
+        sender: 1n,
+        open: true,
+      },
+    ];
+    const confidentialOnly = onlyOpen.filter((note) => !note.open);
+    expect(confidentialOnly).toHaveLength(0);
+    expect(
+      selectSpendableNotes(onlyOpen, 10_000_000_000_000_000_000n, 20)[0]?.open,
+    ).toBe(true);
   });
 });
