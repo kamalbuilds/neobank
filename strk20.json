@@ -2,7 +2,7 @@
   "transactions": [
     "0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193",
     "0x059eb6c1bdddd048006f372b4db6602560dbfc722536b94d59ece8abb865586e",
-    "0x02cbfcceac813b17696710fd8f2e52b603e4ba6dabd87e774d1840d20b21a735"
+    "0xe08fd329091b483978c64f93288b7346b158e0dc485fd7c5f594899f0294"
   ],
   "contracts": [
     {
@@ -99,6 +99,7 @@
   "notes": {
     "0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193": "first_shield. 0.1 STRK shielded, 6 STRK pool fee. Same txs a first Shield in this app now submits: DEPLOY_ACCOUNT then strk20 deposit.",
     "0x059eb6c1bdddd048006f372b4db6602560dbfc722536b94d59ece8abb865586e": "shield_usdc. 0.2 public USDC in, 0.0395 remaining after Ready took the privacy fee from the deposit.",
-    "0x02cbfcceac813b17696710fd8f2e52b603e4ba6dabd87e774d1840d20b21a735": "deploy_account. Succeeded on mainnet but emits no pool event, so it does not count toward the three-transaction bar. Listed because it is a real step of the first-shield flow, not as pool proof."
+    "0x02cbfcceac813b17696710fd8f2e52b603e4ba6dabd87e774d1840d20b21a735": "deploy_account. Succeeded on mainnet but emits no pool event, so it does not count toward the three-transaction bar. Not in the transactions array; kept here as a record of the first-shield flow's deploy leg.",
+    "0xe08fd329091b483978c64f93288b7346b158e0dc485fd7c5f594899f0294": "enable_private_tokens. Ready's native Shield flow on account 0x00801e718e9f717a066fbaad4f71d3f244b2254e6119fca4cf3904daa47cc9e1 (Relaxed Rat): registers the viewing key (ViewingKeySet) and deposits 8 STRK in one apply_actions call - 6 STRK pool fee, 2 STRK shielded (Deposit, Withdrawal, EncNoteCreated). Block 13948493."
   }
 }
