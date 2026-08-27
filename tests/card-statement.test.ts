@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import { authorizationIdFelt } from "@/server/card/authorization";
 import {
   buildCardStatement,
+  buildProofBundle,
   parseStatementQuery,
+  renderProofText,
 } from "@/server/card/statement";
-import type { SettledAuthorization } from "@/server/card/status";
+import type { CardStatusProvider, SettledAuthorization } from "@/server/card/status";
 
 const env = {
   CARD_RUNTIME_ACCOUNT_ADDRESS: "0x123",
@@ -17,6 +19,7 @@ const env = {
 
 const fundedId = "iauth_dinner_1787803543";
 const otherId = "iauth_other_1";
+const felt = `0x${authorizationIdFelt(fundedId).toString(16)}`;
 
 function settlement(
   authorizationId: string,
@@ -119,5 +122,110 @@ describe("card statements", () => {
     expect(parseStatementQuery(new URL("https://example/api/card/statement")).full).toBe(
       false,
     );
+  });
+});
+
+describe("card source-of-funds proof bundle", () => {
+  const provider: CardStatusProvider = {
+    getBlockNumber: async () => 14125886,
+    callContract: async (call) => {
+      if (call.entrypoint === "is_authorization_used") return ["0x1"];
+      throw new Error(`unexpected entrypoint ${call.entrypoint}`);
+    },
+    getEvents: async (filter) => {
+      const selector = filter.keys[0]?.[0];
+      if (selector === "0x25226df400201d50b77f0e509a8b9bb61ef4e5c0d5c64d226df9e6b4a7f9652") {
+        return {
+          events: [
+            {
+              transaction_hash: "0x4d94fa79",
+              keys: ["0xsettled", felt],
+              data: ["0x71", "0x456", "0x354a6ba7a180000", "0x0", "0xd43"],
+              block_number: 14111945,
+            },
+          ],
+        };
+      }
+      if (selector === "0x31960ec076a3d81d6cec39d2ed55a01b54bdb977dcabdf787352460b2795822") {
+        return {
+          events: [
+            {
+              transaction_hash: "0x4d94fa79",
+              keys: ["0xopened", felt],
+              data: [
+                "0xvault1",
+                "0x8ac7230489e80000",
+                "0x0",
+                "0x8ac7230489e80000",
+                "0x0",
+              ],
+              block_number: 14111945,
+            },
+          ],
+        };
+      }
+      return { events: [] };
+    },
+  };
+
+  it("builds a viewer-scoped proof with onchain origin on every numeric", async () => {
+    const bundle = await buildProofBundle(fundedId, { env, provider });
+    expect(bundle).toBeTruthy();
+    expect(bundle?.cardholderAlias).toMatch(/^sof-[0-9a-f]{16}$/);
+    expect(bundle?.authorizationId).toBe(fundedId);
+    expect(bundle?.settledTxHash).toBe("0x4d94fa79");
+    expect(bundle?.settleAmount.units).toBe("240000000000000000");
+    expect(bundle?.settleAmount.origin.call.contractAddress).toBeTruthy();
+    expect(bundle?.settleAmount.origin.call.blockNumber).toBe(14111945);
+    expect(bundle?.positionActions.length).toBeGreaterThan(0);
+    for (const action of bundle?.positionActions ?? []) {
+      expect(action.amount.origin.call.blockNumber).toBeTypeOf("number");
+    }
+    expect(bundle?.generatedAtBlock).toBe(14125886);
+  });
+
+  it("returns null for an unknown id and never leaks ledger totals", async () => {
+    const missing: CardStatusProvider = {
+      ...provider,
+      callContract: async (call) =>
+        call.entrypoint === "is_authorization_used" ? ["0x0"] : [],
+      getEvents: async () => ({ events: [] }),
+    };
+    const bundle = await buildProofBundle(otherId, { env, provider: missing });
+    expect(bundle).toBeNull();
+    const text = renderProofText({
+      formatVersion: 1,
+      cardholderAlias: "sof-0000000000000000",
+      authorizationId: otherId,
+      settledTxHash: "0xnone",
+      settleAmount: {
+        units: "0",
+        decimals: 18,
+        origin: {
+          call: {
+            contractAddress: "0x0",
+            entrypoint: "AuthorizationSettled",
+            blockNumber: 0,
+            blockTag: "latest",
+          },
+        },
+      },
+      lenDidOnchainEventRef: false,
+      positionActions: [],
+      generatedAtBlock: 0,
+      copy: "",
+    });
+    expect(text).not.toContain("totals");
+    expect(text).not.toContain("accountAddress");
+  });
+
+  it("renders byte-identical text for identical inputs", async () => {
+    const bundle = await buildProofBundle(fundedId, { env, provider });
+    const first = renderProofText(bundle!);
+    const second = renderProofText(bundle!);
+    expect(first).toBe(second);
+    expect(first).toContain("SOURCE-OF-FUNDS PROOF");
+    expect(first).toContain("CARDHOLDER ALIAS:");
+    expect(first.split("\n").some((line) => line.includes("blockNumber 14111945"))).toBe(true);
   });
 });
