@@ -22,7 +22,7 @@ Updated: 2026-08-27. Deadline 2026-08-31 23:59 UTC.
 | Shield STRK and USDC on mainnet | DONE | `0x04c4bea0...`, `0x059eb6c1...` |
 | Stripe Issuing sandbox | NOT BUILT | Webhook schema is Stripe Issuing. No issuer account is wired. Demo button signs locally when `CARD_DEMO_AUTHORIZE=1`. |
 | Chain-abstraction / JIT USDC | NOT BUILT | One pool invoke cannot also be an AVNU private swap. Needs a helper that swaps inside privacy_invoke. `/fund` is outbound CCTP only. |
-| Pay dinner from vault shares | CODED | Runtime redeem path exists. Live fee-estimate reverts `Insufficient ERC20 allowance` on the pool pulling the vToken. Vault `total_assets` still 10 STRK. |
+| Pay dinner from vault shares | DONE | Tx `0x45b8c5d7…f0e0` block 14111945 ACCEPTED_ON_L2. `PositionRedeemed` + `AuthorizationSettled`. Vault `total_assets` 10 STRK to 0. Recipient +0.24 STRK. |
 | Shadow spend identities | CODED | Official Sepolia anonymizer `0x010a…b147` matches the pool. Addresses are deterministic per nonce. No live shadow spend yet. |
 | Viewing-key statements | DONE | `GET /api/card/statement?authorizationId=iauth_dinner_1787803543&full=1` returns the Osteria tx, 0.24 settle, 10 STRK lend. Default omits amounts. |
 | Account routes | DONE | `/` `/convert` `/earn` `/spend` `/fund` `/card` `/statements`. `/earn` shows live 10 STRK `total_assets`. |
@@ -48,6 +48,7 @@ Updated: 2026-08-27. Deadline 2026-08-31 23:59 UTC.
 - Vault `total_assets` 0 before the swipe, 10 STRK after. Recipient STRK rose by 0.24. Daily spend on CardProgram is 0.24.
 - Voyager receipt for `0x4d94fa79...2639`: `AuthorizationSettled`, `PositionOpened`, pool `Withdrawal` 10.24, `OpenNoteDeposited`.
 - `POST /api/card/demo-authorize?wait=1` returned confirmed, ACCEPTED_ON_L2, settle 0.24, lend 10.
+- Pay-from-vault: `0x45b8c5d7…f0e0` ACCEPTED_ON_L2. Vault assets 10→0. `PositionRedeemed` on CardProgram. Hosted STRK allowance was 1 STRK vs 2 STRK pool fee; topping up the fee approve was the live fix.
 - Card Cairo tests 10/10 (8 program + 2 vault). 31 vitest card tests green.
 
 Blind spot: ACCEPTED_ON_L2, not L1. `card:balance` only lists STRK notes, not the new vault-share note. Stripe Issuing is still unsigned. Mainnet remains not scoreable.
