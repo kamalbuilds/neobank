@@ -103,6 +103,8 @@ export function parseStatementQuery(url: URL): {
   fromBlock?: number;
   toBlock?: number;
   full: boolean;
+  view?: "statement" | "proof";
+  format?: "json" | "text";
 } {
   const scope = url.searchParams.get("scope") === "period" ? "period" : "authorization";
   const authorizationId = url.searchParams.get("authorizationId") || undefined;
@@ -116,6 +118,8 @@ export function parseStatementQuery(url: URL): {
     fromBlock,
     toBlock,
     full: url.searchParams.get("full") === "1",
+    view: url.searchParams.get("view") === "proof" ? "proof" : undefined,
+    format: url.searchParams.get("format") === "text" ? "text" : undefined,
   };
 }
 
