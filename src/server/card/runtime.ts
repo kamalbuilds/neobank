@@ -184,6 +184,78 @@ export function selectSpendableNotes(
   );
 }
 
+const STRK_FEE_TOKEN =
+  "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
+
+function u256(value: bigint) {
+  return cairo.uint256(value);
+}
+
+async function readU256(
+  provider: RpcProvider,
+  contractAddress: string,
+  entrypoint: string,
+  calldata: string[],
+): Promise<bigint> {
+  const result = await provider.callContract({
+    contractAddress,
+    entrypoint,
+    calldata,
+  });
+  return BigInt(result[0] || "0") + (BigInt(result[1] || "0") << 128n);
+}
+
+export async function ensurePoolFeeAllowance(args: {
+  provider: RpcProvider;
+  account: Account;
+  accountAddress: string;
+  poolAddress: string;
+}): Promise<{ approved: boolean; fee: bigint; allowance: bigint }> {
+  const fee = await readU256(
+    args.provider,
+    args.poolAddress,
+    "get_fee_amount",
+    [],
+  );
+  const allowance = await readU256(
+    args.provider,
+    STRK_FEE_TOKEN,
+    "allowance",
+    [args.accountAddress, args.poolAddress],
+  );
+  const desired = fee * 10n;
+  if (allowance >= fee) {
+    return { approved: false, fee, allowance };
+  }
+  const submitted = await args.account.execute(
+    [
+      {
+        contractAddress: STRK_FEE_TOKEN,
+        entrypoint: "approve",
+        calldata: [args.poolAddress, u256(desired).low, u256(desired).high],
+      },
+    ],
+    { tip: 0n },
+  );
+  const receipt = await waitForTerminalReceipt(
+    args.provider,
+    submitted.transaction_hash,
+  );
+  if (!receipt.isSuccess()) {
+    throw new Error(`Pool fee approval failed: ${submitted.transaction_hash}`);
+  }
+  const approvalBlock =
+    "block_number" in receipt ? Number(receipt.block_number) : 0;
+  const deadline = Date.now() + 180_000;
+  while ((await args.provider.getBlockNumber()) - 10 <= approvalBlock) {
+    if (Date.now() >= deadline) {
+      throw new Error("Timed out waiting for pool fee approval to mature.");
+    }
+    await new Promise((resolve) => setTimeout(resolve, 2_000));
+  }
+  return { approved: true, fee, allowance: desired };
+}
+
 async function waitForTerminalReceipt(
   provider: RpcProvider,
   transactionHash: string,
@@ -215,6 +287,12 @@ export async function executeHostedCardSettlement(
     address: config.accountAddress,
     signer: config.privateKey,
     cairoVersion: "1",
+  });
+  await ensurePoolFeeAllowance({
+    provider,
+    account,
+    accountAddress: config.accountAddress,
+    poolAddress: config.poolAddress,
   });
   const viewingKey = deriveHostedViewingKey(
     config.privateKey,
