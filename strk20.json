@@ -60,6 +60,8 @@
       "daily_limit": "100000000000000000000",
       "osteria_dinner_lend_tx": "0x4d94fa79724d3e997604e4a42a54daab3cc68f4ec17672b3ca9644a843e2639",
       "osteria_dinner_lend_block": 14109923,
+      "osteria_from_vault_tx": "0x45b8c5d7a7cae0a9f98d69e92c1120c0bee831e68f9795fde00e1f3ffa3f0e0",
+      "osteria_from_vault_block": 14111945,
       "settle_amount": "240000000000000000",
       "lend_amount": "10000000000000000000"
     },
