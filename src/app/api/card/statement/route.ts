@@ -1,7 +1,9 @@
 import { cardRuntimeStatus } from "@/server/card/runtime";
 import {
   buildCardStatement,
+  buildProofBundle,
   parseStatementQuery,
+  renderProofText,
 } from "@/server/card/statement";
 import { validateAuthorizationId } from "@/server/card/status";
 
@@ -14,13 +16,37 @@ export async function GET(request: Request) {
   }
 
   const query = parseStatementQuery(new URL(request.url));
-  if (query.scope === "authorization") {
-    if (!query.authorizationId || !validateAuthorizationId(query.authorizationId)) {
+  const wantsProof = query.view === "proof";
+  if ((query.scope === "authorization" || wantsProof) && query.authorizationId) {
+    if (!validateAuthorizationId(query.authorizationId)) {
       return Response.json({ error: "invalid_authorization_id" }, { status: 400 });
     }
   }
+  if (wantsProof && !query.authorizationId) {
+    return Response.json({ error: "invalid_authorization_id" }, { status: 400 });
+  }
 
   try {
+    // Proof view: a viewer-scoped bundle for exactly one authorization. An
+    // unknown id is a 404 that names nothing else, so a probing caller learns
+    // no global totals.
+    if (wantsProof) {
+      const bundle = await buildProofBundle(query.authorizationId!);
+      if (!bundle) {
+        return Response.json({ error: "not_found" }, { status: 404 });
+      }
+      const format = query.format === "text" ? "text" : "json";
+      if (format === "text") {
+        return new Response(renderProofText(bundle), {
+          headers: {
+            "content-type": "text/plain; charset=utf-8",
+            "cache-control": "no-store",
+          },
+        });
+      }
+      return Response.json(bundle);
+    }
+
     return Response.json(await buildCardStatement(query));
   } catch (error) {
     const message = error instanceof Error ? error.message : "statement_unavailable";
