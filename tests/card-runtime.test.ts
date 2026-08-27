@@ -1,8 +1,9 @@
 import { constants, ec } from "starknet";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   cardRuntimeStatus,
   deriveHostedViewingKey,
+  ensurePoolFeeAllowance,
   isTerminalFinality,
   parseCardRuntimeConfig,
   selectSpendableNotes,
@@ -162,5 +163,26 @@ describe("hosted private account runtime", () => {
     expect(
       selectSpendableNotes(onlyOpen, 10_000_000_000_000_000_000n, 20)[0]?.open,
     ).toBe(true);
+  });
+
+  it("does not re-approve when STRK allowance already covers the pool fee", async () => {
+    const provider = {
+      callContract: vi
+        .fn()
+        .mockResolvedValueOnce(["0x1bc16d674ec80000", "0x0"])
+        .mockResolvedValueOnce(["0x8ac7230489e80000", "0x0"]),
+      getTransactionReceipt: vi.fn(),
+      getBlockNumber: vi.fn(),
+    };
+    const account = { execute: vi.fn() };
+    const result = await ensurePoolFeeAllowance({
+      provider: provider as never,
+      account: account as never,
+      accountAddress: "0x1",
+      poolAddress: pool,
+    });
+    expect(result.approved).toBe(false);
+    expect(result.fee).toBe(2_000_000_000_000_000_000n);
+    expect(account.execute).not.toHaveBeenCalled();
   });
 });
