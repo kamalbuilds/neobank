@@ -1,21 +1,11 @@
-'use client';
+import type { Metadata } from 'next';
+import { SpendClient } from './SpendClient';
 
-import SpendPanel from '../components/Panels/SpendPanel';
-import { useStoreWallet } from '../components/Wallet/walletContext';
-import { type NetworkKey } from '@/utils/constants';
-import { AccountChrome, AccountConnectWall } from '../components/v2/AccountChrome';
+export const metadata: Metadata = {
+  title: 'Sotto: spend privately',
+  description: 'Settle a payment from your shielded STRK balance. The recipient sees an address, never your identity.',
+};
 
 export default function SpendPage() {
-  const network = useStoreWallet((s) => s.network);
-  const net: NetworkKey = network ?? 'sepolia';
-
-  return (
-    <AccountChrome>
-      <AccountConnectWall>
-        <div className="rounded-3xl border border-white/[0.07] bg-white/[0.028] backdrop-blur-xl p-6 min-h-[380px]">
-          <SpendPanel network={net} />
-        </div>
-      </AccountConnectWall>
-    </AccountChrome>
-  );
+  return <SpendClient />;
 }

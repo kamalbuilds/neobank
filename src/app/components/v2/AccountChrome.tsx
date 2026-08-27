@@ -9,12 +9,13 @@ import { readPrivateBalance } from '../lib/strk20';
 import { getPublicBalance, TOKENS, type NetworkKey } from '@/utils/constants';
 import { fromBaseUnits } from '../lib/format';
 import { ACCOUNT_MOVE_ROUTES, ACCOUNT_ROUTES } from './accountRoutes';
+import { NumberTicker, RouteTransition, Skeleton } from './ui';
 
 const TAB_BTN =
-  'px-3.5 py-2 rounded-xl text-[13px] font-medium whitespace-nowrap transition-colors';
+  'px-3.5 py-2 rounded-xl text-[13px] font-medium whitespace-nowrap transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2dd4bf]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#06070b]';
 const TAB_ON =
   'text-[#04140f] bg-gradient-to-br from-[#2dd4bf] to-[#38bdf8] font-semibold shadow-[0_4px_16px_-6px_rgba(45,212,191,0.5)]';
-const TAB_OFF = 'text-[#7a859c] hover:text-[#eaf0f8]';
+const TAB_OFF = 'text-[#7a859c] hover:text-[#eaf0f8] hover:bg-white/[0.04]';
 
 function navActive(pathname: string, href: string): boolean {
   if (href === '/') return pathname === '/';
@@ -61,10 +62,12 @@ export function AccountChrome({ children }: { children: ReactNode }) {
 
   const [shielded, setShielded] = useState<string | null>(null);
   const [publicGas, setPublicGas] = useState<string | null>(null);
+  const [balancesLoading, setBalancesLoading] = useState(false);
   const [revealed, setRevealed] = useState(false);
 
   const refresh = useCallback(async () => {
     if (!myWalletAccount || !address) return;
+    setBalancesLoading(true);
     try {
       const [priv, pub] = await Promise.all([
         readPrivateBalance(myWalletAccount, TOKENS.STRK.address),
@@ -75,12 +78,17 @@ export function AccountChrome({ children }: { children: ReactNode }) {
     } catch {
       setShielded(null);
       setPublicGas(null);
+    } finally {
+      setBalancesLoading(false);
     }
   }, [myWalletAccount, address, net]);
 
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  const shieldedNumber = shielded !== null ? Number(shielded) : null;
+  const shieldedIsTickable = shieldedNumber !== null && Number.isFinite(shieldedNumber);
 
   return (
     <div className="vault-bg min-h-[100dvh] text-[#eaf0f8] flex flex-col font-[family-name:var(--font-body)]">
@@ -89,9 +97,9 @@ export function AccountChrome({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-3">
             <Link
               href="/"
-              className="font-[family-name:var(--font-display)] text-[15px] font-semibold uppercase tracking-[0.14em] bg-gradient-to-r from-[#2dd4bf] via-[#38bdf8] to-[#818cf8] bg-clip-text text-transparent"
+              className="font-[family-name:var(--font-display)] text-[15px] font-semibold uppercase tracking-[0.14em] bg-gradient-to-r from-[#2dd4bf] via-[#38bdf8] to-[#818cf8] bg-clip-text text-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2dd4bf]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#06070b] rounded-sm"
             >
-              VAULT
+              Sotto
             </Link>
             <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#7a859c] px-2.5 py-1 rounded-full bg-white/[0.03] border border-white/[0.07]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#34d399] shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
@@ -106,27 +114,36 @@ export function AccountChrome({ children }: { children: ReactNode }) {
 
       <div className="max-w-[1280px] w-full mx-auto px-6 py-6 grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6 flex-1 items-start">
         <aside className="flex flex-col gap-4 lg:sticky lg:top-[76px]">
-          <div className="relative rounded-3xl border border-white/[0.07] bg-white/[0.03] backdrop-blur-xl p-7 overflow-hidden">
+          <div className="relative rounded-3xl border border-white/[0.07] bg-white/[0.03] backdrop-blur-xl elevate-2 p-7 overflow-hidden">
             <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(140%_120%_at_50%_-30%,rgba(45,212,191,0.09),transparent_60%)]" />
             <div className="relative">
               <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7a859c]">
                 Shielded
               </div>
               <div className="mt-3 flex items-center gap-3">
-                <span
-                  className="font-[family-name:var(--font-display)] text-[44px] leading-none tracking-[-0.02em] tabular-nums bg-gradient-to-r from-[#2dd4bf] via-[#5eead4] to-[#67e8f9] bg-clip-text text-transparent transition-[filter] duration-300 cursor-pointer select-none"
-                  style={{ filter: revealed ? 'none' : 'blur(10px)' }}
-                  onClick={() => setRevealed((r) => !r)}
-                  onKeyDown={(e) => e.key === 'Enter' && setRevealed((r) => !r)}
-                  role="button"
-                  tabIndex={0}
-                  aria-pressed={revealed}
-                  aria-label="Toggle shielded balance visibility"
-                >
-                  {revealed ? (shielded ?? 'Unavailable') : '••••••'}
-                </span>
+                {balancesLoading && shielded === null ? (
+                  <Skeleton className="h-11 w-40" />
+                ) : (
+                  <span
+                    className="font-[family-name:var(--font-display)] text-[44px] leading-none tracking-[-0.02em] tabular-nums bg-gradient-to-r from-[#2dd4bf] via-[#5eead4] to-[#67e8f9] bg-clip-text text-transparent transition-[filter] duration-300 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2dd4bf]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#06070b] rounded-lg"
+                    style={{ filter: revealed ? 'none' : 'blur(10px)' }}
+                    onClick={() => setRevealed((r) => !r)}
+                    onKeyDown={(e) => e.key === 'Enter' && setRevealed((r) => !r)}
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={revealed}
+                    aria-label="Toggle shielded balance visibility"
+                  >
+                    {revealed
+                      ? shieldedIsTickable
+                        ? <NumberTicker value={shieldedNumber as number} decimals={shieldedNumber! % 1 === 0 ? 0 : 4} />
+                        : (shielded ?? 'Unavailable')
+                      : '••••••'}
+                  </span>
+                )}
                 <button
-                  className="h-9 rounded-full border border-white/[0.12] bg-white/[0.04] px-3 text-[11px] font-semibold text-[#eaf0f8] hover:bg-white/[0.09] transition-colors"
+                  type="button"
+                  className="h-9 rounded-full border border-white/[0.12] bg-white/[0.04] px-3 text-[11px] font-semibold text-[#eaf0f8] hover:bg-white/[0.09] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2dd4bf]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#06070b]"
                   onClick={() => setRevealed((r) => !r)}
                   aria-label="Toggle shielded balance visibility"
                   aria-pressed={revealed}
@@ -140,12 +157,18 @@ export function AccountChrome({ children }: { children: ReactNode }) {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-white/[0.07] bg-white/[0.028] backdrop-blur-xl p-5">
+          <div className="rounded-2xl border border-white/[0.07] bg-white/[0.028] backdrop-blur-xl elevate-1 p-5">
             <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7a859c]">
               Public gas
             </div>
             <div className="mt-1.5 font-[family-name:var(--font-mono-ui)] text-[16px] tabular-nums">
-              {publicGas ?? 'Unavailable'} <span className="text-[#7a859c]">STRK</span>
+              {balancesLoading && publicGas === null ? (
+                <Skeleton className="mt-0.5 h-5 w-24" />
+              ) : (
+                <>
+                  {publicGas ?? 'Unavailable'} <span className="text-[#7a859c]">STRK</span>
+                </>
+              )}
             </div>
           </div>
 
@@ -163,6 +186,7 @@ export function AccountChrome({ children }: { children: ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
+                aria-current={navActive(pathname, item.href) ? 'page' : undefined}
                 className={`${TAB_BTN} ${navActive(pathname, item.href) ? TAB_ON : TAB_OFF}`}
               >
                 {item.label}
@@ -178,6 +202,7 @@ export function AccountChrome({ children }: { children: ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
+                aria-current={navActive(pathname, item.href) ? 'page' : undefined}
                 className={`${TAB_BTN} ${navActive(pathname, item.href) ? TAB_ON : TAB_OFF}`}
               >
                 {item.label}
@@ -185,7 +210,7 @@ export function AccountChrome({ children }: { children: ReactNode }) {
             ))}
           </nav>
 
-          {children}
+          <RouteTransition>{children}</RouteTransition>
         </main>
       </div>
     </div>

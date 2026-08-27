@@ -45,20 +45,28 @@ describe("account route table", () => {
     }
   });
 
-  it("imports every owned account page module so a missing file fails", async () => {
-    const pages = await Promise.all([
-      import("@/app/page"),
-      import("@/app/spend/page"),
-      import("@/app/send/page"),
-      import("@/app/receive/page"),
-      import("@/app/unshield/page"),
-      import("@/app/convert/page"),
-      import("@/app/fund/page"),
-      import("@/app/earn/page"),
-      import("@/app/statements/page"),
-    ]);
-    for (const mod of pages) {
-      expect(typeof mod.default).toBe("function");
-    }
-  });
+  it(
+    "imports every owned account page module so a missing file fails",
+    async () => {
+      const pages = await Promise.all([
+        import("@/app/page"),
+        import("@/app/spend/page"),
+        import("@/app/send/page"),
+        import("@/app/receive/page"),
+        import("@/app/unshield/page"),
+        import("@/app/convert/page"),
+        import("@/app/fund/page"),
+        import("@/app/earn/page"),
+        import("@/app/statements/page"),
+      ]);
+      for (const mod of pages) {
+        expect(typeof mod.default).toBe("function");
+      }
+    },
+    // Each route now splits into a server page.tsx (metadata) plus a client
+    // component, so this pulls in more modules to transform than the 5s
+    // default budget covers, especially alongside a concurrently running
+    // dev server. The assertion is unchanged: still fails on a missing file.
+    20000,
+  );
 });

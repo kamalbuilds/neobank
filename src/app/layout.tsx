@@ -24,7 +24,10 @@ const spaceGrotesk = Space_Grotesk({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://neobank-six.vercel.app'),
-  title: 'Private money account',
+  title: {
+    default: 'Sotto: private crypto neobank',
+    template: '%s',
+  },
   description: 'Shield, send, and unshield STRK or USDC on the live STRK20 pool. The app never holds a viewing key.',
 }
 

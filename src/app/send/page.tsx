@@ -1,21 +1,11 @@
-'use client';
+import type { Metadata } from 'next';
+import { SendClient } from './SendClient';
 
-import SendPanel from '../components/Panels/SendPanel';
-import { useStoreWallet } from '../components/Wallet/walletContext';
-import { type NetworkKey } from '@/utils/constants';
-import { AccountChrome, AccountConnectWall } from '../components/v2/AccountChrome';
+export const metadata: Metadata = {
+  title: 'Sotto: send privately',
+  description: 'Send shielded STRK or USDC to a recipient already registered in the STRK20 pool.',
+};
 
 export default function SendPage() {
-  const network = useStoreWallet((s) => s.network);
-  const net: NetworkKey = network ?? 'sepolia';
-
-  return (
-    <AccountChrome>
-      <AccountConnectWall>
-        <div className="rounded-3xl border border-white/[0.07] bg-white/[0.028] backdrop-blur-xl p-6 min-h-[380px]">
-          <SendPanel network={net} />
-        </div>
-      </AccountConnectWall>
-    </AccountChrome>
-  );
+  return <SendClient />;
 }
