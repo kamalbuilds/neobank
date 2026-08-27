@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { getQuotes, type Quote } from "@avnu/avnu-sdk";
-import styles from "../../uni.module.css";
+import { ui } from "../lib/panelUi";
 import { useStoreWallet } from "../Wallet/walletContext";
 import { TOKENS, getPublicBalance, type NetworkKey, type TokenSymbol } from "@/utils/constants";
 import { fromBaseUnits, toBaseUnits } from "../lib/format";
@@ -162,26 +162,26 @@ export default function SwapPanel({ network }: { network: NetworkKey }) {
   }
 
   return (
-    <div className={styles.panel}>
-      <div className={styles.warn} style={{ color: "var(--muted)" }}>
+    <div className={ui.panel}>
+      <div className={ui.warn} style={{ color: "var(--muted)" }}>
         The sell token must already be shielded. This swap cannot deposit for you.
         The bought token lands back as a private note. Open-note fill amounts can stay public.
       </div>
 
       {configured === false && (
-        <div className={styles.warn}>
+        <div className={ui.warn}>
           AVNU private swap is not configured on this server. Set `AVNU_PAYMASTER_API_KEY` in the server env; this app never puts the key in the browser.
         </div>
       )}
 
-      <div className={styles.inputBlock}>
-        <div className={styles.inputLabel}>You&apos;re selling privately</div>
-        <div className={styles.inputMain}>
+      <div className={ui.inputBlock}>
+        <div className={ui.inputLabel}>You&apos;re selling privately</div>
+        <div className={ui.inputMain}>
           <input
-            className={styles.bigValue}
-            style={{ border: "none", outline: "none", background: "transparent", width: "60%" }}
+            className={ui.bigValue}
             placeholder="0"
             inputMode="decimal"
+            aria-label={`Amount of ${sellToken} to sell`}
             value={amount}
             onChange={(e) => {
               setAmount(e.target.value);
@@ -190,20 +190,25 @@ export default function SwapPanel({ network }: { network: NetworkKey }) {
           />
           <TokenSelect value={sellToken} onChange={flipTokens} />
         </div>
-        <div className={styles.subLine}>
+        <div className={ui.subLine}>
           <span>Buying {buyToken} · 5% slippage</span>
         </div>
       </div>
 
-      <div className={styles.subLine}>
-        <button className={styles.tab} onClick={shielded.revealed ? shielded.hide : shielded.reveal} disabled={shielded.loading || !myWalletAccount}>
+      <div className={ui.subLine}>
+        <button
+          type="button"
+          className="text-[13px] font-medium text-[#7a859c] transition-colors hover:text-[#eaf0f8] disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={shielded.revealed ? shielded.hide : shielded.reveal}
+          disabled={shielded.loading || !myWalletAccount}
+        >
           {shielded.loading ? "reading shielded balances…" : shielded.revealed ? "Hide shielded balances" : "Show shielded STRK/USDC"}
         </button>
       </div>
-      {shielded.error ? <div className={styles.warn}>{shielded.error}</div> : null}
+      {shielded.error ? <div className={ui.warn}>{shielded.error}</div> : null}
       {shielded.revealed && (
-        <div className={styles.subLine}>
-          <span className={styles.subMono}>
+        <div className={ui.subLine}>
+          <span className={ui.subMono}>
             {shielded.balances[sellToken] !== undefined
               ? `${fromBaseUnits(shielded.balances[sellToken]!, TOKENS[sellToken].decimals)} ${sellToken} shielded`
               : "…"}
@@ -212,7 +217,7 @@ export default function SwapPanel({ network }: { network: NetworkKey }) {
       )}
 
       {maturity.locked && (
-        <div className={styles.warn}>
+        <div className={ui.warn}>
           {maturity.blocksRemaining === undefined
             ? `Notes from your last ${sellToken} shield mature about 10 blocks after the deposit.`
             : `Notes from your last ${sellToken} shield are still maturing: ~${maturity.blocksRemaining} block${
@@ -222,38 +227,40 @@ export default function SwapPanel({ network }: { network: NetworkKey }) {
       )}
 
       {feeAmount === undefined ? (
-        <div className={styles.feeRow}>
+        <div className={ui.feeRow}>
           <span>Pool fee (per private operation)</span>
-          <span className={styles.feeVal}>quoted by the paymaster at submit</span>
+          <span className={ui.feeVal}>quoted by the paymaster at submit</span>
         </div>
       ) : (
         <FeeRow fee={feeAmount} />
       )}
 
       {quote ? (
-        <div className={styles.feeRow}>
+        <div className={ui.feeRow}>
           <span>Quoted buy amount</span>
-          <span className={styles.feeVal}>
+          <span className={ui.feeVal}>
             {fromBaseUnits(quote.buyAmount, TOKENS[buyToken].decimals)} {buyToken}
           </span>
         </div>
       ) : null}
 
       {!strk20Capable && (
-        <div className={styles.warn}>This wallet does not support STRK20 privacy actions. Install or update Ready.</div>
+        <div className={ui.warn}>This wallet does not support STRK20 privacy actions. Install or update Ready.</div>
       )}
 
       {configured !== false && (
         <>
           <button
-            className={styles.btnCta}
+            type="button"
+            className={ui.btnCta}
             disabled={!strk20Capable || quoting || !amount || maturity.locked}
             onClick={handleQuote}
           >
             {quoting ? "Quoting…" : maturity.locked ? "Notes maturing…" : "Get quote"}
           </button>
           <button
-            className={styles.btnCta}
+            type="button"
+            className={ui.btnCta}
             disabled={!strk20Capable || submitting || !quote || maturity.locked}
             onClick={handleSwap}
           >

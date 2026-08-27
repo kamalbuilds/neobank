@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import styles from "../../uni.module.css";
+import { ui } from "../lib/panelUi";
+import { cx } from "../v2/ui";
 import { useStoreWallet } from "../Wallet/walletContext";
 import { CCTP, TOKENS, getPublicBalance, explorerTxUrl, type CctpChain, type NetworkKey } from "@/utils/constants";
 import { toBaseUnits, fromBaseUnits, shortHex } from "../lib/format";
@@ -151,36 +152,36 @@ export default function HopPanel({ network }: { network: NetworkKey }) {
       : false;
 
   return (
-    <div className={styles.panel}>
-      <div className={styles.warn} style={{ color: "var(--muted)" }}>
+    <div className={ui.panel}>
+      <div className={ui.warn} style={{ color: "var(--muted)" }}>
         This is the card-funding hop, not a swipe. It burns public native USDC on Starknet via Circle CCTP V2
         and mints it on {CHAIN_LABEL[chain]}. The amount and destination are visible onchain - this hop is
         public. A Visa is issued by a partner (Stripe + Bridge), not this app; the merchant will see a card,
         not this wallet.
       </div>
 
-      <div className={styles.inputBlock}>
-        <div className={styles.inputLabel}>You&apos;re hopping</div>
-        <div className={styles.inputMain}>
+      <div className={ui.inputBlock}>
+        <div className={ui.inputLabel}>You&apos;re hopping</div>
+        <div className={ui.inputMain}>
           <input
-            className={styles.bigValue}
-            style={{ border: "none", outline: "none", background: "transparent", width: "60%" }}
+            className={ui.bigValue}
             placeholder="0"
             inputMode="decimal"
+            aria-label="Amount of USDC to hop"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
           />
-          <span className={styles.subMono}>USDC</span>
+          <span className={ui.subMono}>USDC</span>
         </div>
 
-        <div className={styles.subLine} role="radiogroup" aria-label="Destination chain">
+        <div className="mt-3 flex items-center gap-1.5" role="radiogroup" aria-label="Destination chain">
           {(["base", "solana"] as CctpChain[]).map((c) => (
             <button
               key={c}
               type="button"
               role="radio"
               aria-checked={chain === c}
-              className={`${styles.tab} ${chain === c ? styles.tabActive : ""}`}
+              className={chain === c ? ui.tabActive : ui.tab}
               onClick={() => {
                 setChain(c);
                 setResult(null);
@@ -192,30 +193,31 @@ export default function HopPanel({ network }: { network: NetworkKey }) {
         </div>
 
         <input
-          className={styles.subMono}
-          style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px", width: "100%", marginTop: 8 }}
+          className={cx(ui.inputField, "mt-2 w-full")}
+          aria-label={chain === "base" ? "Base mint recipient" : "Solana mint recipient"}
           placeholder={chain === "base" ? "Base mint recipient (0x… EVM address)" : "Solana mint recipient (base58 public key)"}
           value={recipient}
           onChange={(e) => setRecipient(e.target.value)}
         />
       </div>
 
-      <div className={styles.subLine}>
-        <span className={styles.subMono}>
+      <div className={ui.subLine}>
+        <span className={ui.subMono}>
           public native USDC: {publicUsdc !== undefined ? fromBaseUnits(publicUsdc, TOKENS.USDC.decimals) : "…"}
         </span>
       </div>
       {insufficientBalance && (
-        <div className={styles.warn}>Not enough public native USDC for this amount.</div>
+        <div className={ui.warn}>Not enough public native USDC for this amount.</div>
       )}
 
-      <div className={styles.subLine} style={{ color: "var(--muted)" }}>
+      <div className={ui.subLine} style={{ color: "var(--muted)" }}>
         Standard Transfer (no CCTP fee, finalizes in minutes). This burns TOKENS.USDC only - bridged USDC.e
         cannot be burned here.
       </div>
 
       <button
-        className={styles.btnCta}
+        type="button"
+        className={ui.btnCta}
         disabled={!myWalletAccount || submitting || !amount || !recipient || insufficientBalance}
         onClick={handleHop}
       >
@@ -224,44 +226,58 @@ export default function HopPanel({ network }: { network: NetworkKey }) {
 
       {result ? (
         <div
-          className={`${styles.receipt} ${
-            result.status === "error" ? styles.receiptError : result.status === "pending" ? styles.receiptPending : styles.receiptOk
-          }`}
+          className={cx(
+            ui.receipt,
+            result.status === "error" ? ui.receiptError : result.status === "pending" ? ui.receiptPending : ui.receiptOk,
+            "animate-rise-in",
+          )}
         >
-          <div className={styles.receiptHead}>
-            <span className={styles.receiptIcon}>{result.status === "ok" ? "✓" : result.status === "error" ? "!" : "⋯"}</span>
+          <div className={ui.receiptHead}>
+            <span
+              className={cx(
+                ui.receiptIcon,
+                result.status === "ok"
+                  ? "bg-[#34d399] shadow-[0_0_12px_rgba(52,211,153,0.55)]"
+                  : result.status === "error"
+                    ? "bg-[#f87171]"
+                    : "bg-[#2dd4bf]",
+              )}
+              aria-hidden="true"
+            >
+              {result.status === "ok" ? "✓" : result.status === "error" ? "!" : "⋯"}
+            </span>
             <span>{result.title}</span>
           </div>
           {result.rows?.length ? (
-            <div className={styles.receiptRows}>
+            <div className={ui.receiptRows}>
               {result.rows.map((row) => (
-                <div key={row.label} className={styles.receiptRow}>
-                  <span className={styles.receiptLabel}>{row.label}</span>
+                <div key={row.label} className={ui.receiptRow}>
+                  <span className={ui.receiptLabel}>{row.label}</span>
                   {row.hash ? (
-                    <a className={styles.receiptLink} href={explorerTxUrl(network, row.hash)} target="_blank" rel="noreferrer">
+                    <a className={ui.receiptLink} href={explorerTxUrl(network, row.hash)} target="_blank" rel="noreferrer">
                       {row.value} ↗
                     </a>
                   ) : (
-                    <span className={styles.receiptValue}>{row.value}</span>
+                    <span className={ui.receiptValue}>{row.value}</span>
                   )}
                 </div>
               ))}
             </div>
           ) : null}
-          {result.note ? <pre className={styles.receiptNote}>{result.note}</pre> : null}
+          {result.note ? <pre className={ui.receiptNote}>{result.note}</pre> : null}
         </div>
       ) : null}
 
       {txHash && result?.status === "ok" ? (
-        <div className={styles.panel} style={{ marginTop: 12 }}>
-          <div className={styles.inputLabel}>Circle attestation (Iris, public API)</div>
+        <div className={cx(ui.panel, "mt-3")}>
+          <div className={ui.inputLabel}>Circle attestation (Iris, public API)</div>
           {attestationLoading && !attestation ? (
-            <div className={styles.subMono}>Polling iris-api.circle.com for the attestation…</div>
+            <div className={ui.subMono}>Polling iris-api.circle.com for the attestation…</div>
           ) : null}
           {attestation?.status === "complete" ? (
             <>
-              <div className={styles.subMono}>Attestation ready: {shortHex(attestation.attestation)}</div>
-              <div className={styles.warn} style={{ color: "var(--muted)" }}>
+              <div className={ui.subMono}>Attestation ready: {shortHex(attestation.attestation)}</div>
+              <div className={ui.warn} style={{ color: "var(--muted)" }}>
                 This app does not hold a {CHAIN_LABEL[chain]} signer. Finish the mint yourself: call
                 receive_message on MessageTransmitterV2 on {CHAIN_LABEL[chain]} with this attestation and the
                 message bytes from Circle&apos;s Iris API (source domain {CCTP.starknetDomain}, transaction{" "}
@@ -270,7 +286,7 @@ export default function HopPanel({ network }: { network: NetworkKey }) {
             </>
           ) : null}
           {attestation?.status === "timeout" ? (
-            <div className={styles.warn}>
+            <div className={ui.warn}>
               Attestation not ready after 2 minutes of polling. Circle usually needs a few minutes for Standard
               Transfer finality - check{" "}
               <a

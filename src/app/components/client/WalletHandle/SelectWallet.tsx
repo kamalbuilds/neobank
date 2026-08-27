@@ -1,8 +1,8 @@
 "use client";
-import styles from "../../../uni.module.css";
+import { ui } from "../../lib/panelUi";
 import { useStoreWallet } from "../../Wallet/walletContext";
 import { useFrontendProvider } from "../provider/providerContext";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { walletV6, validateAndParseAddress, WalletAccountV6 } from "starknet";
 import { WALLET_API } from "@starknet-io/types-js";
 import { networkForChainId, providerFor } from "@/utils/constants";
@@ -40,6 +40,27 @@ export default function SelectWallet({ variant = "ctaBig" }: { variant?: "nav" |
   const [pickerOpen, setPickerOpen] = useState(false);
   // Detected Starknet wallets, in render state so the picker updates as wallets register.
   const [wallets, setWallets] = useState<WalletWithStarknetFeatures[]>([]);
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
+  const openerRef = useRef<HTMLButtonElement>(null);
+  const wasOpenRef = useRef(false);
+
+  // Focus management: move focus into the dialog on open, restore it to the
+  // trigger on close, and let Escape close it (fixing-accessibility skill).
+  useEffect(() => {
+    if (pickerOpen) {
+      wasOpenRef.current = true;
+      closeBtnRef.current?.focus();
+      const onKey = (e: KeyboardEvent) => {
+        if (e.key === "Escape" && !connecting) setPickerOpen(false);
+      };
+      document.addEventListener("keydown", onKey);
+      return () => document.removeEventListener("keydown", onKey);
+    }
+    if (wasOpenRef.current) {
+      wasOpenRef.current = false;
+      openerRef.current?.focus();
+    }
+  }, [pickerOpen, connecting]);
 
   // Create the discovery store once on mount so wallets have time to register
   // before the user opens the picker. eip1193Adapters:[] keeps MetaMask out entirely
@@ -121,45 +142,55 @@ export default function SelectWallet({ variant = "ctaBig" }: { variant?: "nav" |
   const shortAddr = address ? `${address.slice(0, 6)}…${address.slice(-4)}` : "";
 
   const picker = pickerOpen ? (
-    <div className={styles.modalOverlay} onClick={() => !connecting && setPickerOpen(false)}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHead}>
-          <span className={styles.modalTitle}>Connect a wallet</span>
+    <div
+      className={ui.modalOverlay}
+      onClick={() => !connecting && setPickerOpen(false)}
+    >
+      <div
+        className={ui.modal}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="wallet-picker-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className={ui.modalHead}>
+          <span id="wallet-picker-title" className={ui.modalTitle}>Connect a wallet</span>
           <button
-            className={styles.modalClose}
+            ref={closeBtnRef}
+            className={ui.modalClose}
             onClick={() => setPickerOpen(false)}
             aria-label="Close"
             disabled={connecting}
           >
-            ×
+            <span aria-hidden="true">&times;</span>
           </button>
         </div>
 
         {pickable.length ? (
-          <div className={styles.walletList}>
+          <div className={ui.walletList}>
             {pickable.map((w) => (
               <button
                 key={w.name}
-                className={styles.walletRow}
+                className={ui.walletRow}
                 onClick={() => selectWallet(w)}
                 disabled={connecting}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img className={styles.walletIcon} src={w.icon} alt="" />
-                <span className={styles.walletName}>{w.name}</span>
-                <span className={styles.walletGo}>{connecting ? "…" : "→"}</span>
+                <img className={ui.walletIcon} src={w.icon} alt="" />
+                <span className={ui.walletName}>{w.name}</span>
+                <span className={ui.walletGo} aria-hidden="true">{connecting ? "…" : "→"}</span>
               </button>
             ))}
           </div>
         ) : (
-          <div className={styles.walletHint}>
+          <div className={ui.walletHint}>
             No Starknet wallet detected. Install{" "}
             <a href="https://www.ready.co/" target="_blank" rel="noreferrer">Ready</a> for private actions, or{" "}
             <a href="https://www.xverse.app/" target="_blank" rel="noreferrer">Xverse</a>.
           </div>
         )}
 
-        {error ? <div className={styles.errorText}>{error}</div> : null}
+        {error ? <div className={ui.errorText} role="alert">{error}</div> : null}
       </div>
     </div>
   ) : null;
@@ -169,19 +200,19 @@ export default function SelectWallet({ variant = "ctaBig" }: { variant?: "nav" |
     if (isConnected && address) {
       return (
         <button
-          className={styles.addrPill}
+          className={ui.addrPill}
           onClick={disconnect}
-          title="Disconnect"
+          aria-label={`Connected as ${shortAddr}. Disconnect wallet.`}
         >
-          <span className={styles.addrDot} />
+          <span className={ui.addrDot} aria-hidden="true" />
           {shortAddr}
-          <span className={styles.addrDisconnect}>Disconnect</span>
+          <span className={ui.addrDisconnect}>Disconnect</span>
         </button>
       );
     }
     return (
       <>
-        <button className={styles.connectPill} onClick={openPicker}>
+        <button ref={openerRef} className={ui.connectPill} onClick={openPicker}>
           Connect
         </button>
         {picker}
@@ -192,7 +223,7 @@ export default function SelectWallet({ variant = "ctaBig" }: { variant?: "nav" |
   // Default (ctaBig): the large solid connect CTA shown until a wallet is connected.
   return (
     <>
-      <button className={styles.btnCta} onClick={openPicker}>
+      <button ref={openerRef} className={ui.btnCta} onClick={openPicker}>
         Connect a Wallet
       </button>
       {picker}

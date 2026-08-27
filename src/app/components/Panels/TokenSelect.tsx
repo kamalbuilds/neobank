@@ -1,6 +1,6 @@
 "use client";
 import { useRef } from "react";
-import styles from "../../uni.module.css";
+import { ui } from "../lib/panelUi";
 import { TOKEN_LIST, type TokenSymbol } from "@/utils/constants";
 import { StrkCoin, UsdcCoin } from "../TokenIcons";
 
@@ -22,12 +22,7 @@ export default function TokenSelect({
   }
 
   return (
-    <div
-      role="radiogroup"
-      aria-label="Token"
-      className={styles.tokenPill}
-      style={{ padding: 3, gap: 2 }}
-    >
+    <div role="radiogroup" aria-label="Token" className={`${ui.tokenPill} gap-0.5 p-[3px]`}>
       {TOKEN_LIST.map((t, i) => {
         const Icon = ICONS[t.symbol];
         const selected = t.symbol === value;
@@ -51,21 +46,11 @@ export default function TokenSelect({
                 focusIndex(i - 1);
               }
             }}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              border: "none",
-              borderRadius: 999,
-              padding: "6px 12px 6px 6px",
-              font: "inherit",
-              fontWeight: 600,
-              color: selected ? "var(--pink-text)" : "var(--ink)",
-              cursor: "pointer",
-              background: selected ? "var(--pink-soft)" : "transparent",
-            }}
+            className={`inline-flex items-center gap-1.5 rounded-full border-none py-1.5 pr-3 pl-1.5 font-semibold transition-colors duration-150 cursor-pointer ${
+              selected ? "bg-[#2dd4bf]/20 text-[#6ee9d5]" : "bg-transparent text-[#eaf0f8] hover:bg-white/[0.04]"
+            }`}
           >
-            <span className={styles.tokenDot} style={{ opacity: selected ? 1 : 0.55 }}>
+            <span className={ui.tokenDot} style={{ opacity: selected ? 1 : 0.55 }}>
               <Icon size={22} />
             </span>
             {t.symbol}

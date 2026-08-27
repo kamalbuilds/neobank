@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
-import styles from "../../uni.module.css";
+import { ui } from "../lib/panelUi";
+import { cx } from "../v2/ui";
 import { useStoreWallet } from "../Wallet/walletContext";
 import {
   DEFAULT_NETWORK,
@@ -120,8 +121,8 @@ export default function ReceivePanel() {
 
   if (!address) {
     return (
-      <div className={styles.panel}>
-        <div className={styles.warn}>Connect a wallet to build a payment request.</div>
+      <div className={ui.panel}>
+        <div className={ui.warn}>Connect a wallet to build a payment request.</div>
       </div>
     );
   }
@@ -132,45 +133,44 @@ export default function ReceivePanel() {
       : "";
 
   return (
-    <div className={styles.panel}>
+    <div className={ui.panel}>
       {!strk20Capable ? (
-        <div className={styles.warn}>
+        <div className={ui.warn}>
           This wallet does not support STRK20 private transfers yet. You cannot receive private
           transfers until you install or update a STRK20-capable wallet. The payment request below
           is shown for reference only.
         </div>
       ) : (
-        <div className={styles.warn} style={{ color: "var(--muted)" }}>
+        <div className={ui.warn} style={{ color: "var(--muted)" }}>
           A payment request asks for a private transfer to your registered pool address. The
           recipient of any STRK20 transfer must already be registered in the pool; this app cannot
           register anyone.
         </div>
       )}
 
-      <div className={styles.inputBlock}>
-        <div className={styles.inputLabel}>Create a payment request</div>
-        <div className={styles.inputMain}>
+      <div className={ui.inputBlock}>
+        <div className={ui.inputLabel}>Create a payment request</div>
+        <div className={ui.inputMain}>
           <input
-            className={styles.bigValue}
-            style={{ border: "none", outline: "none", background: "transparent", width: "60%" }}
+            className={ui.bigValue}
             placeholder="0"
             inputMode="decimal"
+            aria-label={`Amount of ${token} to request`}
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
           />
           <TokenSelect value={token} onChange={setToken} />
         </div>
         <input
-          className={styles.subMono}
-          style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px", width: "100%", marginTop: 8 }}
+          className={cx(ui.inputField, "mt-2 w-full")}
+          aria-label="Request label"
           placeholder="Label (optional, e.g. Invoice 42)"
           maxLength={60}
           value={memo}
           onChange={(e) => setMemo(e.target.value)}
         />
         <select
-          className={styles.subMono}
-          style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px", width: "100%", marginTop: 8 }}
+          className={cx(ui.inputField, "mt-2 w-full")}
           value={expiryChoice}
           onChange={(e) => setExpiryChoice(e.target.value)}
           aria-label="Request expiry"
@@ -183,102 +183,86 @@ export default function ReceivePanel() {
         </select>
 
         {amount.trim() && amountState.error ? (
-          <div className={styles.warn}>{amountState.error}</div>
+          <div className={ui.warn} role="alert">{amountState.error}</div>
         ) : null}
         {!amount.trim() ? (
-          <div className={styles.subLine} style={{ color: "var(--muted)" }}>
+          <div className={cx(ui.subLine, "mt-2")} style={{ color: "var(--muted)" }}>
             Pick a token and an amount to build the link and QR.
           </div>
         ) : null}
 
         {qr ? (
-          <div style={{ display: "flex", justifyContent: "center", margin: "8px 0 16px" }}>
+          <div className="my-3 flex justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={qr} alt="Payment request QR" width={200} height={200} style={{ borderRadius: 12 }} />
+            <img src={qr} alt="Payment request QR" width={200} height={200} className="rounded-xl" />
           </div>
         ) : null}
 
         {preview ? (
-          <div className={styles.subMono} style={{ wordBreak: "break-all", marginTop: 10, fontSize: 13 }}>
+          <div className={cx(ui.subMono, "mt-2.5 break-all text-[13px]")}>
             Requests {preview} to your pool address.
           </div>
         ) : null}
 
-        <div className={styles.warn} style={{ color: "var(--muted)", marginTop: 12 }}>
+        <div className={cx(ui.warn, "mt-3")} style={{ color: "var(--muted)" }}>
           This is a payment request, not a card or a card number. It cannot be typed into a
           merchant checkout. Opening it opens this app with the Send panel prefilled, and the payer
           confirms the transfer from their own Ready wallet. The token, amount and label are
           encoded inside the link itself, so anyone who opens or scans it can read them.
         </div>
 
-        <div style={{ marginTop: 16 }}>
-          <div className={styles.inputLabel}>Your receive address</div>
-          <div className={styles.subLine} style={{ color: "var(--muted)", marginTop: 6 }}>
+        <div className="mt-4">
+          <div className={ui.inputLabel}>Your receive address</div>
+          <div className={cx(ui.subLine, "mt-1.5")} style={{ color: "var(--muted)" }}>
             Hex pool and account path for private transfers, plus SNIP-42/43 checksummed strings
             (not an official Beam product).
           </div>
 
-          <div className={styles.inputLabel} style={{ marginTop: 14 }}>
-            Account (hex)
-          </div>
-          <div className={styles.subMono} style={{ wordBreak: "break-all", marginTop: 8, fontSize: 13 }}>
-            {address}
-          </div>
-          <div className={styles.subLine} style={{ marginTop: 8 }}>
-            <button className={styles.tab} onClick={() => copy("address", address)}>
+          <div className={cx(ui.inputLabel, "mt-3.5")}>Account (hex)</div>
+          <div className={cx(ui.subMono, "mt-2 break-all text-[13px]")}>{address}</div>
+          <div className={cx(ui.subLine, "mt-2")}>
+            <button type="button" className={ui.tab} onClick={() => copy("address", address)}>
               {copied === "address" ? "Copied account" : "Copy account hex"}
             </button>
           </div>
 
-          <div className={styles.inputLabel} style={{ marginTop: 14 }}>
-            Privacy pool (hex)
-          </div>
-          <div className={styles.subMono} style={{ wordBreak: "break-all", marginTop: 8, fontSize: 13 }}>
-            {poolHex}
-          </div>
-          <div className={styles.subLine} style={{ marginTop: 8 }}>
-            <button className={styles.tab} onClick={() => copy("pool", poolHex)}>
+          <div className={cx(ui.inputLabel, "mt-3.5")}>Privacy pool (hex)</div>
+          <div className={cx(ui.subMono, "mt-2 break-all text-[13px]")}>{poolHex}</div>
+          <div className={cx(ui.subLine, "mt-2")}>
+            <button type="button" className={ui.tab} onClick={() => copy("pool", poolHex)}>
               {copied === "pool" ? "Copied pool" : "Copy pool hex"}
             </button>
           </div>
 
-          <div className={styles.inputLabel} style={{ marginTop: 14 }}>
-            Checksummed address (strk)
-          </div>
-          <div className={styles.subMono} style={{ wordBreak: "break-all", marginTop: 8, fontSize: 13 }}>
-            {checksummed || "-"}
-          </div>
-          <div className={styles.subLine} style={{ marginTop: 8 }}>
+          <div className={cx(ui.inputLabel, "mt-3.5")}>Checksummed address (strk)</div>
+          <div className={cx(ui.subMono, "mt-2 break-all text-[13px]")}>{checksummed || "-"}</div>
+          <div className={cx(ui.subLine, "mt-2")}>
             <button
-              className={styles.tab}
+              type="button"
+              className={ui.tab}
               onClick={() => copy("strk", checksummed)}
               disabled={!checksummed}
-              style={{ opacity: checksummed ? 1 : 0.5 }}
             >
               {copied === "strk" ? "Copied checksummed address" : "Copy checksummed address"}
             </button>
           </div>
 
-          <div className={styles.inputLabel} style={{ marginTop: 14 }}>
-            Shielded receiver string (strkx)
-          </div>
-          <div className={styles.subMono} style={{ wordBreak: "break-all", marginTop: 8, fontSize: 13 }}>
-            {shieldedReceiver || "-"}
-          </div>
-          <div className={styles.subLine} style={{ marginTop: 8 }}>
+          <div className={cx(ui.inputLabel, "mt-3.5")}>Shielded receiver string (strkx)</div>
+          <div className={cx(ui.subMono, "mt-2 break-all text-[13px]")}>{shieldedReceiver || "-"}</div>
+          <div className={cx(ui.subLine, "mt-2 flex-wrap gap-y-2")}>
             <button
-              className={styles.tab}
+              type="button"
+              className={ui.tab}
               onClick={() => copy("strkx", shieldedReceiver)}
               disabled={!shieldedReceiver}
-              style={{ opacity: shieldedReceiver ? 1 : 0.5 }}
             >
               {copied === "strkx" ? "Copied shielded receiver" : "Copy shielded receiver string"}
             </button>
             <button
-              className={styles.tab}
+              type="button"
+              className={ui.tab}
               onClick={() => requestLink && copy("link", requestLink)}
               disabled={!requestLink}
-              style={{ opacity: requestLink ? 1 : 0.5 }}
             >
               {copied === "link" ? "Copied request link" : "Copy payment request link"}
             </button>

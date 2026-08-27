@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { validateAndParseAddress } from "starknet";
-import styles from "../../uni.module.css";
+import { ui } from "../lib/panelUi";
+import { cx } from "../v2/ui";
 import { useStoreWallet } from "../Wallet/walletContext";
 import { TOKENS, getPublicBalance, type TokenSymbol, type NetworkKey } from "@/utils/constants";
 import { toBaseUnits, fromBaseUnits } from "../lib/format";
@@ -132,34 +133,34 @@ export default function UnshieldPanel({ network }: { network: NetworkKey }) {
   }
 
   return (
-    <div className={styles.panel}>
-      <div className={styles.warn} style={{ color: "var(--muted)" }}>
+    <div className={ui.panel}>
+      <div className={ui.warn} style={{ color: "var(--muted)" }}>
         Unshielding is a public withdrawal. The amount and the destination address
         are visible onchain. Leave the destination blank to withdraw to this wallet.
       </div>
 
-      <div className={styles.inputBlock}>
-        <div className={styles.inputLabel}>You&apos;re unshielding</div>
-        <div className={styles.inputMain}>
+      <div className={ui.inputBlock}>
+        <div className={ui.inputLabel}>You&apos;re unshielding</div>
+        <div className={ui.inputMain}>
           <input
-            className={styles.bigValue}
-            style={{ border: "none", outline: "none", background: "transparent", width: "60%" }}
+            className={ui.bigValue}
             placeholder="0"
             inputMode="decimal"
+            aria-label={`Amount of ${token} to unshield`}
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
           />
           <TokenSelect value={token} onChange={setToken} />
         </div>
         <input
-          className={styles.subMono}
-          style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px", width: "100%", marginTop: 8 }}
+          className={cx(ui.inputField, "mt-2 w-full")}
+          aria-label="Public destination address"
           placeholder="Public destination (blank = this wallet)"
           value={recipient}
           onChange={(e) => setRecipient(e.target.value)}
         />
-        <div className={styles.subLine}>
-          <button className={styles.tab} onClick={useMax} disabled={maxLoading || !myWalletAccount}>
+        <div className={cx(ui.subLine, "mt-2")}>
+          <button type="button" className={ui.tab} onClick={useMax} disabled={maxLoading || !myWalletAccount}>
             {maxLoading ? "reading shielded balance…" : "Use max"}
           </button>
         </div>
@@ -168,26 +169,27 @@ export default function UnshieldPanel({ network }: { network: NetworkKey }) {
       <FeeRow fee={fee} />
 
       {address && fee !== undefined && (
-        <div className={styles.subLine}>
-          <span className={styles.subMono}>
+        <div className={ui.subLine}>
+          <span className={ui.subMono}>
             public STRK: {publicStrk !== undefined ? fromBaseUnits(publicStrk, TOKENS.STRK.decimals) : "…"} / fee:{" "}
             {fromBaseUnits(fee, TOKENS.STRK.decimals)}
           </span>
         </div>
       )}
       {feeShortfall && (
-        <div className={styles.warn}>
+        <div className={ui.warn}>
           Need at least {fromBaseUnits(fee!, TOKENS.STRK.decimals)} public STRK for the pool fee. This wallet has{" "}
           {fromBaseUnits(publicStrk!, TOKENS.STRK.decimals)} public STRK. Ready will refuse the unshield until you top up.
         </div>
       )}
-      <div className={styles.subLine} style={{ color: "var(--muted)" }}>
+      <div className={ui.subLine} style={{ color: "var(--muted)" }}>
         Ready may require a buffer above the live pool fee shown here. The fee itself is still public STRK, not taken from this note.
       </div>
 
-      <div className={styles.subLine}>
+      <div className={ui.subLine}>
         <button
-          className={styles.tab}
+          type="button"
+          className={ui.tab}
           onClick={shielded.revealed ? shielded.hide : shielded.reveal}
           disabled={shielded.loading || !myWalletAccount}
         >
@@ -198,20 +200,20 @@ export default function UnshieldPanel({ network }: { network: NetworkKey }) {
             : "Show shielded STRK/USDC"}
         </button>
       </div>
-      {shielded.error ? <div className={styles.warn}>{shielded.error}</div> : null}
+      {shielded.error ? <div className={ui.warn}>{shielded.error}</div> : null}
       {shielded.revealed && (
-        <div className={styles.subLine} style={{ gap: 16 }}>
-          <span className={styles.subMono}>
+        <div className={cx(ui.subLine, "gap-4")}>
+          <span className={ui.subMono}>
             {shielded.balances.STRK !== undefined ? fromBaseUnits(shielded.balances.STRK, TOKENS.STRK.decimals) : "…"} STRK
           </span>
-          <span className={styles.subMono}>
+          <span className={ui.subMono}>
             {shielded.balances.USDC !== undefined ? fromBaseUnits(shielded.balances.USDC, TOKENS.USDC.decimals) : "…"} USDC
           </span>
         </div>
       )}
 
       {maturity.locked && (
-        <div className={styles.warn}>
+        <div className={ui.warn}>
           {maturity.blocksRemaining === undefined
             ? `Notes from your last ${token} shield mature about 10 blocks after the deposit.`
             : `Notes from your last ${token} shield are still maturing: ~${maturity.blocksRemaining} block${
@@ -221,11 +223,12 @@ export default function UnshieldPanel({ network }: { network: NetworkKey }) {
       )}
 
       {!strk20Capable && (
-        <div className={styles.warn}>This wallet does not support STRK20 privacy actions. Install or update Ready.</div>
+        <div className={ui.warn}>This wallet does not support STRK20 privacy actions. Install or update Ready.</div>
       )}
 
       <button
-        className={styles.btnCta}
+        type="button"
+        className={ui.btnCta}
         disabled={!strk20Capable || submitting || !amount || maturity.locked || feeShortfall}
         onClick={handleUnshield}
       >

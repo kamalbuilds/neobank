@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import styles from "../../uni.module.css";
+import { ui } from "../lib/panelUi";
 import { validateAndParseAddress } from "starknet";
 import { useStoreWallet } from "../Wallet/walletContext";
 import {
@@ -160,50 +160,53 @@ export default function SpendPanel({ network }: SpendPanelProps) {
   }
 
   return (
-    <div className={styles.panel}>
-      <div className={styles.warn} style={{ color: "var(--muted)" }}>
+    <div className={ui.panel}>
+      <div className={ui.warn} style={{ color: "var(--muted)" }}>
         The settlement address and amount are public, like a normal card settlement. The payer and their
         remaining balance stay hidden behind the STRK20 pool.
       </div>
 
-      <div className={styles.inputBlock}>
-        <div className={styles.inputLabel}>You&apos;re spending privately</div>
-        <div className={styles.inputMain}>
-          <div className={styles.subLine} style={{ marginTop: 8 }}>
-            <input
-              className={styles.subMono}
-              style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px", width: "100%" }}
-              placeholder="Acquirer or merchant address (0x…)"
-              value={legs[0].recipient}
-              onChange={(e) => updateLeg({ recipient: e.target.value })}
-            />
-            <input
-              className={styles.subMono}
-              style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px", width: "100%" }}
-              placeholder="Purchase amount"
-              inputMode="decimal"
-              value={legs[0].amount}
-              onChange={(e) => updateLeg({ amount: e.target.value })}
-            />
-          </div>
+      <div className={ui.inputBlock}>
+        <div className={ui.inputLabel}>You&apos;re spending privately</div>
+        <div className="mt-2.5 flex flex-col gap-2.5">
+          <input
+            className={`${ui.inputField} w-full`}
+            aria-label="Acquirer or merchant address"
+            placeholder="Acquirer or merchant address (0x…)"
+            value={legs[0].recipient}
+            onChange={(e) => updateLeg({ recipient: e.target.value })}
+          />
+          <input
+            className={`${ui.inputField} w-full`}
+            aria-label="Purchase amount"
+            placeholder="Purchase amount"
+            inputMode="decimal"
+            value={legs[0].amount}
+            onChange={(e) => updateLeg({ amount: e.target.value })}
+          />
         </div>
       </div>
 
       <FeeRow fee={fee} />
-      <div className={styles.subLine} style={{ color: "var(--muted)" }}>
+      <div className={ui.subLine} style={{ color: "var(--muted)" }}>
         Ready shows the settlement amount and STRK pool fee before you approve.
       </div>
-      <div className={styles.subLine}>
-        <button className={styles.tab} onClick={useMax} disabled={maxLoading || !myWalletAccount}>
+      <div className={ui.subLine}>
+        <button
+          type="button"
+          className="text-[13px] font-medium text-[#7a859c] transition-colors hover:text-[#eaf0f8] disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={useMax}
+          disabled={maxLoading || !myWalletAccount}
+        >
           {maxLoading ? "reading shielded balance…" : "Use max"}
         </button>
       </div>
 
       {!strk20Capable && (
-        <div className={styles.warn}>This wallet does not support STRK20 privacy actions. Install or update Ready.</div>
+        <div className={ui.warn}>This wallet does not support STRK20 privacy actions. Install or update Ready.</div>
       )}
       {maturity.locked && (
-        <div className={styles.warn}>
+        <div className={ui.warn}>
           {maturity.blocksRemaining === undefined
             ? `Notes from your last STRK shield mature about 10 blocks after the deposit.`
             : `Notes from your last STRK shield are still maturing: ~${maturity.blocksRemaining} block${
@@ -213,7 +216,8 @@ export default function SpendPanel({ network }: SpendPanelProps) {
       )}
 
       <button
-        className={styles.btnCta}
+        type="button"
+        className={ui.btnCta}
         disabled={
           !strk20Capable ||
           submitting ||

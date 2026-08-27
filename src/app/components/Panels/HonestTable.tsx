@@ -1,5 +1,5 @@
 "use client";
-import styles from "../../uni.module.css";
+import { ui } from "../lib/panelUi";
 
 const ROWS: { hidden: string; visible: string }[] = [
   { hidden: "Sender and receiver of a private transfer", visible: "Deposit and withdrawal amounts (the public ERC-20 legs)" },
@@ -11,27 +11,27 @@ const ROWS: { hidden: string; visible: string }[] = [
 
 export default function HonestTable() {
   return (
-    <div className={styles.inputBlock} style={{ marginTop: 24 }}>
-      <div className={styles.inputLabel}>What stays private, what stays public</div>
-      <div style={{ display: "flex", gap: 24, marginTop: 12, flexWrap: "wrap" }}>
-        <div style={{ flex: 1, minWidth: 220 }}>
-          <div className={styles.subMono} style={{ color: "var(--green)", fontWeight: 700, marginBottom: 8 }}>PRIVATE</div>
+    <div className={`${ui.inputBlock} mt-6`}>
+      <div className={ui.inputLabel}>What stays private, what stays public</div>
+      <div className="mt-3 flex flex-wrap gap-6">
+        <div className="min-w-[220px] flex-1">
+          <div className="mb-2 font-[family-name:var(--font-mono-ui)] font-bold text-[#34d399]">PRIVATE</div>
           {ROWS.filter((r) => r.hidden).map((r) => (
-            <div key={r.hidden} style={{ fontSize: 13, color: "var(--ink)", padding: "6px 0", borderTop: "1px solid var(--line)" }}>
+            <div key={r.hidden} className="border-t border-white/[0.06] py-1.5 text-[13px] text-[#eaf0f8] first:border-t-0">
               {r.hidden}
             </div>
           ))}
         </div>
-        <div style={{ flex: 1, minWidth: 220 }}>
-          <div className={styles.subMono} style={{ color: "var(--pink-text)", fontWeight: 700, marginBottom: 8 }}>PUBLIC</div>
+        <div className="min-w-[220px] flex-1">
+          <div className="mb-2 font-[family-name:var(--font-mono-ui)] font-bold text-[#6ee9d5]">PUBLIC</div>
           {ROWS.map((r) => (
-            <div key={r.visible} style={{ fontSize: 13, color: "var(--ink)", padding: "6px 0", borderTop: "1px solid var(--line)" }}>
+            <div key={r.visible} className="border-t border-white/[0.06] py-1.5 text-[13px] text-[#eaf0f8] first:border-t-0">
               {r.visible}
             </div>
           ))}
         </div>
       </div>
-      <div className={styles.subLine} style={{ marginTop: 12 }}>
+      <div className={`${ui.subLine} mt-3`}>
         <span>A private transfer needs a recipient already registered. Your own first shield in this app registers you. This app cannot register someone else.</span>
       </div>
     </div>

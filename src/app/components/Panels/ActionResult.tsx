@@ -1,5 +1,6 @@
 "use client";
-import styles from "../../uni.module.css";
+import { ui } from "../lib/panelUi";
+import { cx } from "../v2/ui";
 import { num } from "starknet";
 import { explorerTxUrl, type NetworkKey } from "@/utils/constants";
 import { fromBaseUnits, shortHex } from "../lib/format";
@@ -68,33 +69,37 @@ export function receiptToResult(receipt: any, txHash: string, amountLabel: strin
   };
 }
 
+const ICON_BG: Record<ActionResult["status"], string> = {
+  ok: "bg-[#34d399] shadow-[0_0_12px_rgba(52,211,153,0.55)]",
+  error: "bg-[#f87171]",
+  screened: "bg-[#f87171]",
+  pending: "bg-[#2dd4bf]",
+};
+
 export function ResultCard({ r, network }: { r: ActionResult; network: NetworkKey }) {
+  const variant =
+    r.status === "error" || r.status === "screened"
+      ? ui.receiptError
+      : r.status === "pending"
+        ? ui.receiptPending
+        : ui.receiptOk;
+
   return (
-    <div
-      className={`${styles.receipt} ${
-        r.status === "error"
-          ? styles.receiptError
-          : r.status === "screened"
-          ? styles.receiptError
-          : r.status === "pending"
-          ? styles.receiptPending
-          : styles.receiptOk
-      }`}
-    >
-      <div className={styles.receiptHead}>
-        <span className={styles.receiptIcon}>
+    <div className={cx(ui.receipt, variant, "animate-rise-in")}>
+      <div className={ui.receiptHead}>
+        <span className={cx(ui.receiptIcon, ICON_BG[r.status])} aria-hidden="true">
           {r.status === "ok" ? "✓" : r.status === "error" || r.status === "screened" ? "!" : "⋯"}
         </span>
         <span>{r.title}</span>
       </div>
       {r.rows?.length ? (
-        <div className={styles.receiptRows}>
+        <div className={ui.receiptRows}>
           {r.rows.map((row) => (
-            <div key={row.label} className={styles.receiptRow}>
-              <span className={styles.receiptLabel}>{row.label}</span>
+            <div key={row.label} className={ui.receiptRow}>
+              <span className={ui.receiptLabel}>{row.label}</span>
               {row.hash ? (
                 <a
-                  className={styles.receiptLink}
+                  className={ui.receiptLink}
                   href={explorerTxUrl(network, row.hash)}
                   target="_blank"
                   rel="noreferrer"
@@ -102,18 +107,18 @@ export function ResultCard({ r, network }: { r: ActionResult; network: NetworkKe
                   {row.value} ↗
                 </a>
               ) : (
-                <span className={styles.receiptValue}>{row.value}</span>
+                <span className={ui.receiptValue}>{row.value}</span>
               )}
             </div>
           ))}
         </div>
       ) : null}
       {r.status === "pending" ? (
-        <div className={styles.receiptLabel} style={{ marginTop: 4 }}>
+        <div className={cx(ui.receiptLabel, "mt-1")} aria-live="polite">
           Pending is not a failure. Paymaster-relayed txs can take a while to land.
         </div>
       ) : null}
-      {r.note ? <pre className={styles.receiptNote}>{r.note}</pre> : null}
+      {r.note ? <pre className={ui.receiptNote}>{r.note}</pre> : null}
     </div>
   );
 }

@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { validateAndParseAddress } from "starknet";
-import styles from "../../uni.module.css";
+import { ui } from "../lib/panelUi";
+import { cx } from "../v2/ui";
 import { useStoreWallet } from "../Wallet/walletContext";
 import { TOKENS, getPublicBalance, type TokenSymbol, type NetworkKey } from "@/utils/constants";
 import { toBaseUnits, fromBaseUnits, shortHex } from "../lib/format";
@@ -338,81 +339,87 @@ export default function SendPanel({
   }
 
   return (
-    <div className={styles.panel}>
-      <div className={styles.warn} style={{ color: "var(--muted)" }}>
+    <div className={ui.panel}>
+      <div className={ui.warn} style={{ color: "var(--muted)" }}>
         The recipient must already be registered in the privacy pool (they need to have used a STRK20-capable
         wallet at least once). This app cannot register them for you. In a batch, every recipient must be
         registered or the whole batch is refused.
       </div>
 
-      <div className={styles.inputBlock}>
-        <div className={styles.inputLabel}>You&apos;re sending privately</div>
-        <div className={styles.inputMain}>
+      <div className={ui.inputBlock}>
+        <div className={ui.inputLabel}>You&apos;re sending privately</div>
+        <div className={ui.inputMain}>
           <input
-            className={styles.bigValue}
-            style={{ border: "none", outline: "none", background: "transparent", width: "60%" }}
+            className={ui.bigValue}
             placeholder="0"
             inputMode="decimal"
+            aria-label={`Amount of ${token} to send`}
             value={rows[0].amount}
             onChange={(e) => updateRow(0, { amount: e.target.value })}
           />
           <TokenSelect value={token} onChange={setToken} />
         </div>
         <input
-          className={styles.subMono}
-          style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px", width: "100%", marginTop: 8 }}
+          className={cx(ui.inputField, "mt-2 w-full")}
+          aria-label="Recipient address"
           placeholder="Recipient address (0x…)"
           value={rows[0].recipient}
           onChange={(e) => updateRow(0, { recipient: e.target.value })}
         />
         {request ? (
-          <div className={styles.subLine} style={{ color: "var(--muted)" }}>
+          <div className={cx(ui.subLine, "mt-2")} style={{ color: "var(--muted)" }}>
             Payment request loaded: {fromBaseUnits(request.units, TOKENS[request.token].decimals)}{" "}
             {request.token} to {shortHex(request.recipient)}
             {request.memo ? `, labeled ${request.memo}` : ""}. Confirm these details instead of
             retyping them; this is a payment request, not a card.
           </div>
         ) : initialRecipient ? (
-          <div className={styles.subLine} style={{ color: "var(--muted)" }}>
+          <div className={cx(ui.subLine, "mt-2")} style={{ color: "var(--muted)" }}>
             Recipient filled from a receive link.
           </div>
         ) : null}
-        {requestError ? <div className={styles.warn}>{requestError}</div> : null}
-        <div className={styles.subLine}>
-          <button className={styles.tab} onClick={useMax} disabled={maxLoading || !myWalletAccount}>
+        {requestError ? <div className={ui.warn} role="alert">{requestError}</div> : null}
+        <div className={cx(ui.subLine, "mt-2")}>
+          <button type="button" className={ui.tab} onClick={useMax} disabled={maxLoading || !myWalletAccount}>
             {maxLoading ? "reading shielded balance…" : "Use max"}
           </button>
         </div>
 
         {rows.slice(1).map((row, i) => (
-          <div key={i + 1} className={styles.subLine} style={{ marginTop: 8 }}>
+          <div key={i + 1} className="mt-2 flex items-center gap-2">
             <input
-              className={styles.subMono}
-              style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px", flex: 3, minWidth: 0 }}
+              className={cx(ui.inputField, "min-w-0 flex-[3]")}
+              aria-label={`Recipient ${i + 2} address`}
               placeholder={`Recipient ${i + 2} address (0x…)`}
               value={row.recipient}
               onChange={(e) => updateRow(i + 1, { recipient: e.target.value })}
             />
             <input
-              className={styles.subMono}
-              style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px", flex: 2, minWidth: 0 }}
+              className={cx(ui.inputField, "min-w-0 flex-[2]")}
+              aria-label={`Recipient ${i + 2} amount`}
               placeholder="Amount"
               inputMode="decimal"
               value={row.amount}
               onChange={(e) => updateRow(i + 1, { amount: e.target.value })}
             />
-            <button className={styles.tab} onClick={() => removeRow(i + 1)}>
+            <button
+              type="button"
+              className={ui.tab}
+              onClick={() => removeRow(i + 1)}
+              aria-label={`Remove recipient ${i + 2}`}
+            >
               Remove
             </button>
           </div>
         ))}
 
-        <div className={styles.subLine}>
-          <button className={styles.tab} onClick={addRow}>
+        <div className={cx(ui.subLine, "mt-2")}>
+          <button type="button" className={ui.tab} onClick={addRow}>
             Add another recipient
           </button>
           <button
-            className={styles.tab}
+            type="button"
+            className={ui.tab}
             onClick={() => {
               setPasteNote("");
               setPasteOpen((v) => !v);
@@ -423,27 +430,23 @@ export default function SendPanel({
         </div>
         {pasteOpen && (
           <>
+            <label htmlFor="send-batch-paste" className="sr-only">
+              Paste recipients as address,amount per line
+            </label>
             <textarea
-              className={styles.subMono}
+              id="send-batch-paste"
+              className={cx(ui.inputField, "mt-2 w-full resize-y py-2.5")}
               rows={4}
-              style={{
-                border: "1px solid var(--line)",
-                borderRadius: 12,
-                padding: "10px 12px",
-                width: "100%",
-                resize: "vertical",
-                boxSizing: "border-box",
-              }}
               placeholder={"0x…,25\n0x…,0.5"}
               value={batchText}
               onChange={(e) => setBatchText(e.target.value)}
             />
-            <div className={styles.subLine}>
-              <button className={styles.tab} onClick={addFromPaste}>
+            <div className={cx(ui.subLine, "mt-2")}>
+              <button type="button" className={ui.tab} onClick={addFromPaste}>
                 Add lines to the batch
               </button>
               {pasteNote ? (
-                <span className={styles.subMono} style={{ color: "var(--muted)" }}>
+                <span className={ui.subMono} style={{ color: "var(--muted)" }}>
                   {pasteNote}
                 </span>
               ) : null}
@@ -453,11 +456,11 @@ export default function SendPanel({
       </div>
 
       <FeeRow fee={fee} />
-      <div className={styles.subLine} style={{ color: "var(--muted)" }}>
+      <div className={ui.subLine} style={{ color: "var(--muted)" }}>
         Fee is public STRK, not taken from this note. Ready may require a buffer above the live pool fee shown here.
       </div>
       {rows.length > 1 && fee !== undefined && (
-        <div className={styles.subLine} style={{ color: "var(--muted)" }}>
+        <div className={ui.subLine} style={{ color: "var(--muted)" }}>
           These {rows.length} transfers go in one transaction: the pool fee is charged once (
           {fromBaseUnits(fee, TOKENS.STRK.decimals)} STRK) instead of {rows.length} times (
           {fromBaseUnits(fee * BigInt(rows.length), TOKENS.STRK.decimals)} STRK). You save{" "}
@@ -465,9 +468,10 @@ export default function SendPanel({
         </div>
       )}
 
-      <div className={styles.subLine}>
+      <div className={ui.subLine}>
         <button
-          className={styles.tab}
+          type="button"
+          className={ui.tab}
           onClick={shielded.revealed ? shielded.hide : shielded.reveal}
           disabled={shielded.loading || !myWalletAccount}
         >
@@ -478,23 +482,23 @@ export default function SendPanel({
             : "Show shielded STRK/USDC"}
         </button>
       </div>
-      {shielded.error ? <div className={styles.warn}>{shielded.error}</div> : null}
+      {shielded.error ? <div className={ui.warn} role="alert">{shielded.error}</div> : null}
       {shielded.revealed && (
-        <div className={styles.subLine} style={{ gap: 16 }}>
-          <span className={styles.subMono}>
+        <div className={cx(ui.subLine, "gap-4")}>
+          <span className={ui.subMono}>
             {shielded.balances.STRK !== undefined ? fromBaseUnits(shielded.balances.STRK, TOKENS.STRK.decimals) : "…"} STRK
           </span>
-          <span className={styles.subMono}>
+          <span className={ui.subMono}>
             {shielded.balances.USDC !== undefined ? fromBaseUnits(shielded.balances.USDC, TOKENS.USDC.decimals) : "…"} USDC
           </span>
         </div>
       )}
       {shielded.revealed && shielded.balances[token] === 0n && (
-        <div className={styles.warn}>You have no shielded {token} to send.</div>
+        <div className={ui.warn}>You have no shielded {token} to send.</div>
       )}
 
       {maturity.locked && (
-        <div className={styles.warn}>
+        <div className={ui.warn}>
           {maturity.blocksRemaining === undefined
             ? `Notes from your last ${token} shield mature about 10 blocks after the deposit.`
             : `Notes from your last ${token} shield are still maturing: ~${maturity.blocksRemaining} block${
@@ -504,11 +508,11 @@ export default function SendPanel({
       )}
 
       {!strk20Capable && (
-        <div className={styles.warn}>This wallet does not support STRK20 privacy actions. Install or update Ready.</div>
+        <div className={ui.warn}>This wallet does not support STRK20 privacy actions. Install or update Ready.</div>
       )}
 
       {request && requestExpired ? (
-        <div className={styles.warn}>
+        <div className={ui.warn}>
           This payment request expired on {new Date((request.expiresAt ?? 0) * 1000).toLocaleString()}. It stays
           filled so you can see what was asked, but you cannot pay against it. Ask the requester for a fresh
           link.
@@ -516,7 +520,8 @@ export default function SendPanel({
       ) : null}
 
       <button
-        className={styles.btnCta}
+        type="button"
+        className={ui.btnCta}
         disabled={
           !strk20Capable ||
           submitting ||
