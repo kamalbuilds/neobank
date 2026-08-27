@@ -8,7 +8,9 @@ import {
   explorerTxUrl,
   type NetworkKey,
 } from "@/utils/constants";
-import styles from "../../uni.module.css";
+import { ui } from "../../components/lib/panelUi";
+import { cx, Skeleton } from "../../components/v2/ui";
+import { AccountChrome } from "../../components/v2/AccountChrome";
 
 function isValidTxHash(hash: string): hash is `0x${string}` {
   return /^0x[a-fA-F0-9]{64}$/.test(hash);
@@ -88,99 +90,81 @@ export default function ReceiptPage() {
 
   if (!txHash) {
     return (
-      <div className={styles.receipt} style={{ color: "var(--muted)" }}>
-        No transaction hash provided
-      </div>
+      <AccountChrome>
+        <div className={ui.panel}>
+          <div className={ui.warn}>No transaction hash provided.</div>
+        </div>
+      </AccountChrome>
     );
   }
 
   if (state === "loading") {
     return (
-      <div className={styles.receipt} style={{ margin: "20px 0" }}>
-        Loading…
-      </div>
+      <AccountChrome>
+        <div className={cx(ui.panel, "flex flex-col gap-3")} aria-busy="true" aria-label="Verifying receipt">
+          <Skeleton className="h-8 w-2/3" />
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+        </div>
+      </AccountChrome>
     );
   }
 
   if (state === "not-found") {
     return (
-      <div
-        className={styles.receipt}
-        style={{
-          borderColor: "var(--danger)",
-          color: "var(--danger)",
-        }}
-      >
-        <div>Receipt not found</div>
-        <div>{error || "Transaction not on the STRK20 pool"}</div>
-        <div>
-          Make sure the transaction hash is correct and on the <code>sepolia</code>
-          network.
+      <AccountChrome>
+        <div className={cx(ui.receipt, ui.receiptError, "mx-auto max-w-[520px]")}>
+          <div className={ui.receiptHead}>Receipt not found</div>
+          <p className="mt-2 text-[13px] leading-relaxed text-[#f0a8a8]">
+            {error || "Transaction not on the STRK20 pool."}
+          </p>
+          <p className="mt-2 text-[13px] leading-relaxed text-[#7a859c]">
+            Make sure the transaction hash is correct and on the <code>sepolia</code> network.
+          </p>
         </div>
-      </div>
+      </AccountChrome>
     );
   }
 
   if (state === "verified") {
     return (
-      <div className={styles.receipt} style={{ margin: "24px 0" }}>
-        <div
-          style={{
-            fontSize: 48,
-            margin: "24px 0",
-            color: "var(--green)",
-            textAlign: "center",
-          }}
-        >
-          ✓
-        </div>
-
-        <div style={{ marginBottom: 16 }}>
-          <strong>Settled through the STRK20 privacy pool</strong>
-        </div>
-
-        <div style={{ margin: "16px 0" }}>
-          <a
-            href={explorerTxUrl(netKey, txHash)}
-            target="_blank"
-            rel="noreferrer"
-            style={{
-              color: "var(--pink-text)",
-              fontWeight: 600,
-              fontFamily: "var(--font-mono-ui), monospace",
-              textDecoration: "none",
-            }}
+      <AccountChrome>
+        <div className={cx(ui.receipt, ui.receiptOk, "mx-auto max-w-[520px] animate-rise-in")}>
+          <div
+            className={cx(ui.receiptIcon, "mx-auto size-12 bg-[#34d399] text-2xl shadow-[0_0_20px_rgba(52,211,153,0.55)]")}
+            aria-hidden="true"
           >
-            {txHash.slice(0, 7)}…{txHash.slice(-4)}
-          </a>{" on "}
-          <span>{blockNumber ?? "?"}</span>
-          <span> block</span>
-        </div>
+            ✓
+          </div>
 
-        <div>
-          <strong>Timestamp:</strong> {timestamp}
-        </div>
+          <div className={cx(ui.receiptHead, "mt-4 justify-center")}>
+            Settled through the STRK20 privacy pool
+          </div>
 
-        <div>
-          <strong>Pool events found:</strong> {eventCount}
-        </div>
+          <div className="mt-4 text-center text-[13px] text-[#a3acbd]">
+            <a href={explorerTxUrl(netKey, txHash)} target="_blank" rel="noreferrer" className={ui.receiptLink}>
+              {txHash.slice(0, 7)}…{txHash.slice(-4)}
+            </a>{" "}
+            on block {blockNumber ?? "?"}
+          </div>
 
-        <blockquote
-          style={{
-            margin: "16px 0",
-            padding: "12px",
-            background: "var(--inset)",
-            borderRadius: "12px",
-            color: "#24242c",
-            fontFamily: "var(--font-mono-ui), monospace",
-            fontSize: 12,
-            lineHeight: 1.55,
-          }}
-        >
-          Amounts, sender and recipient stay inside encrypted pool storage. This
-          page proves settlement happened; it cannot show who paid whom.
-        </blockquote>
-      </div>
+          <div className={ui.receiptRows}>
+            <div className={ui.receiptRow}>
+              <span className={ui.receiptLabel}>Timestamp</span>
+              <span className={ui.receiptValue}>{timestamp}</span>
+            </div>
+            <div className={ui.receiptRow}>
+              <span className={ui.receiptLabel}>Pool events found</span>
+              <span className={ui.receiptValue}>{eventCount}</span>
+            </div>
+          </div>
+
+          <blockquote className={ui.receiptNote}>
+            Amounts, sender and recipient stay inside encrypted pool storage. This
+            page proves settlement happened; it cannot show who paid whom.
+          </blockquote>
+        </div>
+      </AccountChrome>
     );
   }
 

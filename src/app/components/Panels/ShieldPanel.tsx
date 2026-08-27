@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import styles from "../../uni.module.css";
+import { ui } from "../lib/panelUi";
 import { useStoreWallet } from "../Wallet/walletContext";
 import { TOKENS, getPublicBalance, type TokenSymbol, type NetworkKey } from "@/utils/constants";
 import { toBaseUnits, fromBaseUnits } from "../lib/format";
@@ -139,41 +139,46 @@ export default function ShieldPanel({ network }: { network: NetworkKey }) {
   }
 
   return (
-    <div className={styles.panel}>
-      <div className={styles.warn} style={{ color: "var(--muted)" }}>
+    <div className={ui.panel}>
+      <div className={ui.warn} style={{ color: "var(--muted)" }}>
         First privacy use in this app deploys the account if it is still counterfactual, then shields.
         That is the same pair of txs as Ready&apos;s Activate and Enable private tokens. After that:
         two wallet prompts (public approve, then deposit). The deposit is public. Notes take about 10
         blocks to mature.
       </div>
 
-      <div className={styles.inputBlock}>
-        <div className={styles.inputLabel}>You&apos;re shielding</div>
-        <div className={styles.inputMain}>
+      <div className={ui.inputBlock}>
+        <div className={ui.inputLabel}>You&apos;re shielding</div>
+        <div className={ui.inputMain}>
           <input
-            className={styles.bigValue}
-            style={{ border: "none", outline: "none", background: "transparent", width: "60%" }}
+            className={ui.bigValue}
             placeholder="0"
             inputMode="decimal"
+            aria-label="Amount to shield"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
           />
           <TokenSelect value={token} onChange={setToken} />
         </div>
-        <div className={styles.subLine}>
-          <button className={styles.tab} onClick={useMax} disabled={maxLoading || !address}>
+        <div className={ui.subLine}>
+          <button
+            type="button"
+            className="text-[13px] font-medium text-[#7a859c] transition-colors hover:text-[#eaf0f8] disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={useMax}
+            disabled={maxLoading || !address}
+          >
             {maxLoading ? "reading balance…" : "Use max (public balance minus fee)"}
           </button>
         </div>
       </div>
 
       <FeeRow fee={fee} />
-      <div className={styles.subLine} style={{ color: "var(--muted)" }}>
+      <div className={ui.subLine} style={{ color: "var(--muted)" }}>
         Ready may require a buffer above the live pool fee shown here. The fee itself is still public STRK, not taken from this deposit.
       </div>
 
       {token === "USDC" && (
-        <div className={styles.warn} style={{ color: "var(--muted)" }}>
+        <div className={ui.warn} style={{ color: "var(--muted)" }}>
           The pool fee is still public STRK, paid from your wallet, not deducted from this deposit. Separately,
           Ready has been observed reserving a small amount from the shielded asset itself (0.2 USDC in resulted
           in 0.0395 USDC noted) - that reservation is wallet-side behavior we&apos;ve seen, not a fee this app
@@ -182,11 +187,12 @@ export default function ShieldPanel({ network }: { network: NetworkKey }) {
       )}
 
       {!strk20Capable && (
-        <div className={styles.warn}>This wallet does not support STRK20 privacy actions. Install or update Ready.</div>
+        <div className={ui.warn}>This wallet does not support STRK20 privacy actions. Install or update Ready.</div>
       )}
 
       <button
-        className={styles.btnCta}
+        type="button"
+        className={ui.btnCta}
         disabled={!strk20Capable || submitting || !amount}
         onClick={handleShield}
       >

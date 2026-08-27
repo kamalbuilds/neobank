@@ -1,5 +1,5 @@
 "use client";
-import styles from "../../uni.module.css";
+import { ui } from "../lib/panelUi";
 import SelectWallet from "../client/WalletHandle/SelectWallet";
 import { useStoreWallet } from "../Wallet/walletContext";
 import { NETWORKS } from "@/utils/constants";
@@ -9,12 +9,12 @@ export default function AppNav() {
   const isConnected = useStoreWallet((s) => s.isConnected);
 
   return (
-    <div className={styles.nav}>
-      <div className={styles.brand}>Private money account</div>
-      <div className={styles.brand}>
+    <div className={ui.nav}>
+      <div className={ui.brand}>Sotto</div>
+      <div className={ui.brand}>
         {isConnected && network ? (
-          <span className={`${styles.feeVal}`} style={{ fontSize: 13 }}>
-            <span className={`${styles.netDot} ${styles.netOkDot}`} />
+          <span className={`${ui.feeVal} text-[13px]`}>
+            <span className={`${ui.netDot} ${ui.netOkDot}`} />
             {NETWORKS[network].label}
           </span>
         ) : null}
