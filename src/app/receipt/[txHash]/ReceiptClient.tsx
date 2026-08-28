@@ -12,8 +12,12 @@ import { ui } from "../../components/lib/panelUi";
 import { cx, Skeleton } from "../../components/v2/ui";
 import { AccountChrome } from "../../components/v2/AccountChrome";
 
+// Starknet prints felts with leading zeros stripped, so a real hash is 1-64
+// hex digits, not always 64: the JIT settlement
+// 0x1f815361cd9cb1b378f208c8def10dddf5452ead190cb199a1da37adf4fe5df is 63 and
+// was rejected as malformed until this accepted short forms.
 function isValidTxHash(hash: string): hash is `0x${string}` {
-  return /^0x[a-fA-F0-9]{64}$/.test(hash);
+  return /^0x[a-fA-F0-9]{1,64}$/.test(hash);
 }
 
 export function ReceiptClient() {
@@ -51,8 +55,11 @@ export function ReceiptClient() {
         const provider = providerFor(netKey);
         const poolAddr = poolAddressFor(netKey);
 
-        const txResult: any = await provider.getTransaction(txHash);
-        const bn = txResult?.block_number ?? null;
+        // The block number lives on the receipt, not the transaction:
+        // starknet_getTransactionByHash omits it, so reading it from
+        // getTransaction left every lookup unscoped.
+        const receipt: any = await provider.getTransactionReceipt(txHash);
+        const bn = receipt?.block_number ?? null;
         setBlockNumber(bn);
 
         if (bn) {
@@ -61,13 +68,21 @@ export function ReceiptClient() {
           setTimestamp(String(ts));
         }
 
+        // Scope the scan to the transaction's own block. An unbounded
+        // getEvents starts at genesis and returns the first chunk, so a recent
+        // transaction was never in the window and every receipt read
+        // "not on the STRK20 pool".
         const chunk = await provider.getEvents({
           address: poolAddr,
-          chunk_size: "1000",
+          chunk_size: 1000,
+          ...(bn === null ? {} : { from_block: { block_number: bn }, to_block: { block_number: bn } }),
         } as any);
 
+        // Compare as felts: the RPC pads hashes to 64 hex digits while the URL
+        // carries the stripped form, so a string equality check never matched.
+        const wanted = BigInt(txHash);
         const matchingEvents = chunk.events.filter(
-          (e: any) => e.transaction_hash === txHash
+          (e: any) => BigInt(e.transaction_hash) === wanted
         );
         setEventCount(matchingEvents.length);
 
