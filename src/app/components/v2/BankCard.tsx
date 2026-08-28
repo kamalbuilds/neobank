@@ -33,7 +33,7 @@ function ContactlessIcon() {
 export type BankCardStatus = 'checking' | 'ready' | 'blocked';
 
 /**
- * The Sotto card, rendered as an actual bank-card face rather than a settled
+ * The Sealed card, rendered as an actual bank-card face rather than a settled
  * status row. Address-derived, never a real PAN: privacy is the product, so
  * nothing here is a payable card number.
  */
@@ -59,7 +59,7 @@ export function BankCard({
         'border border-white/[0.08] elevate-2',
       )}
       role="img"
-      aria-label={`Sotto private card, ${status === 'ready' ? 'active' : status === 'blocked' ? 'blocked' : 'checking status'}, ending in ${digits.slice(-4) || '----'}`}
+      aria-label={`Sealed private card, ${status === 'ready' ? 'active' : status === 'blocked' ? 'blocked' : 'checking status'}, ending in ${digits.slice(-4) || '----'}`}
     >
       {/* Sheen sweep: one-shot on mount, transform-only, respects reduced motion via globals.css media query on animation-* */}
       <div className="pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/[0.06] to-transparent [animation:cardSheen_1.4s_ease-out_1]" />
@@ -69,7 +69,7 @@ export function BankCard({
       <div className="relative flex h-full flex-col justify-between p-5 sm:p-6">
         <div className="flex items-start justify-between">
           <span className="font-[family-name:var(--font-display)] text-[20px] font-semibold tracking-[-0.01em] text-[#eaf0f8]">
-            Sotto
+            Sealed
           </span>
           <span
             className={cx(
