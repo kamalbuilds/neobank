@@ -8,14 +8,19 @@ import SelectWallet from '../client/WalletHandle/SelectWallet';
 import { readPrivateBalance } from '../lib/strk20';
 import { getPublicBalance, TOKENS, type NetworkKey } from '@/utils/constants';
 import { fromBaseUnits } from '../lib/format';
-import { ACCOUNT_MOVE_ROUTES, ACCOUNT_ROUTES } from './accountRoutes';
+import { PRIMARY_ROUTES, ROUTE_GROUPS, primaryForPath } from './accountRoutes';
 import { NumberTicker, RouteTransition, Skeleton } from './ui';
 
 const TAB_BTN =
-  'px-3.5 py-2 rounded-xl text-[13px] font-medium whitespace-nowrap transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2dd4bf]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#06070b]';
+  'px-4 py-2.5 rounded-xl text-[14px] font-semibold whitespace-nowrap transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2dd4bf]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#06070b]';
 const TAB_ON =
-  'text-[#04140f] bg-gradient-to-br from-[#2dd4bf] to-[#38bdf8] font-semibold shadow-[0_4px_16px_-6px_rgba(45,212,191,0.5)]';
-const TAB_OFF = 'text-[#7a859c] hover:text-[#eaf0f8] hover:bg-white/[0.04]';
+  'text-[#04140f] bg-gradient-to-br from-[#2dd4bf] to-[#38bdf8] shadow-[0_4px_16px_-6px_rgba(45,212,191,0.5)]';
+const TAB_OFF = 'text-[#a3acbd] hover:text-[#eaf0f8] hover:bg-white/[0.04]';
+
+const SUBTAB_BTN =
+  'px-3 py-1.5 rounded-lg text-[12.5px] font-medium whitespace-nowrap transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2dd4bf]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#06070b]';
+const SUBTAB_ON = 'text-[#eaf0f8] bg-white/[0.08]';
+const SUBTAB_OFF = 'text-[#7a859c] hover:text-[#eaf0f8] hover:bg-white/[0.04]';
 
 function navActive(pathname: string, href: string): boolean {
   if (href === '/') return pathname === '/';
@@ -89,6 +94,10 @@ export function AccountChrome({ children }: { children: ReactNode }) {
 
   const shieldedNumber = shielded !== null ? Number(shielded) : null;
   const shieldedIsTickable = shieldedNumber !== null && Number.isFinite(shieldedNumber);
+
+  const activePrimary = primaryForPath(pathname);
+  const secondaryRoutes = ROUTE_GROUPS[activePrimary] ?? [];
+  const activePrimaryLabel = PRIMARY_ROUTES.find((r) => r.href === activePrimary)?.label ?? '';
 
   return (
     <div className="vault-bg min-h-[100dvh] text-[#eaf0f8] flex flex-col font-[family-name:var(--font-body)]">
@@ -177,38 +186,43 @@ export function AccountChrome({ children }: { children: ReactNode }) {
           </p>
         </aside>
 
-        <main className="flex flex-col gap-4 min-w-0">
+        <main className="flex flex-col gap-3 min-w-0">
           <nav
             className="flex gap-1 p-1 rounded-2xl bg-white/[0.03] border border-white/[0.06] w-fit max-w-full overflow-x-auto"
             aria-label="Account"
           >
-            {ACCOUNT_ROUTES.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={navActive(pathname, item.href) ? 'page' : undefined}
-                className={`${TAB_BTN} ${navActive(pathname, item.href) ? TAB_ON : TAB_OFF}`}
-              >
-                {item.label}
-              </Link>
-            ))}
+            {PRIMARY_ROUTES.map((item) => {
+              const isActive = primaryForPath(pathname) === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`${TAB_BTN} ${isActive ? TAB_ON : TAB_OFF}`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
           </nav>
 
-          <nav
-            className="flex gap-1 p-1 rounded-2xl bg-white/[0.02] border border-white/[0.05] w-fit max-w-full overflow-x-auto"
-            aria-label="Private moves"
-          >
-            {ACCOUNT_MOVE_ROUTES.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={navActive(pathname, item.href) ? 'page' : undefined}
-                className={`${TAB_BTN} ${navActive(pathname, item.href) ? TAB_ON : TAB_OFF}`}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
+          {secondaryRoutes.length > 0 && (
+            <nav
+              className="flex gap-0.5 w-fit max-w-full overflow-x-auto"
+              aria-label={`${activePrimaryLabel} sections`}
+            >
+              {secondaryRoutes.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-current={navActive(pathname, item.href) ? 'page' : undefined}
+                  className={`${SUBTAB_BTN} ${navActive(pathname, item.href) ? SUBTAB_ON : SUBTAB_OFF}`}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+          )}
 
           <RouteTransition>{children}</RouteTransition>
         </main>

@@ -1,48 +1,42 @@
 import { describe, it, expect } from "vitest";
 import {
-  ACCOUNT_MOVE_ROUTES,
-  ACCOUNT_ROUTES,
   ALL_ACCOUNT_HREFS,
+  PRIMARY_ROUTES,
+  ROUTE_GROUPS,
+  primaryForPath,
 } from "@/app/components/v2/accountRoutes";
 
 describe("account route table", () => {
-  it("keeps RFP primary verbs and hrefs", () => {
-    expect(ACCOUNT_ROUTES.map((r) => r.label)).toEqual([
-      "Hold",
-      "Convert",
-      "Earn",
-      "Spend",
-      "Fund",
-      "Card",
-      "Statements",
-    ]);
-    expect(ACCOUNT_ROUTES.map((r) => r.href)).toEqual([
-      "/",
-      "/convert",
-      "/earn",
-      "/spend",
-      "/fund",
-      "/card",
-      "/statements",
-    ]);
+  it("keeps the 4 primary destinations a new user sees", () => {
+    expect(PRIMARY_ROUTES.map((r) => r.label)).toEqual(["Home", "Spend", "Earn", "Fund"]);
+    expect(PRIMARY_ROUTES.map((r) => r.href)).toEqual(["/", "/spend", "/earn", "/fund"]);
   });
 
   it("fails if /earn or /fund is dropped from the nav table", () => {
     expect(ALL_ACCOUNT_HREFS).toContain("/earn");
     expect(ALL_ACCOUNT_HREFS).toContain("/fund");
-    expect(ACCOUNT_ROUTES.some((r) => r.href === "/earn" && r.label === "Earn")).toBe(true);
-    expect(ACCOUNT_ROUTES.some((r) => r.href === "/fund" && r.label === "Fund")).toBe(true);
+    expect(PRIMARY_ROUTES.some((r) => r.href === "/earn" && r.label === "Earn")).toBe(true);
+    expect(PRIMARY_ROUTES.some((r) => r.href === "/fund" && r.label === "Fund")).toBe(true);
   });
 
-  it("keeps private-move routes that share chrome", () => {
-    expect(ACCOUNT_MOVE_ROUTES.map((r) => r.href)).toEqual([
-      "/send",
-      "/receive",
-      "/unshield",
-    ]);
-    for (const href of ["/send", "/receive", "/unshield", "/spend", "/convert"]) {
+  it("nests every non-primary route under Spend or Fund, none dropped", () => {
+    expect(ROUTE_GROUPS["/spend"].map((r) => r.href)).toEqual(["/spend", "/card", "/send", "/statements"]);
+    expect(ROUTE_GROUPS["/fund"].map((r) => r.href)).toEqual(["/fund", "/receive", "/convert", "/unshield"]);
+    for (const href of ["/send", "/receive", "/unshield", "/spend", "/convert", "/card", "/statements"]) {
       expect(ALL_ACCOUNT_HREFS).toContain(href);
     }
+  });
+
+  it("routes a nested page's URL back to its primary destination for nav highlighting", () => {
+    expect(primaryForPath("/")).toBe("/");
+    expect(primaryForPath("/card")).toBe("/spend");
+    expect(primaryForPath("/send")).toBe("/spend");
+    expect(primaryForPath("/statements")).toBe("/spend");
+    expect(primaryForPath("/statements/some-id")).toBe("/spend");
+    expect(primaryForPath("/receive")).toBe("/fund");
+    expect(primaryForPath("/convert")).toBe("/fund");
+    expect(primaryForPath("/unshield")).toBe("/fund");
+    expect(primaryForPath("/earn")).toBe("/earn");
   });
 
   it(
@@ -57,6 +51,7 @@ describe("account route table", () => {
         import("@/app/convert/page"),
         import("@/app/fund/page"),
         import("@/app/earn/page"),
+        import("@/app/card/page"),
         import("@/app/statements/page"),
       ]);
       for (const mod of pages) {
