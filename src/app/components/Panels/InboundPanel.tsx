@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { explorerTxUrl, type NetworkKey } from '@/utils/constants';
 import { fromBaseUnits, shortHex } from '../lib/format';
+import { HowThisWorks } from '../v2/ui';
 
 const USDC_DECIMALS = 6;
 
@@ -247,18 +248,20 @@ export default function InboundPanel({ network }: { network: NetworkKey }) {
   return (
     <div className="flex flex-col gap-4">
       <p className="text-[13px] leading-relaxed text-[#7a859c]">
-        Bring USDC in from Base Sepolia without touching a bridge UI: burn it there with
-        Circle CCTP V2, this account claims the mint on Starknet and shields it straight
-        into the STRK20 pool. The burn and mint are public; once shielded, the balance is
-        a private note only this account&apos;s viewing key can read.
+        Bring USDC in from Base and shield it straight into your private balance, three steps.
       </p>
+      <HowThisWorks>
+        <p>
+          The transfer from Base and the mint on Starknet are both public onchain events, the
+          same as any bridge. Only the last step, shielding, moves the balance behind your
+          private key.
+        </p>
+      </HowThisWorks>
 
       <div className={CARD}>
-        <div className={LABEL}>Step 1 - Burn on Base Sepolia toward this account</div>
+        <div className={LABEL}>Step 1 - Send USDC from Base</div>
         <div className="mt-2 flex flex-col gap-1.5">
-          <div className="text-[13px] text-[#7a859c]">
-            Mint recipient (hosted Starknet account):
-          </div>
+          <div className="text-[13px] text-[#7a859c]">Send to this account:</div>
           {hosted ? (
             <button
               type="button"
@@ -278,15 +281,20 @@ export default function InboundPanel({ network }: { network: NetworkKey }) {
             <span className={MONO}>{runtimeError ?? '…'}</span>
           )}
           <div className="text-[12px] leading-relaxed text-[#7a859c]">
-            From any Base Sepolia wallet: <span className="text-[#a9b4c8]">depositForBurn</span> on
-            TokenMessengerV2{' '}
-            <span className="font-mono">
-              {runtime ? shortHex(runtime.contracts.baseSepolia.tokenMessengerV2) : '…'}
-            </span>{' '}
-            with destination domain {runtime?.contracts.starknetSepolia.domain ?? 25}, this address
-            left-padded to bytes32 as the mint recipient, and finality threshold 2000 (Standard, no
-            Circle fee).
+            Use any Base wallet or bridge that supports Circle&apos;s CCTP transfer to Starknet, no
+            Circle fee, finalizes in a few minutes.
           </div>
+          <HowThisWorks label="Calling this without a bridge UI">
+            <p>
+              Call <span className="font-mono">depositForBurn</span> on TokenMessengerV2{' '}
+              <span className="font-mono">
+                {runtime ? shortHex(runtime.contracts.baseSepolia.tokenMessengerV2) : '…'}
+              </span>{' '}
+              with destination domain {runtime?.contracts.starknetSepolia.domain ?? 25}, this address
+              left-padded to bytes32 as the mint recipient, and finality threshold 2000 (Standard
+              Transfer).
+            </p>
+          </HowThisWorks>
         </div>
 
         {runtime?.evmSignerConfigured ? (
@@ -304,7 +312,7 @@ export default function InboundPanel({ network }: { network: NetworkKey }) {
               disabled={burning || !burnAmount}
               onClick={handleServerBurn}
             >
-              {burning ? 'Burning on Base…' : 'Burn from the hosted Base wallet'}
+              {burning ? 'Sending from Base…' : 'Send from the hosted Base wallet'}
             </button>
           </div>
         ) : null}
@@ -372,7 +380,7 @@ export default function InboundPanel({ network }: { network: NetworkKey }) {
           disabled={!claimable || claiming || !runtime?.ready}
           onClick={handleClaim}
         >
-          {claiming ? 'Submitting receive_message…' : 'Claim on Starknet'}
+          {claiming ? 'Claiming…' : 'Claim on Starknet'}
         </button>
         {claimError ? <div className="mt-2 text-[13px] text-[#f0716f]">{claimError}</div> : null}
         {claim?.starknetTxHash ? (
@@ -396,11 +404,11 @@ export default function InboundPanel({ network }: { network: NetworkKey }) {
       </div>
 
       <div className={CARD}>
-        <div className={LABEL}>Step 3 - Shield into the privacy pool</div>
+        <div className={LABEL}>Step 3 - Shield it</div>
         <p className="mt-2 text-[13px] leading-relaxed text-[#7a859c]">
-          Deposits the minted USDC from the hosted account&apos;s public balance into the
-          STRK20 pool. This is the step that makes the funds private - kept explicit so
-          the public mint and the private deposit stay separately auditable.
+          Move the USDC you just received into your shielded balance. This is the step that
+          makes it private - kept as its own step so the public arrival and the private deposit
+          are each visible on their own.
         </p>
         <button
           type="button"
@@ -408,7 +416,7 @@ export default function InboundPanel({ network }: { network: NetworkKey }) {
           disabled={!claimed || shielding || !runtime?.ready}
           onClick={handleShield}
         >
-          {shielding ? 'Proving and depositing…' : 'Shield into the pool'}
+          {shielding ? 'Shielding…' : 'Shield it'}
         </button>
         {shieldError ? <div className="mt-2 text-[13px] text-[#f0716f]">{shieldError}</div> : null}
         {shield ? (

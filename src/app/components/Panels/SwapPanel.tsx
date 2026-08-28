@@ -11,6 +11,7 @@ import { useMaturity, useShieldedBalances } from "../lib/usePrivateBalance";
 import TokenSelect from "./TokenSelect";
 import FeeRow from "./FeeRow";
 import { ResultCard, errorResult, receiptToResult, type ActionResult } from "./ActionResult";
+import { HowThisWorks } from "../v2/ui";
 
 const SLIPPAGE = 0.05;
 
@@ -163,19 +164,25 @@ export default function SwapPanel({ network }: { network: NetworkKey }) {
 
   return (
     <div className={ui.panel}>
-      <div className={ui.warn} style={{ color: "var(--muted)" }}>
-        The sell token must already be shielded. This swap cannot deposit for you.
-        The bought token lands back as a private note. Open-note fill amounts can stay public.
+      <div className="px-3 pt-2">
+        <p className="text-[13px] leading-relaxed text-[#7a859c]">
+          Convert between STRK and USDC without leaving your shielded balance. The token you sell
+          needs to already be shielded first.
+        </p>
+        <HowThisWorks className="mt-2">
+          <p>
+            The converted token comes back as a private note. The fill price can be visible to the
+            router that executes it, the same as any onchain swap.
+          </p>
+        </HowThisWorks>
       </div>
 
       {configured === false && (
-        <div className={ui.warn}>
-          AVNU private swap is not configured on this server. Set `AVNU_PAYMASTER_API_KEY` in the server env; this app never puts the key in the browser.
-        </div>
+        <div className={ui.warn}>Convert is temporarily unavailable. Try again shortly.</div>
       )}
 
       <div className={ui.inputBlock}>
-        <div className={ui.inputLabel}>You&apos;re selling privately</div>
+        <div className={ui.inputLabel}>Amount to convert</div>
         <div className={ui.inputMain}>
           <input
             className={ui.bigValue}
@@ -228,8 +235,8 @@ export default function SwapPanel({ network }: { network: NetworkKey }) {
 
       {feeAmount === undefined ? (
         <div className={ui.feeRow}>
-          <span>Pool fee (per private operation)</span>
-          <span className={ui.feeVal}>quoted by the paymaster at submit</span>
+          <span>Fee</span>
+          <span className={ui.feeVal}>shown when you submit</span>
         </div>
       ) : (
         <FeeRow fee={feeAmount} />
@@ -245,7 +252,7 @@ export default function SwapPanel({ network }: { network: NetworkKey }) {
       ) : null}
 
       {!strk20Capable && (
-        <div className={ui.warn}>This wallet does not support STRK20 privacy actions. Install or update Ready.</div>
+        <div className={ui.warn}>This wallet doesn&apos;t support private balances yet. Install or update Ready to continue.</div>
       )}
 
       {configured !== false && (
@@ -264,7 +271,7 @@ export default function SwapPanel({ network }: { network: NetworkKey }) {
             disabled={!strk20Capable || submitting || !quote || maturity.locked}
             onClick={handleSwap}
           >
-            {submitting ? "Swapping privately…" : "Swap privately"}
+            {submitting ? "Converting…" : "Convert"}
           </button>
         </>
       )}

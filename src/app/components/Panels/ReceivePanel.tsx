@@ -14,6 +14,7 @@ import { toBaseUnits, fromBaseUnits } from "../lib/format";
 import { buildPaymentRequestUrl, type PaymentRequest } from "../lib/paymentRequest";
 import { encodePublicAddress, encodeShieldedReceiver } from "../lib/beam";
 import TokenSelect from "./TokenSelect";
+import { HowThisWorks } from "../v2/ui";
 
 const EXPIRY_OPTIONS: { value: string; label: string }[] = [
   { value: "0", label: "No expiry" },
@@ -141,11 +142,10 @@ export default function ReceivePanel() {
           is shown for reference only.
         </div>
       ) : (
-        <div className={ui.warn} style={{ color: "var(--muted)" }}>
-          A payment request asks for a private transfer to your registered pool address. The
-          recipient of any STRK20 transfer must already be registered in the pool; this app cannot
-          register anyone.
-        </div>
+        <p className="px-3 pt-2 text-[13px] leading-relaxed text-[#7a859c]">
+          Build a link or QR code asking someone to pay you privately. You need to have shielded
+          funds at least once before you can receive this way.
+        </p>
       )}
 
       <div className={ui.inputBlock}>
@@ -204,18 +204,20 @@ export default function ReceivePanel() {
           </div>
         ) : null}
 
-        <div className={cx(ui.warn, "mt-3")} style={{ color: "var(--muted)" }}>
-          This is a payment request, not a card or a card number. It cannot be typed into a
-          merchant checkout. Opening it opens this app with the Send panel prefilled, and the payer
-          confirms the transfer from their own Ready wallet. The token, amount and label are
-          encoded inside the link itself, so anyone who opens or scans it can read them.
-        </div>
+        <HowThisWorks className="mt-3" label="Not a card - what opening this link does">
+          <p>
+            This is a request link, not a card number - a merchant checkout can&apos;t take it.
+            Opening it opens this app with the Send panel filled in, and the payer approves the
+            transfer from their own wallet. The token, amount and label are readable by anyone who
+            opens or scans the link.
+          </p>
+        </HowThisWorks>
 
         <div className="mt-4">
           <div className={ui.inputLabel}>Your receive address</div>
           <div className={cx(ui.subLine, "mt-1.5")} style={{ color: "var(--muted)" }}>
-            Hex pool and account path for private transfers, plus SNIP-42/43 checksummed strings
-            (not an official Beam product).
+            Share the account address for a direct transfer, or use one of the formatted strings
+            below.
           </div>
 
           <div className={cx(ui.inputLabel, "mt-3.5")}>Account (hex)</div>

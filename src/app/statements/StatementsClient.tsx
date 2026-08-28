@@ -62,15 +62,15 @@ export function StatementsClient() {
     <AccountChrome>
       <div className="rounded-3xl border border-white/[0.07] bg-white/[0.028] elevate-1 p-6">
         <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7a859c]">
-          Selective disclosure
+          Statements
         </div>
-        <h1 className="mt-2 font-[family-name:var(--font-display)] text-[28px] font-semibold tracking-[-0.02em]">
-          Source-of-funds for one swipe
+        <h1 className="mt-2 text-balance font-[family-name:var(--font-display)] text-[28px] font-semibold tracking-[-0.02em]">
+          Proof of what one swipe settled
         </h1>
         <p className="mt-3 max-w-xl text-[14px] leading-relaxed text-[#7a859c]">
-          Viewing-key statements for the hosted card account. Default response omits
-          amounts. This discloses activity the operator can already see. It is not a
-          regulator endorsement.
+          A statement for one card authorization, built from your account&apos;s own records. By
+          default it doesn&apos;t show amounts - this is disclosure you choose to see, not a
+          regulator filing.
         </p>
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-end">
@@ -88,7 +88,7 @@ export function StatementsClient() {
               checked={full}
               onChange={(event) => setFull(event.target.checked)}
             />
-            Include amounts (full=1)
+            Show amounts
           </label>
           <button
             type="button"
@@ -96,7 +96,7 @@ export function StatementsClient() {
             disabled={loading}
             className="h-11 rounded-2xl border border-[#2dd4bf]/40 bg-[#2dd4bf]/10 px-4 text-sm font-semibold text-[#9ae9da] transition-colors duration-150 hover:bg-[#2dd4bf]/16 disabled:cursor-wait disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2dd4bf]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#06070b]"
           >
-            {loading ? "Reading" : "Trace"}
+            {loading ? "Looking up…" : "Look up"}
           </button>
         </div>
 
@@ -115,8 +115,8 @@ export function StatementsClient() {
         {payload && (
           <div className="mt-6 space-y-3">
             <p className="text-[13px] text-[#7a859c]">{payload.copy}</p>
-            <p className="font-mono text-[12px] text-[#a3acbd]">
-              settled={String(payload.settled)} id={payload.authorizationId}
+            <p className="text-[12px] text-[#a3acbd]">
+              {payload.settled ? "Settled" : "Not settled"} · {payload.authorizationId}
             </p>
             {(payload.disclosed || []).map((item) => (
               <a

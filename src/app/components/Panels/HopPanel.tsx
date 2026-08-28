@@ -14,6 +14,7 @@ import {
 } from "../lib/cctp";
 import { waitStrk20Transaction } from "../lib/strk20";
 import { errorResult, type ActionResult } from "./ActionResult";
+import { HowThisWorks } from "../v2/ui";
 
 const CHAIN_LABEL: Record<CctpChain, string> = { base: "Base", solana: "Solana" };
 
@@ -102,22 +103,22 @@ export default function HopPanel({ network }: { network: NetworkKey }) {
       status: "pending",
       title: "Waiting for confirmation…",
       rows: [
-        { label: "Burning", value: `${amount} USDC -> ${CHAIN_LABEL[chain]}` },
+        { label: "Sending", value: `${amount} USDC -> ${CHAIN_LABEL[chain]}` },
         { label: "Transaction", value: submission.txHash, hash: submission.txHash },
       ],
     });
     const outcome = await waitStrk20Transaction(submission.txHash, network);
     if (outcome.status === "confirmed") {
       if (outcome.reverted) {
-        setResult(errorResult(outcome.revertReason ?? "The burn transaction reverted."));
+        setResult(errorResult(outcome.revertReason ?? "The transaction reverted."));
         setSubmitting(false);
         return;
       }
       setResult({
         status: "ok",
-        title: "Burn confirmed on Starknet",
+        title: "Confirmed on Starknet",
         rows: [
-          { label: "Burned", value: `${amount} USDC` },
+          { label: "Sent", value: `${amount} USDC` },
           { label: "Destination", value: `${CHAIN_LABEL[chain]} (domain ${CCTP.domains[chain]})` },
           { label: "Mint recipient", value: shortHex(`0x${mintRecipient.toString(16)}`) },
           { label: "Transaction", value: submission.txHash, hash: submission.txHash },
@@ -153,15 +154,22 @@ export default function HopPanel({ network }: { network: NetworkKey }) {
 
   return (
     <div className={ui.panel}>
-      <div className={ui.warn} style={{ color: "var(--muted)" }}>
-        This is the card-funding hop, not a swipe. It burns public native USDC on Starknet via Circle CCTP V2
-        and mints it on {CHAIN_LABEL[chain]}. The amount and destination are visible onchain - this hop is
-        public. A Visa is issued by a partner (Stripe + Bridge), not this app; the merchant will see a card,
-        not this wallet.
+      <div className="px-3 pt-2">
+        <p className="text-[13px] leading-relaxed text-[#7a859c]">
+          Send public USDC from Starknet out to {CHAIN_LABEL[chain]}. This moves money out of the
+          app, not a card swipe.
+        </p>
+        <HowThisWorks className="mt-2">
+          <p>
+            This uses Circle&apos;s CCTP bridge: USDC is burned here and minted on{" "}
+            {CHAIN_LABEL[chain]}. The amount and destination address are public onchain, the same
+            as any transfer.
+          </p>
+        </HowThisWorks>
       </div>
 
       <div className={ui.inputBlock}>
-        <div className={ui.inputLabel}>You&apos;re hopping</div>
+        <div className={ui.inputLabel}>Amount to send out</div>
         <div className={ui.inputMain}>
           <input
             className={ui.bigValue}
@@ -211,8 +219,7 @@ export default function HopPanel({ network }: { network: NetworkKey }) {
       )}
 
       <div className={ui.subLine} style={{ color: "var(--muted)" }}>
-        Standard Transfer (no CCTP fee, finalizes in minutes). This burns TOKENS.USDC only - bridged USDC.e
-        cannot be burned here.
+        No bridge fee, finalizes in a few minutes. Native USDC only - bridged USDC.e isn&apos;t supported here.
       </div>
 
       <button
@@ -221,7 +228,7 @@ export default function HopPanel({ network }: { network: NetworkKey }) {
         disabled={!myWalletAccount || submitting || !amount || !recipient || insufficientBalance}
         onClick={handleHop}
       >
-        {submitting ? "Hopping…" : `Burn to ${CHAIN_LABEL[chain]}`}
+        {submitting ? "Sending…" : `Send to ${CHAIN_LABEL[chain]}`}
       </button>
 
       {result ? (
@@ -270,33 +277,38 @@ export default function HopPanel({ network }: { network: NetworkKey }) {
 
       {txHash && result?.status === "ok" ? (
         <div className={cx(ui.panel, "mt-3")}>
-          <div className={ui.inputLabel}>Circle attestation (Iris, public API)</div>
+          <div className={ui.inputLabel}>Finishing on {CHAIN_LABEL[chain]}</div>
           {attestationLoading && !attestation ? (
-            <div className={ui.subMono}>Polling iris-api.circle.com for the attestation…</div>
+            <div className={ui.subMono}>Waiting on Circle to attest the transfer…</div>
           ) : null}
           {attestation?.status === "complete" ? (
             <>
-              <div className={ui.subMono}>Attestation ready: {shortHex(attestation.attestation)}</div>
-              <div className={ui.warn} style={{ color: "var(--muted)" }}>
-                This app does not hold a {CHAIN_LABEL[chain]} signer. Finish the mint yourself: call
-                receive_message on MessageTransmitterV2 on {CHAIN_LABEL[chain]} with this attestation and the
-                message bytes from Circle&apos;s Iris API (source domain {CCTP.starknetDomain}, transaction{" "}
-                {shortHex(txHash)}). No balance is minted until that call lands.
+              <div className={cx(ui.subLine, "mt-1")} style={{ color: "var(--muted)" }}>
+                Ready to complete on {CHAIN_LABEL[chain]}. This app doesn&apos;t hold a signer on{" "}
+                {CHAIN_LABEL[chain]}, so you finish the mint from a {CHAIN_LABEL[chain]} wallet. Nothing
+                lands until that step runs.
               </div>
+              <HowThisWorks className="mt-2" label="Call details for a wallet or script">
+                <p>
+                  Call <span className={ui.subMono}>receive_message</span> on MessageTransmitterV2 on{" "}
+                  {CHAIN_LABEL[chain]} with this attestation ({shortHex(attestation.attestation)}) and the
+                  message bytes from Circle&apos;s Iris API (source domain {CCTP.starknetDomain}, transaction{" "}
+                  {shortHex(txHash)}).
+                </p>
+              </HowThisWorks>
             </>
           ) : null}
           {attestation?.status === "timeout" ? (
             <div className={ui.warn}>
-              Attestation not ready after 2 minutes of polling. Circle usually needs a few minutes for Standard
-              Transfer finality - check{" "}
+              Still waiting on Circle after 2 minutes - that&apos;s normal for this transfer type. Check{" "}
               <a
                 href={`https://iris-api.circle.com/v2/messages/${CCTP.starknetDomain}?transactionHash=${txHash}`}
                 target="_blank"
                 rel="noreferrer"
               >
-                this Iris URL
+                status here
               </a>{" "}
-              again later with this transaction hash.
+              again shortly.
             </div>
           ) : null}
         </div>

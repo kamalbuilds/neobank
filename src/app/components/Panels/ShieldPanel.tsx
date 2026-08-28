@@ -9,6 +9,7 @@ import { usePoolFee } from "../lib/useFee";
 import TokenSelect from "./TokenSelect";
 import FeeRow from "./FeeRow";
 import { ResultCard, errorResult, receiptToResult, walletErrorResult, type ActionResult } from "./ActionResult";
+import { HowThisWorks } from "../v2/ui";
 
 // Matches the pool's documented note-maturity window. Applied to a real
 // receipt block_number - never used to fabricate a countdown on its own.
@@ -85,8 +86,8 @@ export default function ShieldPanel({ network }: { network: NetworkKey }) {
     setSubmitting(true);
     setResult({
       status: "pending",
-      title: "Asking the wallet to deploy if needed, then shield…",
-      note: "First privacy use is two wallet txs: deploy the account, then the public deposit that registers you in the pool.",
+      title: "Shielding…",
+      note: "First time shielding, your wallet approves two prompts: one to activate the account, one for the deposit.",
     });
     const submission = await submitConnectedShield(myWalletAccount, wallet, network, [
       { type: "deposit", token: tokenConfig.address, amount: `0x${units.toString(16)}` },
@@ -140,15 +141,25 @@ export default function ShieldPanel({ network }: { network: NetworkKey }) {
 
   return (
     <div className={ui.panel}>
-      <div className={ui.warn} style={{ color: "var(--muted)" }}>
-        First privacy use in this app deploys the account if it is still counterfactual, then shields.
-        That is the same pair of txs as Ready&apos;s Activate and Enable private tokens. After that:
-        two wallet prompts (public approve, then deposit). The deposit is public. Notes take about 10
-        blocks to mature.
+      <div className="px-3 pt-2">
+        <p className="text-[13px] leading-relaxed text-[#7a859c]">
+          Moving money into your shielded balance. Once it lands, only you can see the amount.
+        </p>
+        <HowThisWorks className="mt-2">
+          <p>
+            The deposit itself is a public onchain transaction, like any transfer. What stays
+            private is your balance and who you move it to afterward. If this is your first time
+            shielding with this wallet, it needs one extra approval first to activate your account
+            for private actions.
+          </p>
+          <p className="mt-2">
+            New deposits take about 10 blocks (roughly a minute) before they can be spent or sent.
+          </p>
+        </HowThisWorks>
       </div>
 
       <div className={ui.inputBlock}>
-        <div className={ui.inputLabel}>You&apos;re shielding</div>
+        <div className={ui.inputLabel}>Amount to shield</div>
         <div className={ui.inputMain}>
           <input
             className={ui.bigValue}
@@ -174,20 +185,19 @@ export default function ShieldPanel({ network }: { network: NetworkKey }) {
 
       <FeeRow fee={fee} />
       <div className={ui.subLine} style={{ color: "var(--muted)" }}>
-        Ready may require a buffer above the live pool fee shown here. The fee itself is still public STRK, not taken from this deposit.
+        The fee is separate public STRK from your wallet, not taken out of this deposit.
       </div>
 
       {token === "USDC" && (
         <div className={ui.warn} style={{ color: "var(--muted)" }}>
-          The pool fee is still public STRK, paid from your wallet, not deducted from this deposit. Separately,
-          Ready has been observed reserving a small amount from the shielded asset itself (0.2 USDC in resulted
-          in 0.0395 USDC noted) - that reservation is wallet-side behavior we&apos;ve seen, not a fee this app
-          charges or a formula we can guarantee.
+          Some wallets also set aside a small extra amount when shielding USDC, on top of the pool
+          fee above. That is wallet behavior, not a charge from this app, and the amount is not
+          fixed - your wallet will show it before you approve.
         </div>
       )}
 
       {!strk20Capable && (
-        <div className={ui.warn}>This wallet does not support STRK20 privacy actions. Install or update Ready.</div>
+        <div className={ui.warn}>This wallet doesn&apos;t support private balances yet. Install or update Ready to continue.</div>
       )}
 
       <button

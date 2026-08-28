@@ -11,7 +11,7 @@ import {
 import { withRetry } from '../components/lib/rpcRetry';
 import { fromBaseUnits, shortHex } from '../components/lib/format';
 import { AccountChrome } from '../components/v2/AccountChrome';
-import { NumberTicker, Skeleton } from '../components/v2/ui';
+import { HowThisWorks, NumberTicker, Skeleton } from '../components/v2/ui';
 
 const EARN_VAULT = ANONYMIZER_ADDRESSES.sepolia.earnVault;
 const EXPECTED_VAULT =
@@ -69,23 +69,21 @@ export function EarnClient() {
       <div className="rounded-3xl border border-white/[0.07] bg-white/[0.028] backdrop-blur-xl elevate-1 p-6 min-h-[380px] flex flex-col gap-6">
         <div>
           <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7a859c]">
-            Earn vault
+            Earn
           </div>
-          <h1 className="mt-2 font-[family-name:var(--font-display)] text-[28px] font-semibold tracking-[-0.02em] text-[#eaf0f8]">
-            Restaurant swipes lend into this vault
+          <h1 className="mt-2 text-balance font-[family-name:var(--font-display)] text-[28px] font-semibold tracking-[-0.02em] text-[#eaf0f8]">
+            Card spend at restaurants funds this vault
           </h1>
           <p className="mt-3 max-w-xl text-[14px] leading-relaxed text-[#7a859c]">
-            When a card authorization settles a restaurant swipe, the program lends 10 STRK from
-            the private pool into this earn vault. The figure below is live{' '}
-            <span className="font-[family-name:var(--font-mono-ui)] text-[#a3acbd]">total_assets</span>{' '}
-            from Sepolia RPC. No APY is shown because this vault does not publish a yield rate
-            here.
+            Every time your card settles a restaurant purchase, 10 STRK from your private balance
+            lends into this vault. The balance below is read live from the contract. No yield rate
+            is shown because this vault doesn&apos;t publish one yet.
           </p>
         </div>
 
         <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] elevate-1 p-5">
           <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7a859c]">
-            Live total_assets
+            Vault balance
           </div>
           <div className="mt-2 font-[family-name:var(--font-display)] text-[40px] leading-none tracking-[-0.02em] tabular-nums bg-gradient-to-r from-[#2dd4bf] via-[#5eead4] to-[#67e8f9] bg-clip-text text-transparent">
             {loading ? (
@@ -102,10 +100,7 @@ export function EarnClient() {
           {error ? (
             <p className="mt-3 text-[13px] text-[#f87171]" role="alert">{error}</p>
           ) : (
-            <p className="mt-3 text-[13px] text-[#7a859c]">
-              Read via <span className="font-[family-name:var(--font-mono-ui)]">total_assets()</span>{' '}
-              on Sepolia. Refresh to re-query.
-            </p>
+            <p className="mt-3 text-[13px] text-[#7a859c]">Read live from Sepolia. Refresh to re-check.</p>
           )}
           <button
             type="button"
@@ -119,7 +114,7 @@ export function EarnClient() {
 
         <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] elevate-1 p-5">
           <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7a859c]">
-            CARD_EARN_VAULT
+            Vault contract
           </div>
           <a
             href={explorerAddressUrl('sepolia', vault)}
@@ -130,9 +125,15 @@ export function EarnClient() {
             {vault}
           </a>
           <p className="mt-2 text-[12px] text-[#7a859c]">
-            Short: {shortHex(vault)}. Public vault TVL only; your private share note stays in the
-            pool.
+            {shortHex(vault)}. This shows the vault&apos;s public total - your own private share
+            stays in your shielded balance.
           </p>
+          <HowThisWorks className="mt-3" label="Where this number comes from">
+            <p>
+              Read via <span className="font-[family-name:var(--font-mono-ui)]">total_assets()</span>{' '}
+              on the vault contract above, on Sepolia.
+            </p>
+          </HowThisWorks>
         </div>
       </div>
     </AccountChrome>

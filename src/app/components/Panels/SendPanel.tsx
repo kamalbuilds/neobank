@@ -14,6 +14,7 @@ import { useMaturity, useShieldedBalances } from "../lib/usePrivateBalance";
 import TokenSelect from "./TokenSelect";
 import FeeRow from "./FeeRow";
 import { ResultCard, errorResult, receiptToResult, walletErrorResult, type ActionResult } from "./ActionResult";
+import { HowThisWorks } from "../v2/ui";
 
 export interface BatchRow {
   recipient: string;
@@ -340,14 +341,22 @@ export default function SendPanel({
 
   return (
     <div className={ui.panel}>
-      <div className={ui.warn} style={{ color: "var(--muted)" }}>
-        The recipient must already be registered in the privacy pool (they need to have used a STRK20-capable
-        wallet at least once). This app cannot register them for you. In a batch, every recipient must be
-        registered or the whole batch is refused.
+      <div className="px-3 pt-2">
+        <p className="text-[13px] leading-relaxed text-[#7a859c]">
+          Send from your shielded balance. The recipient needs to have shielded funds at least once
+          before - this app can&apos;t set that up for them.
+        </p>
+        <HowThisWorks className="mt-2">
+          <p>
+            Sending in a batch of several recipients is one transaction and one fee. If any single
+            recipient in the batch isn&apos;t set up yet, the whole batch is refused rather than
+            partially sent.
+          </p>
+        </HowThisWorks>
       </div>
 
       <div className={ui.inputBlock}>
-        <div className={ui.inputLabel}>You&apos;re sending privately</div>
+        <div className={ui.inputLabel}>Amount to send</div>
         <div className={ui.inputMain}>
           <input
             className={ui.bigValue}
@@ -508,7 +517,7 @@ export default function SendPanel({
       )}
 
       {!strk20Capable && (
-        <div className={ui.warn}>This wallet does not support STRK20 privacy actions. Install or update Ready.</div>
+        <div className={ui.warn}>This wallet doesn&apos;t support private balances yet. Install or update Ready to continue.</div>
       )}
 
       {request && requestExpired ? (

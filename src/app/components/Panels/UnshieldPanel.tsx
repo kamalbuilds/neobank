@@ -12,6 +12,7 @@ import { useMaturity, useShieldedBalances } from "../lib/usePrivateBalance";
 import TokenSelect from "./TokenSelect";
 import FeeRow from "./FeeRow";
 import { ResultCard, errorResult, receiptToResult, walletErrorResult, type ActionResult } from "./ActionResult";
+import { HowThisWorks } from "../v2/ui";
 
 export default function UnshieldPanel({ network }: { network: NetworkKey }) {
   const myWalletAccount = useStoreWallet((s) => s.myWalletAccount);
@@ -134,13 +135,18 @@ export default function UnshieldPanel({ network }: { network: NetworkKey }) {
 
   return (
     <div className={ui.panel}>
-      <div className={ui.warn} style={{ color: "var(--muted)" }}>
-        Unshielding is a public withdrawal. The amount and the destination address
-        are visible onchain. Leave the destination blank to withdraw to this wallet.
+      <div className="px-3 pt-2">
+        <p className="text-[13px] leading-relaxed text-[#7a859c]">
+          Move funds out of your shielded balance to a public wallet. Leave the destination blank
+          to withdraw back to this wallet.
+        </p>
+        <HowThisWorks className="mt-2">
+          <p>The withdrawal amount and destination address become visible onchain once it lands.</p>
+        </HowThisWorks>
       </div>
 
       <div className={ui.inputBlock}>
-        <div className={ui.inputLabel}>You&apos;re unshielding</div>
+        <div className={ui.inputLabel}>Amount to withdraw</div>
         <div className={ui.inputMain}>
           <input
             className={ui.bigValue}
@@ -223,7 +229,7 @@ export default function UnshieldPanel({ network }: { network: NetworkKey }) {
       )}
 
       {!strk20Capable && (
-        <div className={ui.warn}>This wallet does not support STRK20 privacy actions. Install or update Ready.</div>
+        <div className={ui.warn}>This wallet doesn&apos;t support private balances yet. Install or update Ready to continue.</div>
       )}
 
       <button
@@ -232,7 +238,7 @@ export default function UnshieldPanel({ network }: { network: NetworkKey }) {
         disabled={!strk20Capable || submitting || !amount || maturity.locked || feeShortfall}
         onClick={handleUnshield}
       >
-        {submitting ? "Unshielding…" : maturity.locked ? "Notes maturing…" : "Unshield"}
+        {submitting ? "Withdrawing…" : maturity.locked ? "Notes maturing…" : "Withdraw"}
       </button>
 
       {result ? <ResultCard r={result} network={network} /> : null}

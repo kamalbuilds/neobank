@@ -58,6 +58,44 @@ export function Skeleton({ className }: { className?: string }) {
   return <div aria-hidden="true" className={cx('skeleton', className)} />;
 }
 
+/**
+ * Protocol detail collapsed behind one line by default. Every panel used to
+ * put its "how this actually settles onchain" paragraph directly in the
+ * default view - a changelog reading as product copy. This is where that
+ * detail goes instead: still honest, still readable, never the first thing
+ * a user sees.
+ */
+export function HowThisWorks({
+  children,
+  label = 'How this works',
+  className,
+}: {
+  children: ReactNode;
+  label?: string;
+  className?: string;
+}) {
+  return (
+    <details className={cx('group', className)}>
+      <summary
+        className="cursor-pointer select-none list-none text-[12.5px] font-medium text-[#7a859c] transition-colors duration-150 hover:text-[#eaf0f8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2dd4bf]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#06070b] rounded-sm marker:content-none [&::-webkit-details-marker]:hidden"
+      >
+        <span className="inline-flex items-center gap-1.5">
+          <span
+            aria-hidden="true"
+            className="inline-block transition-transform duration-150 group-open:rotate-90"
+          >
+            ›
+          </span>
+          {label}
+        </span>
+      </summary>
+      <div className="mt-2 pl-3.5 border-l border-white/[0.08] text-[12.5px] leading-relaxed text-[#7a859c]">
+        {children}
+      </div>
+    </details>
+  );
+}
+
 type NumberTickerProps = {
   value: number;
   decimals?: number;
