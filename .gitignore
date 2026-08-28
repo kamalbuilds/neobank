@@ -1,3 +1,4 @@
+.progress
 .claude/
 node_modules/
 .env
@@ -41,3 +42,11 @@ A1priv/A1priv.ts
 /cairo/target/
 
 contracts/.snfoundry_cache/
+
+# marketing footage: raw clips are large binaries, keep out of git
+marketing/footage/*.mp4
+marketing/footage/*.mov
+
+# never commit: captured traffic, shared testnet keys
+mitm_mcp_traffic.db
+testnet.txt
