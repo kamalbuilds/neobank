@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import {
   type FormEvent,
   useCallback,
@@ -10,7 +9,8 @@ import {
 } from "react";
 import { ANONYMIZER_ADDRESSES } from "@/utils/constants";
 import { BankCard, type BankCardStatus } from "../components/v2/BankCard";
-import { Skeleton } from "../components/v2/ui";
+import { HowThisWorks, Skeleton } from "../components/v2/ui";
+import { AccountChrome } from "../components/v2/AccountChrome";
 
 export type PublicCardPolicy = {
   perSwipeCap?: string;
@@ -415,33 +415,14 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
     : undefined;
 
   return (
-    <main className="min-h-[100dvh] bg-[#06070b] text-[#eaf0f8]">
-      <header className="border-b border-white/[0.06] bg-[#06070b]/95">
-        <div className="mx-auto flex max-w-[1320px] items-center justify-between gap-4 px-5 py-4 sm:px-8">
-          <Link
-            href="/"
-            className="rounded-md text-sm text-[#a3acbd] transition-colors duration-150 hover:text-[#eaf0f8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2dd4bf]"
-          >
-            Back to account
-          </Link>
-          <div className="text-right">
-            <p className="font-display text-sm font-semibold tracking-[-0.01em]">
-              Private Card Runtime
-            </p>
-            <p className="mt-0.5 font-mono text-[11px] uppercase tracking-[0.12em] text-[#687287]">
-              STRK20 · Sepolia
-            </p>
-          </div>
-        </div>
-      </header>
-
-      <div className="mx-auto max-w-[1320px] px-5 py-8 sm:px-8 lg:py-10">
+    <AccountChrome>
+      <div className="text-[#eaf0f8]">
         <section className="border-b border-white/[0.07] pb-8">
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start">
             <div className="max-w-3xl">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <p className="font-mono text-xs uppercase tracking-[0.14em] text-[#2dd4bf]">
-                  Programmatic settlement
+                  Spend from your shielded balance
                 </p>
                 <button
                   type="button"
@@ -449,16 +430,16 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
                   disabled={runtime.phase === "loading"}
                   className="min-h-11 rounded-2xl border border-white/[0.1] bg-white/[0.03] px-4 text-sm font-medium text-[#d8deea] transition-[background-color,border-color,transform] duration-150 hover:border-white/[0.18] hover:bg-white/[0.06] active:scale-[0.97] disabled:cursor-wait disabled:opacity-50 lg:hidden"
                 >
-                  {runtime.phase === "loading" ? "Checking runtime" : "Refresh runtime"}
+                  {runtime.phase === "loading" ? "Checking status" : "Refresh status"}
                 </button>
               </div>
-              <h1 className="mt-3 font-display text-[clamp(2rem,4vw,3.75rem)] font-medium leading-[1.02] tracking-[-0.04em]">
-                Card authorization now. Private settlement next.
+              <h1 className="mt-3 text-balance font-display text-[clamp(2rem,4vw,3.75rem)] font-medium leading-[1.02] tracking-[-0.04em]">
+                Swipe your card. Settlement stays private.
               </h1>
-              <p className="mt-4 max-w-2xl text-[15px] leading-7 text-[#909aae]">
-                Stripe-compatible requests are verified and policy-approved
-                immediately. A hosted STRK20 account then settles the swipe and
-                can open a vault position in the same privacy_invoke on Sepolia.
+              <p className="mt-4 max-w-2xl text-pretty text-[15px] leading-7 text-[#909aae]">
+                Every swipe is checked and approved instantly against your card limits. Behind the
+                scenes, your shielded balance settles it - the merchant sees a card number, never
+                your balance or your other activity.
               </p>
               <button
                 type="button"
@@ -466,7 +447,7 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
                 disabled={runtime.phase === "loading"}
                 className="mt-5 hidden min-h-11 rounded-2xl border border-white/[0.1] bg-white/[0.03] px-4 text-sm font-medium text-[#d8deea] transition-[background-color,border-color,transform] duration-150 hover:border-white/[0.18] hover:bg-white/[0.06] active:scale-[0.97] disabled:cursor-wait disabled:opacity-50 lg:inline-flex"
               >
-                {runtime.phase === "loading" ? "Checking runtime" : "Refresh runtime"}
+                {runtime.phase === "loading" ? "Checking status" : "Refresh status"}
               </button>
             </div>
 
@@ -480,73 +461,81 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
             </div>
           </div>
 
-          <dl className="mt-8 grid gap-x-8 gap-y-5 border-y border-white/[0.06] py-5 sm:grid-cols-2 lg:grid-cols-5">
-            <div>
-              <dt className="text-xs text-[#687287]">Runtime</dt>
-              <dd
-                className={`mt-1.5 font-mono text-sm ${
-                  runtimeReady ? "text-[#73e5d2]" : "text-[#fca5a5]"
-                }`}
-              >
-                {runtime.phase === "loading"
-                  ? "Checking"
+          <div className="mt-8 flex items-center gap-2.5 border-y border-white/[0.06] py-4">
+            <span
+              className={`inline-block h-2 w-2 rounded-full ${
+                runtime.phase === "loading"
+                  ? "animate-pulse bg-[#eab308]"
                   : runtimeReady
-                    ? "Ready"
-                    : "Blocked"}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs text-[#687287]">Network</dt>
-              <dd className="mt-1.5 font-mono text-sm text-[#d8deea]">
-                {readiness?.network || "Sepolia"}
-              </dd>
-            </div>
-            <div className="min-w-0">
-              <dt className="text-xs text-[#687287]">Hosted account</dt>
-              <dd
-                className="mt-1.5 truncate font-mono text-sm text-[#d8deea]"
-                title={readiness?.accountAddress}
-              >
-                {shorten(readiness?.accountAddress)}
-              </dd>
-            </div>
-            <div className="min-w-0">
-              <dt className="text-xs text-[#687287]">STRK20 pool</dt>
-              <dd
-                className="mt-1.5 truncate font-mono text-sm text-[#d8deea]"
-                title={readiness?.poolAddress}
-              >
-                {shorten(readiness?.poolAddress)}
-              </dd>
-            </div>
-            <div className="min-w-0">
-              <dt className="text-xs text-[#687287]">Spend identity</dt>
-              <dd
-                className="mt-1.5 truncate font-mono text-sm text-[#d8deea]"
-                title={
-                  SHADOW_ANONYMIZER
-                    ? `Shadow anonymizer ${SHADOW_ANONYMIZER}`
-                    : undefined
-                }
-              >
-                {SHADOW_ANONYMIZER
-                  ? shorten(SHADOW_ANONYMIZER)
-                  : "Not configured"}
-              </dd>
-            </div>
-          </dl>
+                    ? "bg-[#34d399] shadow-[0_0_8px_rgba(52,211,153,0.7)]"
+                    : "bg-[#f87171]"
+              }`}
+              aria-hidden="true"
+            />
+            <span className="text-sm font-medium text-[#d8deea]">
+              {runtime.phase === "loading"
+                ? "Checking card status…"
+                : runtimeReady
+                  ? "Card is live and can settle"
+                  : "Card settlement is blocked"}
+            </span>
+          </div>
+
+          <HowThisWorks className="mt-3" label="Contract addresses backing this card">
+            <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <dt className="text-xs text-[#687287]">Network</dt>
+                <dd className="mt-1 font-mono text-[13px] text-[#a3acbd]">
+                  {readiness?.network || "Sepolia"}
+                </dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="text-xs text-[#687287]">Hosted account</dt>
+                <dd
+                  className="mt-1 truncate font-mono text-[13px] text-[#a3acbd]"
+                  title={readiness?.accountAddress}
+                >
+                  {shorten(readiness?.accountAddress)}
+                </dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="text-xs text-[#687287]">Privacy pool</dt>
+                <dd
+                  className="mt-1 truncate font-mono text-[13px] text-[#a3acbd]"
+                  title={readiness?.poolAddress}
+                >
+                  {shorten(readiness?.poolAddress)}
+                </dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="text-xs text-[#687287]">Settlement contract</dt>
+                <dd
+                  className="mt-1 truncate font-mono text-[13px] text-[#a3acbd]"
+                  title={
+                    SHADOW_ANONYMIZER
+                      ? `Shadow anonymizer ${SHADOW_ANONYMIZER}`
+                      : undefined
+                  }
+                >
+                  {SHADOW_ANONYMIZER
+                    ? shorten(SHADOW_ANONYMIZER)
+                    : "Not configured"}
+                </dd>
+              </div>
+            </dl>
+          </HowThisWorks>
         </section>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.72fr)]">
           <section className="min-w-0 rounded-2xl border border-white/[0.07] bg-white/[0.022] elevate-1 p-5 sm:p-6">
             <div className="flex flex-col gap-2 border-b border-white/[0.06] pb-5 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <h2 className="font-display text-xl font-medium tracking-[-0.02em]">
-                  Authorization trace
+                <h2 className="text-balance font-display text-xl font-medium tracking-[-0.02em]">
+                  Trace a swipe
                 </h2>
                 <p className="mt-1 text-sm leading-6 text-[#7f899d]">
-                  Inspect one real card request from verification through
-                  Starknet receipt.
+                  Follow one real card purchase from approval to the Starknet transaction that
+                  settled it.
                 </p>
               </div>
               <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-[#687287]">
@@ -558,11 +547,11 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <h3 className="text-sm font-medium text-[#d8deea]">
-                    Real swipes from the pool
+                    Try a real swipe
                   </h3>
                   <p className="mt-1 text-sm leading-6 text-[#7f899d]">
-                    Restaurant MCC lends into the earn vault in the same
-                    privacy_invoke as the dinner settlement.
+                    A restaurant purchase also lends 10 STRK into the Earn vault, settled in the
+                    same transaction as the payment.
                   </p>
                 </div>
                 {demoEnabled && (
@@ -703,8 +692,7 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
             <div aria-live="polite" className="mt-6">
               {lookup.phase === "idle" && (
                 <p className="border-l-2 border-white/[0.1] pl-4 text-sm leading-6 text-[#7f899d]">
-                  Enter a Stripe authorization ID to trace its private
-                  settlement checkpoints.
+                  Enter an authorization ID to see how that swipe settled.
                 </p>
               )}
               {lookup.phase === "error" && (
@@ -829,7 +817,7 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
 
           <aside className="min-w-0 space-y-6">
             <section className="rounded-2xl border border-white/[0.07] bg-white/[0.022] elevate-1 p-5">
-              <h2 className="font-display text-lg font-medium tracking-[-0.02em]">
+              <h2 className="text-balance font-display text-lg font-medium tracking-[-0.02em]">
                 Card policy
               </h2>
               <dl className="mt-4">
@@ -868,8 +856,8 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
 
             <section className="rounded-2xl border border-white/[0.07] bg-white/[0.022] elevate-1 p-5">
               <div className="flex items-center justify-between gap-4">
-                <h2 className="font-display text-lg font-medium tracking-[-0.02em]">
-                  Runtime blockers
+                <h2 className="text-balance font-display text-lg font-medium tracking-[-0.02em]">
+                  What's blocking settlement
                 </h2>
                 <span
                   className={`font-mono text-[10px] uppercase tracking-[0.12em] ${
@@ -927,8 +915,8 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
 
             {runtimeHealth && (
               <section className="rounded-2xl border border-white/[0.07] bg-white/[0.022] elevate-1 p-5">
-                <h2 className="font-display text-lg font-medium tracking-[-0.02em]">
-                  Runtime probes
+                <h2 className="text-balance font-display text-lg font-medium tracking-[-0.02em]">
+                  System health
                 </h2>
                 <div className="mt-3">
                   <RuntimeProbe label="Sepolia RPC" value={runtimeHealth.rpc} />
@@ -952,12 +940,12 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
 
         <section className="mt-6 rounded-2xl border border-white/[0.07] bg-white/[0.022] elevate-1 p-5 sm:p-6">
           <div className="grid gap-3 border-b border-white/[0.06] pb-5 md:grid-cols-[minmax(0,0.7fr)_minmax(0,1fr)]">
-            <h2 className="font-display text-xl font-medium tracking-[-0.02em]">
-              Privacy boundary
+            <h2 className="text-balance font-display text-xl font-medium tracking-[-0.02em]">
+              What's hidden, what isn't
             </h2>
             <p className="text-sm leading-6 text-[#7f899d]">
-              STRK20 breaks the public link to the user funding the card. The
-              settlement recipient and amount remain visible on Starknet.
+              Your wallet and shielded balance stay off the public record. The merchant, amount,
+              and settlement transaction are still visible onchain, the same as any card.
             </p>
           </div>
 
@@ -1024,6 +1012,6 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
           </div>
         </section>
       </div>
-    </main>
+    </AccountChrome>
   );
 }
