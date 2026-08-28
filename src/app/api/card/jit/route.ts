@@ -1,4 +1,6 @@
+import { enforceRateLimit, jsonError } from "@/app/api/avnu/lib";
 import { isDemoAuthorizeEnabled } from "@/server/card/authorization";
+import { DemoTokenError, consumeDemoToken } from "@/server/card/demo-token";
 import { cardRuntimeStatus } from "@/server/card/runtime";
 import {
   JitSettlementConfigError,
@@ -19,27 +21,37 @@ type JitBody = {
   amountInStrk?: string;
   amountUsdMinor?: number;
   slippageBps?: number;
+  demoToken?: string;
 };
 
 function parseBody(body: unknown): JitBody {
   if (!body || typeof body !== "object") return {};
-  const { authorizationId, amountInStrk, amountUsdMinor, slippageBps } =
+  const { authorizationId, amountInStrk, amountUsdMinor, slippageBps, demoToken } =
     body as Record<string, unknown>;
   return {
     authorizationId: typeof authorizationId === "string" ? authorizationId : undefined,
     amountInStrk: typeof amountInStrk === "string" ? amountInStrk : undefined,
     amountUsdMinor: typeof amountUsdMinor === "number" ? amountUsdMinor : undefined,
     slippageBps: typeof slippageBps === "number" ? slippageBps : undefined,
+    demoToken: typeof demoToken === "string" ? demoToken : undefined,
   };
 }
 
 export async function POST(request: Request) {
   // Same guard as the other operational triggers (demo-authorize,
-  // shadow-spend): this endpoint moves real hosted funds and is not
-  // authenticated by a Stripe webhook signature, so it stays behind the
-  // explicit demo-authorize flag rather than being open by default.
+  // shadow-spend): this endpoint moves real hosted funds, bypasses
+  // evaluateCardPolicy, and is not authenticated by a Stripe webhook
+  // signature. CARD_DEMO_AUTHORIZE alone is a deploy-time switch that must be
+  // "1" in production for the demo button to work, so it cannot be the only
+  // guard - a caller must also present a server-minted, single-use demo
+  // token (see /api/card/demo-token) and stay under the per-IP rate limit.
   if (!isDemoAuthorizeEnabled()) {
     return Response.json({ error: "jit_settlement_disabled" }, { status: 403 });
+  }
+  try {
+    enforceRateLimit(request, "card-jit");
+  } catch (error) {
+    return jsonError(error);
   }
 
   const status = cardRuntimeStatus();
@@ -48,6 +60,14 @@ export async function POST(request: Request) {
   }
 
   const body = parseBody(await request.json().catch(() => ({})));
+  try {
+    consumeDemoToken(body.demoToken);
+  } catch (error) {
+    if (error instanceof DemoTokenError) {
+      return Response.json({ error: error.message }, { status: 401 });
+    }
+    throw error;
+  }
   if (!body.authorizationId) {
     return Response.json({ error: "authorizationId is required" }, { status: 400 });
   }

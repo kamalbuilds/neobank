@@ -211,8 +211,6 @@ export async function probeUnusedShadowNonce(
 export type ShadowSpendRequest = {
   /** 18-decimal token units to forward to the recipient. */
   amount: bigint;
-  /** Defaults to CARD_SETTLEMENT_RECIPIENT. */
-  recipient?: string;
   /** Explicit shadow nonce; defaults to the first undeployed one. */
   nonce?: bigint;
 };
@@ -267,10 +265,14 @@ export async function executeShadowSpend(
   env: Environment = process.env,
 ): Promise<ShadowSpendResult> {
   const config = parseCardRuntimeConfig(env);
-  const recipient = request.recipient || env.CARD_SETTLEMENT_RECIPIENT;
+  // The payout recipient is never client-controlled: it comes only from
+  // server env. A caller-supplied recipient here would let anyone drain the
+  // hosted position to an address of their choosing (see the route guard in
+  // src/app/api/card/shadow-spend/route.ts for the rest of the gate).
+  const recipient = env.CARD_SETTLEMENT_RECIPIENT;
   if (!recipient) {
     throw new ShadowSpendConfigError(
-      "Shadow spend needs a recipient or CARD_SETTLEMENT_RECIPIENT.",
+      "Shadow spend needs a recipient: set CARD_SETTLEMENT_RECIPIENT.",
     );
   }
   const anonymizer = resolveShadowAnonymizer(
