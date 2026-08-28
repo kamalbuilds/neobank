@@ -1,3 +1,4 @@
+import { enforceRateLimit, jsonError } from "@/app/api/avnu/lib";
 import { executeInboundBaseBurn, inboundRuntimeStatus } from "@/server/fund/inbound.ts";
 
 export const runtime = "nodejs";
@@ -10,9 +11,18 @@ export const maxDuration = 300;
  * depositForBurn (Standard Transfer). Requires INBOUND_EVM_PRIVATE_KEY in the
  * server environment; fails closed with 503 when absent. The primary product
  * path is the user burning from their own Base wallet toward the address the
- * fund page shows - this route exists for hosted end-to-end runs.
+ * fund page shows - this route exists for hosted end-to-end runs. The mint
+ * recipient is always the hosted account (hardcoded server-side, never from
+ * the request), so this is unauthenticated but not a payout vector; it is
+ * still rate-limited per IP since each call spends the hosted EVM signer's
+ * real Base Sepolia gas.
  */
 export async function POST(request: Request) {
+  try {
+    enforceRateLimit(request, "fund-inbound-burn");
+  } catch (error) {
+    return jsonError(error);
+  }
   const status = inboundRuntimeStatus();
   if (!status.ready || !status.evmSignerConfigured) {
     return Response.json(
