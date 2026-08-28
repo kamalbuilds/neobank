@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { CardDashboard, type PublicCardPolicy } from "./CardDashboard";
 
 export const metadata: Metadata = {
-  title: "Sotto: private card runtime",
+  title: "Sotto: your card",
   description:
-    "Monitor Stripe-compatible authorizations and asynchronous private settlement through STRK20 on Starknet Sepolia.",
+    "A card funded from your shielded balance. Swipes approve instantly and settle privately on Starknet.",
 };
 
 function publicValue(name: string): string | undefined {
