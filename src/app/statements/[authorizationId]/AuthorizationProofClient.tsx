@@ -89,15 +89,15 @@ export function AuthorizationProofClient() {
     <AccountChrome>
       <div className="rounded-3xl border border-white/[0.07] bg-white/[0.028] elevate-1 p-6">
         <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7a859c]">
-          Source-of-funds proof
+          Proof
         </div>
-        <h1 className="mt-2 font-[family-name:var(--font-display)] text-[28px] font-semibold tracking-[-0.02em]">
-          One authorization, scoped to the viewing key
+        <h1 className="mt-2 text-balance font-[family-name:var(--font-display)] text-[28px] font-semibold tracking-[-0.02em]">
+          What this one swipe settled, verifiable
         </h1>
         <p className="mt-3 max-w-2xl text-[14px] leading-relaxed text-[#7a859c]">
-          Everything on this page is re-read from Starknet at request time and names the
-          contract call plus the block each number was read at. The cardholder is shown
-          pseudonymously: no address and no key material leaves the hosted account.
+          Every number on this page is read fresh from Starknet, not stored - each one names the
+          exact block it came from. Your identity stays pseudonymous: no wallet address or key
+          ever leaves your account.
         </p>
 
         {status === "loading" && (

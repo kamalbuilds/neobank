@@ -6,6 +6,7 @@ import { useStoreWallet } from "../Wallet/walletContext";
 import { explorerTxUrl, tokenForAddress, type NetworkKey } from "@/utils/constants";
 import { fromBaseUnits, shortHex } from "../lib/format";
 import { getPoolActivity, type PoolActivityEntry } from "../lib/history";
+import { HowThisWorks } from "../v2/ui";
 
 export default function ActivityPanel({ network }: { network: NetworkKey }) {
   const address = useStoreWallet((s) => s.address);
@@ -48,10 +49,18 @@ export default function ActivityPanel({ network }: { network: NetworkKey }) {
 
   return (
     <div className={ui.panel}>
-      <div className={ui.warn} style={{ color: "var(--muted)" }}>
-        These are your public deposit legs into the STRK20 pool, not private transfers. Each row is
-        matched on the deposit event&apos;s depositor key, never on the transaction sender, so a
-        relayer-submitted deposit still shows under your address.
+      <div className="px-3 pt-2">
+        <p className="text-[13px] leading-relaxed text-[#7a859c]">
+          Deposits into your shielded balance. Private sends and payments don&apos;t appear here -
+          only this account can see those.
+        </p>
+        <HowThisWorks className="mt-2">
+          <p>
+            Each row is matched to your account&apos;s own key, not to whichever wallet or relayer
+            actually submitted the transaction, so it stays accurate even when a deposit was
+            relayed on your behalf.
+          </p>
+        </HowThisWorks>
       </div>
 
       <div className={`${ui.inputBlock} mt-4`}>

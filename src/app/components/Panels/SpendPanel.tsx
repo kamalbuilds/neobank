@@ -24,6 +24,7 @@ import {
   type ActionResult,
 } from "./ActionResult";
 import FeeRow from "./FeeRow";
+import { HowThisWorks } from "../v2/ui";
 
 export interface SpendLeg {
   recipient: string;
@@ -161,13 +162,20 @@ export default function SpendPanel({ network }: SpendPanelProps) {
 
   return (
     <div className={ui.panel}>
-      <div className={ui.warn} style={{ color: "var(--muted)" }}>
-        The settlement address and amount are public, like a normal card settlement. The payer and their
-        remaining balance stay hidden behind the STRK20 pool.
+      <div className="px-3 pt-2">
+        <p className="text-[13px] leading-relaxed text-[#7a859c]">
+          Pay a merchant or acquirer directly from your shielded balance.
+        </p>
+        <HowThisWorks className="mt-2">
+          <p>
+            The address you pay and the amount are visible onchain, the same as any card
+            settlement. What stays hidden is which of your notes paid it and what you have left.
+          </p>
+        </HowThisWorks>
       </div>
 
       <div className={ui.inputBlock}>
-        <div className={ui.inputLabel}>You&apos;re spending privately</div>
+        <div className={ui.inputLabel}>Amount to pay</div>
         <div className="mt-2.5 flex flex-col gap-2.5">
           <input
             className={`${ui.inputField} w-full`}
@@ -203,7 +211,7 @@ export default function SpendPanel({ network }: SpendPanelProps) {
       </div>
 
       {!strk20Capable && (
-        <div className={ui.warn}>This wallet does not support STRK20 privacy actions. Install or update Ready.</div>
+        <div className={ui.warn}>This wallet doesn&apos;t support private balances yet. Install or update Ready to continue.</div>
       )}
       {maturity.locked && (
         <div className={ui.warn}>
