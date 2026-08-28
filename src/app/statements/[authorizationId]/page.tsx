@@ -8,7 +8,7 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { authorizationId } = await params;
   return {
-    title: `Sotto: proof for ${authorizationId}`,
+    title: `Sealed: proof for ${authorizationId}`,
     description: "Source-of-funds proof for one card authorization, re-read from Starknet at request time.",
   };
 }

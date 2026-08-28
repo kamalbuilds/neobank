@@ -8,7 +8,7 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { txHash } = await params;
   return {
-    title: `Sotto: receipt for ${txHash.slice(0, 10)}…`,
+    title: `Sealed: receipt for ${txHash.slice(0, 10)}…`,
     description: "Verify a settlement receipt against the live STRK20 pool on Starknet Sepolia.",
   };
 }

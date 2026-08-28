@@ -23,12 +23,13 @@ const spaceGrotesk = Space_Grotesk({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://neobank-six.vercel.app'),
+  metadataBase: new URL('https://sealed.cash'),
   title: {
-    default: 'Sotto: private crypto neobank',
+    default: 'Sealed: a private money account on Starknet',
     template: '%s',
   },
-  description: 'Shield, send, and unshield STRK or USDC on the live STRK20 pool. The app never holds a viewing key.',
+  description:
+    'Hold, spend, and move money without publishing your balance. Sepolia testnet, real transactions, test money. Your wallet holds the viewing key, not Sealed.',
 }
 
 export default function RootLayout({

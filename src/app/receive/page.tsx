@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { ReceiveClient } from './ReceiveClient';
 
 export const metadata: Metadata = {
-  title: 'Sotto: receive privately',
+  title: 'Sealed: receive privately',
   description: 'Build a payment request link or QR code for a private STRK or USDC transfer into your account.',
 };
 
