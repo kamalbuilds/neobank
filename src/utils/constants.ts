@@ -149,6 +149,22 @@ export const ANONYMIZER_ADDRESSES = {
   }
 >;
 
+// Two more deployed Sepolia anonymizers that sit outside the card-runtime
+// object above (the server reads them from CARD_PROGRAM_CONTRACT /
+// CARD_JIT_CONVERTER, not from ANONYMIZER_ADDRESSES) but are real, deployed,
+// and worth listing on the trust/proof surface. Not deployed on mainnet yet.
+export const CARD_PROGRAM_ADDRESSES: Record<NetworkKey, string | null> = {
+  mainnet: null,
+  // CardProgramAnonymizer, class 0x042d287c20e7a6de0b85533c79e178e2f7f19bee8228306454ceb50933662fa1.
+  sepolia: "0x059524ff1c689a45b92e0ff02c752b261805409ff5940721aa4c382ac6b572a4",
+};
+
+export const JIT_CONVERTER_ADDRESSES: Record<NetworkKey, string | null> = {
+  mainnet: null,
+  // Sells shielded STRK to settle a card swipe in USDC in one transaction.
+  sepolia: "0x04a36f2fab9bbb37f190971755ed84c1be11e95c3664b5948f25854410669f99",
+};
+
 // Pool fee is charged per private operation, always in STRK, and is admin
 // settable (`set_fee_amount`) - read it at runtime, never hardcode a figure.
 export async function getPoolFeeAmount(network: NetworkKey): Promise<bigint> {

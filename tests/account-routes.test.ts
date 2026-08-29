@@ -9,7 +9,7 @@ import {
 describe("account route table", () => {
   it("keeps the 4 primary destinations a new user sees", () => {
     expect(PRIMARY_ROUTES.map((r) => r.label)).toEqual(["Home", "Spend", "Earn", "Fund"]);
-    expect(PRIMARY_ROUTES.map((r) => r.href)).toEqual(["/", "/spend", "/earn", "/fund"]);
+    expect(PRIMARY_ROUTES.map((r) => r.href)).toEqual(["/app", "/spend", "/earn", "/fund"]);
   });
 
   it("fails if /earn or /fund is dropped from the nav table", () => {
@@ -28,7 +28,7 @@ describe("account route table", () => {
   });
 
   it("routes a nested page's URL back to its primary destination for nav highlighting", () => {
-    expect(primaryForPath("/")).toBe("/");
+    expect(primaryForPath("/app")).toBe("/app");
     expect(primaryForPath("/card")).toBe("/spend");
     expect(primaryForPath("/send")).toBe("/spend");
     expect(primaryForPath("/statements")).toBe("/spend");
@@ -44,6 +44,7 @@ describe("account route table", () => {
     async () => {
       const pages = await Promise.all([
         import("@/app/page"),
+        import("@/app/app/page"),
         import("@/app/spend/page"),
         import("@/app/send/page"),
         import("@/app/receive/page"),
