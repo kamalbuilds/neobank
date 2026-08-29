@@ -16,13 +16,13 @@ Sealed is a private money account on Starknet built to stop that.
 
 **2/**
 
-Most "private" crypto tools shield one step: a transfer, a mixer hop, then you spend from a normal wallet and the trail reconnects on the other side. Sealed shields the loop instead. Shielded balances. A card that spends straight from them. A fresh funding identity per transaction. Lending that keeps earning while you're not looking. Your balance and your history stay off the public record; the card's settlement leg runs through a hosted account we operate, and we say so on the site rather than pretending otherwise.
+Most "private" crypto tools shield one step: a transfer, a mixer hop, then you spend from a normal wallet and the trail reconnects on the other side. Sealed shields the loop instead. Shielded balances. A card that spends straight from them. A fresh funding identity per transaction. And spend rules you program, so one swipe both pays the merchant and moves money where you told it to. Your balance and your history stay off the public record; the card's settlement leg runs through a hosted account we operate, and we say so on the site rather than pretending otherwise.
 
 **3/**
 
 Here's an actual transaction, not a mockup: a Sealed account sells private STRK and pays a merchant in USDC in a single call.
 
-tx 0x1f815361cd9cb1b378f208c8def10dddf5452ead190cb199a1da37adf4fe5df, block 14130415, ACCEPTED_ON_L2 / SUCCEEDED.
+tx 0x1f815361cd9cb1b378f208c8def10dddf5452ead190cb199a1da37adf4fe5df, block 14130415, SUCCEEDED, and now Accepted on L1.
 
 Pull it up on a Sepolia explorer yourself.
 
@@ -44,7 +44,9 @@ The card is the part people don't believe until they see the decisioning logs. W
 
 **7/**
 
-Idle money isn't just sitting there doing nothing. A shielded position in Sealed can lend and keep earning while you're not spending it, without ever leaving the shielded state to do it.
+You program what a swipe does. Set a rule and every restaurant purchase lends 10 STRK into the Earn vault in the same transaction that pays the merchant, no second signature, no separate trip.
+
+To be exact about what that vault is: it's our own ERC-4626 contract, 1:1, deposit STRK and mint the same number of shares. It is a lockbox, not a yield strategy. There is no rate to quote and we don't quote one.
 
 **8/**
 
@@ -76,7 +78,7 @@ No mockup, no staged screenshot. That's what a private money account on Starknet
 
 **C. Product-led**
 
-Sealed is a private money account on Starknet: shielded balances, a card that spends straight from them, a fresh identity for every merchant, and lending that keeps earning while your balance sits idle.
+Sealed is a private money account on Starknet: shielded balances, a card that spends straight from them, a fresh identity for every merchant, and spend rules you program so one swipe pays the merchant and moves money where you told it to.
 
 Testnet today, real transactions, test money: sealed.cash
 
@@ -96,7 +98,7 @@ Every payment you make onchain is a public receipt: salary, rent, last night's d
 Right now, small. It's testnet, volume is thin, so today's pool doesn't hide much on its own yet. Anonymity sets grow with real usage, that's true of every shielded pool at launch, not unique to us. The pool gets meaningfully private when it gets meaningfully used, which is the whole case for pushing to mainnet next rather than staying a demo forever.
 
 **"Why not just use the STRK20 pool directly instead of your wrapper?"**
-You can, the pool works fine on its own. Sealed adds what a raw pool doesn't give you: a spendable card, a fresh identity per merchant instead of reusing one shielded address everywhere, private lending on idle balances, and a statement you can hand someone without opening your whole account. If all you want is a shield, use the pool. If you want to live off it, that's what we built.
+You can, the pool works fine on its own. Sealed adds what a raw pool doesn't give you: a spendable card, a fresh identity per merchant instead of reusing one shielded address everywhere, programmable spend rules that fire in the same transaction as the payment, and a statement you can hand someone without opening your whole account. If all you want is a shield, use the pool. If you want to live off it, that's what we built.
 
 **"Is the card real or a mockup?"**
 The authorization logic runs against Lithic's Authorization Stream API, real decisioning infrastructure, not something we wrote to fake a demo. What isn't real yet: a production card program a bank has approved, and a card working at a physical terminal. That step needs an issuing partnership we don't have yet.
@@ -105,7 +107,9 @@ The authorization logic runs against Lithic's Authorization Stream API, real dec
 Your shielded balance is non-custodial: it lives in the STRK20 privacy pool under notes only your wallet can spend, and we never hold that key. One carve-out, stated plainly: the card's settlement leg runs through a hosted account we operate, with a server-held viewing key. That account is custodial and we label it as such in the app.
 
 **"Testnet or mainnet, be straight with me"**
-Testnet. Everything shown is Starknet Sepolia with real transactions and test money, and the card runs against Lithic's sandbox, not a live program. We've also run 3 of 3 required qualifying transactions against the mainnet STRK20 pool as part of getting there, that's a step toward mainnet, not a claim that Sealed itself runs on mainnet today.
+The product is Sepolia. Every screen in the video is Starknet Sepolia with real transactions and test money, and the card runs against Lithic's sandbox, not a live program.
+
+What is on mainnet, and it's more than a gesture: we shielded real STRK into the canonical STRK20 privacy pool at 0x040337b1af3c663e86e333bab5a4b28da8d4652a15a69beee2b677776ffe812a, and those transactions are Accepted on L1, so they're settled on Ethereum rather than merely sequenced. Two of our own contract classes are also declared on mainnet now. Declared is not deployed, and none of our contracts has a live mainnet address yet, so no, Sealed itself does not run on mainnet today.
 
 ---
 
