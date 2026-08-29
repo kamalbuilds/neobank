@@ -1,3 +1,10 @@
 [sncast.rehearsal]
 account = "rehearsal"
 url = "https://starknet-sepolia-rpc.publicnode.com"
+
+# Mainnet declares for the STRK20 submission. The account is the same
+# `deployer` that already shielded on the canonical privacy pool, so it is a
+# real funded mainnet account, not a fresh one.
+[sncast.mainnet]
+account = "deployer"
+url = "https://starknet-mainnet.g.alchemy.com/starknet/version/rpc/v0_10/vHKGfKB9XNKdpiZATW1hysInS43CT5sZ"
