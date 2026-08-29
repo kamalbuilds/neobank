@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { checkTransaction } from '../scripts/verify-strk20-claim.mjs';
 
 /**
@@ -78,4 +79,37 @@ describe('the contracts clause', () => {
     },
     RPC_TIMEOUT,
   );
+});
+
+describe('the docs agree with the verifier', () => {
+  /**
+   * The verifier said SCOREABLE while the hub said zero, and nothing noticed
+   * because no two sources of that claim were ever compared. The docs are the
+   * third place this state is written down, so it gets compared here.
+   *
+   * If a future mainnet deployment makes the submission scoreable, this test
+   * fails and points at the page that still says otherwise - which is the
+   * intended behaviour, not a nuisance.
+   */
+  const statusPage = readFileSync('src/app/docs/status/page.tsx', 'utf8');
+
+  it('states the zero-verified consequence rather than only the cause', () => {
+    expect(statusPage).toContain('verified_txs: 0');
+    expect(statusPage).toContain("not through this project");
+  });
+
+  it('does not claim mainnet contracts anywhere on the status page', () => {
+    // 'Contracts on mainnet' is the row NAME; what matters is that it stays
+    // marked not-built while every deployment is Sepolia.
+    const manifest = JSON.parse(readFileSync('strk20.json', 'utf8'));
+    const anyMainnet = manifest.contracts.some((c: { network?: string }) => c.network === 'mainnet');
+    expect(anyMainnet, 'a mainnet contract exists - the status page needs updating').toBe(false);
+  });
+
+  it('counts the mainnet transactions the same way the manifest does', () => {
+    const manifest = JSON.parse(readFileSync('strk20.json', 'utf8'));
+    expect(manifest.transactions).toHaveLength(3);
+    // The pages used to say "Two shields" while the manifest declared three.
+    expect(statusPage).not.toMatch(/two mainnet shields/i);
+  });
 });

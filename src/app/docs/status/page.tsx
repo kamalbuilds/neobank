@@ -15,7 +15,7 @@ const ROWS: Row[] = [
     kind: 'live',
     evidence: (
       <>
-        Two mainnet shields, <C>0x04c4bea0…9193</C> and <C>0x059eb6c1…586e</C>, plus the full
+        Three mainnet pool transactions, all <C>SUCCEEDED</C> and finalised on L1, plus the full
         Sepolia loop.
       </>
     ),
@@ -97,8 +97,13 @@ const ROWS: Row[] = [
     kind: 'not-built',
     evidence: (
       <>
-        Every Sealed contract is deployed on Sepolia only. Mainnet has the two shields above and
-        nothing else of ours.
+        Every Sealed contract is deployed on Sepolia only. Mainnet has the three pool transactions
+        above and nothing else of ours. This has a consequence worth stating plainly: the sprint
+        counts a mainnet transaction only when it runs through a contract the project itself
+        deployed, so all three of ours are recorded as{' '}
+        <em>touched the pool, but not through this project&apos;s contracts</em> and the submission
+        scores <C>verified_txs: 0</C>. Verified against mainnet RPC by{' '}
+        <C>npm run verify:claim</C>, which reports <C>NOT SCOREABLE</C>.
       </>
     ),
   },
@@ -138,7 +143,7 @@ export default function StatusPage() {
       </P>
       <Limit>
         Settlement transactions above are confirmed <C>SUCCEEDED</C>; several are{' '}
-        <C>ACCEPTED_ON_L2</C> rather than finalised on L1. The two mainnet shields are{' '}
+        <C>ACCEPTED_ON_L2</C> rather than finalised on L1. All three mainnet pool transactions are{' '}
         <C>ACCEPTED_ON_L1</C>. Where that distinction matters to you, check the hash yourself on{' '}
         <A href="/docs/evidence">the evidence page</A>.
       </Limit>

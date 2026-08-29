@@ -48,7 +48,7 @@ const SURFACES: { name: string; kind: StatusKind; body: string }[] = [
   {
     name: 'Mainnet',
     kind: 'not-built',
-    body: 'Two shields have settled on Starknet mainnet. Every contract in this documentation is deployed on Sepolia only.',
+    body: 'Three transactions have settled against the STRK20 pool on mainnet. Every contract in this documentation is deployed on Sepolia only, which is why the sprint scores those transactions as zero - see surface status.',
   },
 ];
 
