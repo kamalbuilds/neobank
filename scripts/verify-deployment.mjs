@@ -12,12 +12,13 @@
  */
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { DOCS_ROUTES } from './docs-routes.mjs';
+import { ALL_ROUTES } from './docs-routes.mjs';
 
 const run = promisify(execFile);
 const ORIGIN = (process.argv[2] || 'https://sealed.cash').replace(/\/$/, '');
 
-const ROUTES = ['/', '/app', ...DOCS_ROUTES];
+// Every static route in src/app, not a hand-picked few. See docs-routes.mjs.
+const ROUTES = ALL_ROUTES;
 
 let failures = 0;
 const fail = (msg) => {

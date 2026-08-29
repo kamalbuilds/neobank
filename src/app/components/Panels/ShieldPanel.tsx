@@ -143,7 +143,8 @@ export default function ShieldPanel({ network }: { network: NetworkKey }) {
     <div className={ui.panel}>
       <div className="px-3 pt-2">
         <p className="text-[13px] leading-relaxed text-[#7a859c]">
-          Moving money into your shielded balance. Once it lands, only you can see the amount.
+          Moving money into your shielded balance. The deposit is public; what it becomes is
+          readable only with your viewing key.
         </p>
         <HowThisWorks className="mt-2">
           <p>
