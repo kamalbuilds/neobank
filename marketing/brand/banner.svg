@@ -1,0 +1,71 @@
+<svg width="1500" height="500" viewBox="0 0 1500 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sealGrad" x1="410" y1="185" x2="530" y2="315" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2dd4bf"/>
+      <stop offset="0.5" stop-color="#38bdf8"/>
+      <stop offset="1" stop-color="#818cf8"/>
+    </linearGradient>
+    <linearGradient id="wordGrad" x1="600" y1="0" x2="980" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2dd4bf"/>
+      <stop offset="0.5" stop-color="#38bdf8"/>
+      <stop offset="1" stop-color="#818cf8"/>
+    </linearGradient>
+    <linearGradient id="dotsGrad" x1="880" y1="0" x2="1190" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#38bdf8"/>
+      <stop offset="1" stop-color="#818cf8"/>
+    </linearGradient>
+    <radialGradient id="glowTR" cx="88%" cy="8%" r="55%">
+      <stop offset="0" stop-color="#2dd4bf" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#2dd4bf" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowBL" cx="6%" cy="96%" r="40%">
+      <stop offset="0" stop-color="#818cf8" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#818cf8" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="sheen" cx="35%" cy="26%" r="30%">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1500" height="500" fill="#06070b"/>
+  <rect width="1500" height="500" fill="url(#glowTR)"/>
+  <rect width="1500" height="500" fill="url(#glowBL)"/>
+
+  <!-- ledger motif: a payment going from legible to sealed, sits above the wordmark -->
+  <g font-family="Space Mono" font-size="21" letter-spacing="0.5">
+    <text x="600" y="187" fill="#5c6884">0x7a3f9c2b…d92c</text>
+    <text x="805" y="187" fill="#7a859c">$240.00</text>
+    <text x="898" y="187" fill="#465065" font-size="19">&#8594;</text>
+    <g fill="url(#dotsGrad)">
+      <circle cx="932" cy="182" r="4.5"/>
+      <circle cx="951" cy="182" r="4.5"/>
+      <circle cx="970" cy="182" r="4.5"/>
+      <circle cx="989" cy="182" r="4.5"/>
+      <circle cx="1008" cy="182" r="4.5"/>
+      <circle cx="1027" cy="182" r="4.5"/>
+      <circle cx="1046" cy="182" r="4.5"/>
+      <circle cx="1065" cy="182" r="4.5"/>
+    </g>
+  </g>
+
+  <!-- mini seal mark -->
+  <g transform="translate(410,190)">
+    <circle cx="60" cy="60" r="58" fill="url(#sealGrad)"/>
+    <circle cx="60" cy="60" r="52" fill="#06070b" fill-opacity="0.14"/>
+    <circle cx="60" cy="60" r="58" fill="url(#sheen)"/>
+    <circle cx="60" cy="60" r="52" fill="none" stroke="#06070b" stroke-opacity="0.30" stroke-width="1.4"/>
+    <text x="60" y="80" font-family="Space Grotesk" font-weight="700" font-size="62" letter-spacing="-1.5"
+          fill="#06070b" fill-opacity="0.94" text-anchor="middle">S</text>
+  </g>
+
+  <!-- wordmark -->
+  <text x="600" y="292" font-family="Space Grotesk" font-weight="700" font-size="92" letter-spacing="-2">
+    <tspan fill="url(#wordGrad)">Sealed</tspan><tspan fill="#6b7689">.cash</tspan>
+  </text>
+
+  <!-- tagline -->
+  <text x="602" y="346" font-family="Geist, ui-sans-serif" font-weight="400" font-size="29" fill="#a3acbd">
+    A money account the public ledger can't read.
+  </text>
+</svg>
