@@ -75,9 +75,10 @@ export default function Quickstart() {
         </Step>
       </Steps>
       <Evidence>
-        Two shields have settled on Starknet <em>mainnet</em>, not just Sepolia:{' '}
-        <C>0x04c4bea0…9193</C> (STRK) and <C>0x059eb6c1…586e</C> (USDC), both{' '}
-        <C>SUCCEEDED</C> and finalised on L1. See <A href="/docs/evidence">Evidence</A>.
+        Three transactions have settled against the pool on Starknet <em>mainnet</em>, not just
+        Sepolia: <C>0x04c4bea0…9193</C> (STRK), <C>0x059eb6c1…586e</C> (USDC) and{' '}
+        <C>0xe08fd329…0294</C>, all <C>SUCCEEDED</C> and finalised on L1. See{' '}
+        <A href="/docs/evidence">Evidence</A>.
       </Evidence>
 
       <H2>Spend it</H2>
