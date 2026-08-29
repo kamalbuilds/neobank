@@ -1,0 +1,13 @@
+{
+  "capturedBy": "launch-video CLI, via bhn deepsurge screencast (CDP frame capture, no OS screen-recording permission needed)",
+  "capturedAt": "2026-08-28",
+  "note": "Recaptured against the redesigned UI (commits 9f05490, 90f6357: Tailwind v2 glass system, elevation, motion, number tickers, real bank-card hero on /card). Prior 2026-08-27 captures showed the pre-redesign 'VAULT' wordmark and a text-only /card page and were replaced.",
+  "clips": [
+    { "file": "demo-swipe.mp4", "route": "http://localhost:3000/card", "viewport": "1600x1000@2x (desktop)", "note": "real BankCard hero (Sotto, ACTIVE, masked number, elevation) plus a live 'Pay dinner at Osteria Nova' authorization: click -> Checking/skeleton -> Ready with a new settlement entry and real Sepolia tx link" },
+    { "file": "demo-earn.mp4", "route": "http://localhost:3000/earn", "viewport": "1600x1000@2x", "note": "real EarnVault total_assets live read (10 STRK) via total_assets() on Sepolia, Refresh interaction, elevation cards, Sotto branding" },
+    { "file": "demo-tx.mp4", "route": "https://sepolia.voyager.online/tx/0x1f815361cd9cb1b378f208c8def10dddf5452ead190cb199a1da37adf4fe5df", "viewport": "1920x1080@2x", "note": "real Voyager receipt: block 14130415, ACCEPTED_ON_L2, convert_and_pay, sold 2 STRK for 1.189325 USDC (reused, unrelated to the frontend redesign)" },
+    { "file": "demo-shadow.mp4", "route": "https://sepolia.voyager.online/tx/0x48ccd889292f406734d97a27c53db53910fb0f9ef3c056668bd64e20ccb111b", "viewport": "1920x1080@2x", "note": "real Voyager receipt: block 14130089, ShadowAccountDeployed + spend (reused, unrelated to the frontend redesign)" },
+    { "file": "demo-fund.mp4", "route": "http://localhost:3000/fund", "viewport": "1600x1000@2x", "note": "real Bring-in (Base -> Starknet CCTP) 3-step flow plus a live tab switch to Send out (Starknet -> Base/Solana) and back, elevation cards, Sotto branding" },
+    { "file": "proof.mp4", "route": "http://localhost:3000/statements/iauth_dinner_1787803543", "viewport": "1600x1268@2x", "note": "real source-of-funds proof page for authorization iauth_dinner_1787803543: cardholder alias, settle amount, settled tx, onchain event ref, deterministic text export, settled tx 0x4d94fa79724d3e997604e4a42a54daab3cc68f4ec17672b3ca9644a843e2639" }
+  ]
+}

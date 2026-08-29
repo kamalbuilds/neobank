@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { CardDashboard, type PublicCardPolicy } from "./CardDashboard";
 
 export const metadata: Metadata = {
-  title: "Sotto: your card",
+  title: "Sealed: your card",
   description:
-    "A card funded from your shielded balance. Swipes approve instantly and settle privately on Starknet.",
+    "A card funded from your shielded balance. Swipes approve instantly; settlement runs through a hosted account the operator can see and is public on Starknet.",
 };
 
 function publicValue(name: string): string | undefined {

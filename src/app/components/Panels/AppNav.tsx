@@ -10,7 +10,7 @@ export default function AppNav() {
 
   return (
     <div className={ui.nav}>
-      <div className={ui.brand}>Sotto</div>
+      <div className={ui.brand}>Sealed</div>
       <div className={ui.brand}>
         {isConnected && network ? (
           <span className={`${ui.feeVal} text-[13px]`}>

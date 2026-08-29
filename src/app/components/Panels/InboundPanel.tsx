@@ -60,10 +60,11 @@ function usdc(units: string | undefined): string {
 }
 
 /**
- * Inbound chain abstraction: fund the hosted private account from Base
- * Sepolia over Circle CCTP V2, then shield the minted USDC into the STRK20
- * pool. The burn happens in the user's own Base wallet (or, when the server
- * holds an EVM key, from here); claim and shield run on the hosted account.
+ * Inbound chain abstraction: fund the hosted (operator-visible) account from
+ * Base Sepolia over Circle CCTP V2, then shield the minted USDC into the
+ * STRK20 pool. The burn happens in the user's own Base wallet (or, when the
+ * server holds an EVM key, from here); claim and shield run on the hosted
+ * account.
  */
 export default function InboundPanel({ network }: { network: NetworkKey }) {
   const [runtime, setRuntime] = useState<RuntimeStatus | null>(null);
@@ -248,13 +249,15 @@ export default function InboundPanel({ network }: { network: NetworkKey }) {
   return (
     <div className="flex flex-col gap-4">
       <p className="text-[13px] leading-relaxed text-[#7a859c]">
-        Bring USDC in from Base and shield it straight into your private balance, three steps.
+        Bring USDC in from Base and shield it into the hosted account&apos;s balance, three steps.
       </p>
       <HowThisWorks>
         <p>
           The transfer from Base and the mint on Starknet are both public onchain events, the
-          same as any bridge. Only the last step, shielding, moves the balance behind your
-          private key.
+          same as any bridge. The last step, shielding, moves the balance into the STRK20 pool
+          behind the hosted account&apos;s viewing key - which Sealed&apos;s operator holds, not
+          you. This is a custodial account, unlike your own self-custody balance elsewhere in
+          Sealed.
         </p>
       </HowThisWorks>
 
@@ -406,9 +409,10 @@ export default function InboundPanel({ network }: { network: NetworkKey }) {
       <div className={CARD}>
         <div className={LABEL}>Step 3 - Shield it</div>
         <p className="mt-2 text-[13px] leading-relaxed text-[#7a859c]">
-          Move the USDC you just received into your shielded balance. This is the step that
-          makes it private - kept as its own step so the public arrival and the private deposit
-          are each visible on their own.
+          Move the USDC you just received into the hosted account&apos;s shielded balance. This
+          step moves it behind the STRK20 pool - kept as its own step so the public arrival and
+          the pool deposit are each visible on their own. The operator still holds the viewing
+          key for this account.
         </p>
         <button
           type="button"
@@ -433,7 +437,7 @@ export default function InboundPanel({ network }: { network: NetworkKey }) {
               </a>
             </div>
             <div>
-              Private USDC notes: {usdc(shield.privateBefore)} → {usdc(shield.privateAfter)}
+              Shielded USDC notes: {usdc(shield.privateBefore)} → {usdc(shield.privateAfter)}
             </div>
           </div>
         ) : null}
