@@ -322,13 +322,24 @@ async function main() {
   return scoreable ? 0 : 1;
 }
 
-/* Only run, and only exit, when invoked as a command. checkTransaction is
-   imported by tests/strk20-claim-ownership.test.ts, and a module that calls
-   process.exit on import takes the test runner down with it. */
-const invokedDirectly =
-  process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href;
+/* Run main() only when this module is being used AS the command.
+ *
+ * Two callers have to keep working, and the obvious guard breaks one of them:
+ *
+ *   - tests/strk20-claim-ownership.test.ts imports checkTransaction to test it
+ *     directly. A module that calls process.exit on import takes the runner
+ *     down with it.
+ *   - tests/verify-claim.test.ts drives the WHOLE script by setting
+ *     process.argv and importing it, so for that caller main() must still run.
+ *
+ * Comparing import.meta.url to argv[1] satisfies the first and silently breaks
+ * the second, because that test sets a RELATIVE argv path which never resolves
+ * to this module's URL. So match on the basename instead: it is true for the
+ * real CLI and for the argv-driven test, and false for a bare import. */
+const entry = process.argv[1] ?? "";
+const invokedAsCommand = entry.endsWith("verify-strk20-claim.mjs");
 
-if (invokedDirectly) {
+if (invokedAsCommand) {
   main()
     .then((code) => process.exit(code))
     .catch((err) => {

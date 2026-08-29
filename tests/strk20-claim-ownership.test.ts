@@ -113,3 +113,24 @@ describe('the docs agree with the verifier', () => {
     expect(statusPage).not.toMatch(/two mainnet shields/i);
   });
 });
+
+describe('the module is safe to import and still runs as a command', () => {
+  /**
+   * Adding an import-guard to this script broke tests/verify-claim.test.ts,
+   * which drives the whole CLI by setting process.argv and importing it. I did
+   * not notice because I ran only my own test file after the change. These
+   * pin both callers so the next guard edit cannot quietly break one.
+   */
+  const script = readFileSync('scripts/verify-strk20-claim.mjs', 'utf8');
+
+  it('guards on the basename, not on a URL comparison', () => {
+    // import.meta.url === argv[1] is the tempting form and is wrong here: the
+    // argv-driven test passes a RELATIVE path that never matches.
+    expect(script).toContain('endsWith("verify-strk20-claim.mjs")');
+    expect(script).not.toMatch(/import\.meta\.url === new URL/);
+  });
+
+  it('exports checkTransaction for direct use', () => {
+    expect(typeof checkTransaction).toBe('function');
+  });
+});
