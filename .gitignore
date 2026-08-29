@@ -50,3 +50,6 @@ marketing/footage/*.mov
 # never commit: captured traffic, shared testnet keys
 mitm_mcp_traffic.db
 testnet.txt
+
+marketing/*.mp4
+marketing/*.mov
