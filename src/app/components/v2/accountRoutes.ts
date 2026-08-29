@@ -10,7 +10,7 @@ export type RouteItem = { readonly href: string; readonly label: string };
  * at its own URL.
  */
 export const PRIMARY_ROUTES: readonly RouteItem[] = [
-  { href: "/", label: "Home" },
+  { href: "/app", label: "Home" },
   { href: "/spend", label: "Spend" },
   { href: "/earn", label: "Earn" },
   { href: "/fund", label: "Fund" },
@@ -44,7 +44,7 @@ export const ALL_ACCOUNT_HREFS: readonly string[] = [
 
 /** The primary destination that owns `pathname`, for nav highlighting. */
 export function primaryForPath(pathname: string): string {
-  if (pathname === "/") return "/";
+  if (pathname === "/app") return "/app";
   for (const [primaryHref, group] of Object.entries(ROUTE_GROUPS)) {
     if (group.some((r) => pathname === r.href || pathname.startsWith(`${r.href}/`))) {
       return primaryHref;
@@ -53,7 +53,7 @@ export function primaryForPath(pathname: string): string {
   for (const route of PRIMARY_ROUTES) {
     if (pathname === route.href || pathname.startsWith(`${route.href}/`)) return route.href;
   }
-  return "/";
+  return "/app";
 }
 
 export type AccountHref = (typeof ALL_ACCOUNT_HREFS)[number];
