@@ -72,12 +72,21 @@ export function EarnClient() {
             Earn
           </div>
           <h1 className="mt-2 text-balance font-[family-name:var(--font-display)] text-[28px] font-semibold tracking-[-0.02em] text-[#eaf0f8]">
-            Card spend at restaurants funds this vault
+            Card spend at restaurants funds the Sealed EarnVault
           </h1>
           <p className="mt-3 max-w-xl text-[14px] leading-relaxed text-[#7a859c]">
             Every time your card settles a restaurant purchase, 10 STRK from the hosted settlement
-            account lends into this vault. The balance below is read live from the contract. No
-            yield rate is shown because this vault doesn&apos;t publish one yet.
+            account lends into this vault. The balance below is read live from the contract.
+          </p>
+          {/* Naming the venue matters more than sounding impressive: this is
+              Sealed's own ERC-4626 lockbox, not Vesu and not Ekubo. Ekubo does
+              appear in this product, but on the settlement swap (src/server/card/jit.ts),
+              never here — and a vault page that borrowed a known protocol's name
+              would be the first claim a judge disproves. */}
+          <p className="mt-2 max-w-xl text-[13px] leading-relaxed text-[#687287]">
+            This is Sealed&apos;s own ERC-4626 vault on Sepolia: depositing STRK mints the same
+            number of shares, and redeeming returns the STRK. It is a lockbox, not a yield
+            strategy, so there is no rate to quote and none is shown.
           </p>
         </div>
 
