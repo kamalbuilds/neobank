@@ -116,7 +116,7 @@ async function loadClaim() {
   }
 }
 
-export async function checkTransaction(hash, expectedAddress) {
+export async function checkTransaction(hash, expectedAddress, ownContracts = []) {
   const row = {
     hash,
     type: null,
@@ -125,6 +125,10 @@ export async function checkTransaction(hash, expectedAddress) {
     events: 0,
     poolEvents: 0,
     addressEvents: 0,
+    /* null means the question does not apply because the submission declares no
+       contracts. false is the failing case the hub calls "touched the pool, but
+       not through this project's contracts". */
+    mine: null,
     pass: false,
     reason: "",
   };
@@ -168,6 +172,30 @@ export async function checkTransaction(hash, expectedAddress) {
     return row;
   }
 
+  /* The clause this tool used to miss entirely, and the reason it reported
+     SCOREABLE while the hub recorded verified_txs: 0.
+     CONTRIBUTING.md: "If you listed anything in `contracts`, the transaction
+     must also carry an event from one of them - touching the pool through
+     someone else's contract is not your project running on mainnet."
+     Projects that declare no contracts are judged on the pool alone, which is
+     why this is skipped rather than failed when the list is empty.
+
+     Matched against events first and calldata second, exactly as the hub's
+     build-projects.mjs does: a helper that only forwards a call to the pool may
+     emit nothing of its own. */
+  if (ownContracts.length > 0) {
+    row.mine = events.some((event) => ownContracts.some((a) => sameAddress(event.from_address, a)));
+    if (!row.mine) {
+      const { result: tx } = await rpc("starknet_getTransactionByHash", [hash]);
+      const calldata = Array.isArray(tx?.calldata) ? tx.calldata : [];
+      row.mine = calldata.some((felt) => ownContracts.some((a) => sameAddress(felt, a)));
+    }
+    if (!row.mine) {
+      row.reason = "touched the pool, but not through this project's contracts";
+      return row;
+    }
+  }
+
   row.pass = true;
   return row;
 }
@@ -198,8 +226,26 @@ async function main() {
         .map((entry) => ({ hash: typeof entry === "string" ? entry : entry?.hash }))
         .filter(({ hash }) => Boolean(hash));
 
+  /* EVERY declared contract, not just those on the network being verified.
+     Filtering by network here is the tempting mistake: it makes this tool
+     lenient in precisely the case that is failing us, since our contracts are
+     Sepolia and the transactions are mainnet.
+
+     The hub's resolveContracts() passes the whole declared list into
+     verifyTransactions() and works out each address's network separately, for
+     display only. So declaring a Sepolia address arms the rule against a
+     mainnet transaction that can never satisfy it. That is the real gate, and
+     this tool has to reproduce it rather than a kinder version. */
+  const ownContracts = deploymentCheck
+    ? []
+    : (Array.isArray(claim.contracts) ? claim.contracts : [])
+        .map((c) => (typeof c === "string" ? c : c?.address))
+        .filter(Boolean);
+
   const rows = [];
-  for (const check of checks) rows.push(await checkTransaction(check.hash, check.expectedAddress));
+  for (const check of checks) {
+    rows.push(await checkTransaction(check.hash, check.expectedAddress, ownContracts));
+  }
 
   const qualifying = rows.filter((r) => r.pass).length;
   const hasVideo = typeof claim.demo_video === "string" && claim.demo_video.trim() !== "";
@@ -276,10 +322,18 @@ async function main() {
   return scoreable ? 0 : 1;
 }
 
-main()
-  .then((code) => process.exit(code))
-  .catch((err) => {
-    if (asJson) console.log(JSON.stringify({ error: err.message }, null, 2));
-    else console.error(`\n  error: ${err.message}\n`);
-    process.exit(1);
-  });
+/* Only run, and only exit, when invoked as a command. checkTransaction is
+   imported by tests/strk20-claim-ownership.test.ts, and a module that calls
+   process.exit on import takes the test runner down with it. */
+const invokedDirectly =
+  process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href;
+
+if (invokedDirectly) {
+  main()
+    .then((code) => process.exit(code))
+    .catch((err) => {
+      if (asJson) console.log(JSON.stringify({ error: err.message }, null, 2));
+      else console.error(`\n  error: ${err.message}\n`);
+      process.exit(1);
+    });
+}
