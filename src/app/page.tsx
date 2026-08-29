@@ -45,8 +45,11 @@ export default function LandingPage() {
       <TestnetNotice />
 
       <header className="mx-auto flex max-w-[1100px] items-center justify-between px-6 py-5">
-        <span className="font-[family-name:var(--font-display)] text-[15px] font-semibold uppercase tracking-[0.14em] bg-gradient-to-r from-[#2dd4bf] via-[#38bdf8] to-[#818cf8] bg-clip-text text-transparent">
-          Sealed
+        <span className="font-[family-name:var(--font-display)] text-[16px] font-semibold tracking-[-0.01em]">
+          <span className="bg-gradient-to-r from-[#2dd4bf] via-[#38bdf8] to-[#818cf8] bg-clip-text text-transparent">
+            Sealed
+          </span>
+          <span className="text-[#6b7689]">.cash</span>
         </span>
         <nav className="flex items-center gap-5 text-[13.5px] font-medium text-[#a3acbd]">
           <a href="#privacy" className="hidden transition-colors hover:text-[#eaf0f8] sm:inline">

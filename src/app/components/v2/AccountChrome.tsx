@@ -111,9 +111,13 @@ export function AccountChrome({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-3">
             <Link
               href="/app"
-              className="font-[family-name:var(--font-display)] text-[15px] font-semibold uppercase tracking-[0.14em] bg-gradient-to-r from-[#2dd4bf] via-[#38bdf8] to-[#818cf8] bg-clip-text text-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2dd4bf]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#06070b] rounded-sm"
+              className="font-[family-name:var(--font-display)] text-[16px] font-semibold tracking-[-0.01em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2dd4bf]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#06070b] rounded-sm"
             >
-              Sealed
+              {/* The domain is the brand: people retype "sealed.cash", not "SEALED". */}
+              <span className="bg-gradient-to-r from-[#2dd4bf] via-[#38bdf8] to-[#818cf8] bg-clip-text text-transparent">
+                Sealed
+              </span>
+              <span className="text-[#6b7689]">.cash</span>
             </Link>
             <span
               className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#7a859c] px-2.5 py-1 rounded-full bg-white/[0.03] border border-white/[0.07]"
