@@ -15,12 +15,19 @@ import {
  * marketing components - for the banned substrings.
  */
 
-const COPY_DIRS = [
-  'src/app/docs',
-  'src/app/components/marketing',
-];
+/**
+ * The whole app, not just the surfaces this test was written alongside.
+ *
+ * It originally swept src/app/docs, src/app/components/marketing and the
+ * landing page - 20 files. The app has 113, and the first run over the full
+ * tree found a real violation in ShieldPanel ("only you can see the amount")
+ * that had been shipping in the product UI the entire time. A sweep scoped to
+ * the code its author just wrote is a sweep that can only find that code's
+ * mistakes.
+ */
+const COPY_DIRS = ['src'];
 
-const COPY_FILES = ['src/app/page.tsx'];
+const COPY_FILES: string[] = [];
 
 function collectFiles(dir: string): string[] {
   const out: string[] = [];
@@ -64,7 +71,10 @@ describe('the sweep can actually fail', () => {
 describe('shipped copy', () => {
   it('sweeps a non-empty set of files', () => {
     // Without this the suite below passes vacuously the day a path changes.
-    expect(files.length).toBeGreaterThan(8);
+    // 113 at the time of writing. The floor is deliberately near that number:
+    // if a refactor moves most of the app out from under this walk, the sweep
+    // should fail loudly rather than quietly pass over a handful of files.
+    expect(files.length).toBeGreaterThan(80);
   });
 
   it.each(files)('%s makes no refused claim', (file) => {
