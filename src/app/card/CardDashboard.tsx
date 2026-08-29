@@ -433,14 +433,22 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
                   {runtime.phase === "loading" ? "Checking status" : "Refresh status"}
                 </button>
               </div>
+              {/* Leads with where the money comes from, not with what the
+                  merchant misses. "The merchant never sees your wallet" is true
+                  of any card ever issued, so it described the category instead
+                  of this product; the private pool is the part nothing else
+                  does. The custodial caveat stays, moved below the claim it
+                  qualifies rather than crowding the opening paragraph. */}
               <h1 className="mt-3 text-balance font-display text-[clamp(2rem,4vw,3.75rem)] font-medium leading-[1.02] tracking-[-0.04em]">
-                Swipe your card. The merchant never sees your wallet.
+                A card that spends from your private STRK20 pool.
               </h1>
               <p className="mt-4 max-w-2xl text-pretty text-[15px] leading-7 text-[#909aae]">
-                Every swipe is checked and approved instantly against your card limits. Behind the
-                scenes, the hosted settlement account pays it - the merchant sees a card number,
-                never your wallet or your other activity. That hosted account is a custodial
-                exception: Sealed&apos;s operator holds a derived key and can see its settlements,
+                Swipe and it approves instantly against your card limits. The money is drawn from
+                your shielded balance, and you program what else each swipe does.
+              </p>
+              <p className="mt-3 max-w-2xl text-pretty text-[13.5px] leading-6 text-[#687287]">
+                One honest exception: the hosted settlement account that pays the merchant is
+                custodial. Sealed&apos;s operator holds a derived key and can see its settlements,
                 and the settlement token, amount, and recipient land on Starknet in the clear.
               </p>
               <button
