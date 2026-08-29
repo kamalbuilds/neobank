@@ -151,7 +151,7 @@ function timelineFromLookup(
       state: "waiting" as TimelineState,
     },
     {
-      title: "Private settlement queued",
+      title: "Proof-backed settlement queued",
       detail: "The hosted STRK20 account builds proof-backed Sepolia settlement.",
       state: "waiting" as TimelineState,
     },
@@ -434,12 +434,14 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
                 </button>
               </div>
               <h1 className="mt-3 text-balance font-display text-[clamp(2rem,4vw,3.75rem)] font-medium leading-[1.02] tracking-[-0.04em]">
-                Swipe your card. Settlement stays private.
+                Swipe your card. The merchant never sees your wallet.
               </h1>
               <p className="mt-4 max-w-2xl text-pretty text-[15px] leading-7 text-[#909aae]">
                 Every swipe is checked and approved instantly against your card limits. Behind the
-                scenes, your shielded balance settles it - the merchant sees a card number, never
-                your balance or your other activity.
+                scenes, the hosted settlement account pays it - the merchant sees a card number,
+                never your wallet or your other activity. That hosted account is a custodial
+                exception: Sealed&apos;s operator holds a derived key and can see its settlements,
+                and the settlement token, amount, and recipient land on Starknet in the clear.
               </p>
               <button
                 type="button"

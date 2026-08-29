@@ -1,0 +1,95 @@
+product:
+  name: "Sotto"
+  tagline: "wealth, sotto voce"
+  one_liner: "A private crypto neobank: spend, lend, and get paid without anyone reading your balance."
+  url: "sotto.money"
+  handle: "@sottomoney"
+
+brand:
+  bg: "#0B0B0D"
+  fg: "#F5F3EE"
+  muted: "#8C8A85"
+  accent: "#C9A24B"
+  font_family: "Inter"
+  mood: "dark"
+
+platform:
+  primary: "x"
+  aspect: "16:9"
+  duration_cap_seconds: 32
+
+proof_points:
+  - claim: "spend from a shielded note at a card swipe"
+    receipt: "Lithic sandbox authorization decisioning webhook, live approve/decline loop"
+    kind: "stat"
+  - claim: "a private position lends at dinner, pays for the next dinner"
+    receipt: "EarnVault share-note lend -> spend loop, same session"
+    kind: "stat"
+  - claim: "one transaction: sell private STRK, pay a merchant in USDC"
+    receipt: "0x1f815361cd9cb1b378f208c8def10dddf5452ead190cb199a1da37adf4fe5df — block 14130415, ACCEPTED_ON_L2/SUCCEEDED, sold 2 STRK for 1.189325 USDC in one account.execute batch"
+    kind: "tx"
+  - claim: "a shadow identity per merchant"
+    receipt: "per-merchant stealth address derivation, no linkable balance across vendors"
+    kind: "stat"
+  - claim: "fund from Base in USDC, arrive shielded on Starknet"
+    receipt: "CCTP V2 inbound lane, Base Sepolia -> claim -> shield, single flow"
+    kind: "tx"
+  - claim: "prove without exposing"
+    receipt: "viewing-key statement export, per-authorization proof page with deterministic text export"
+    kind: "screenshot"
+
+scenes_hint:
+  - id: hook
+    beat: hook
+    text: "Your bank statement is a public diary.|Sotto's isn't."
+    asset: "generated:typographic"
+  - id: solution
+    beat: solution
+    text: "Spend from a shielded note.|Nobody sees the balance it came from."
+    asset: "generated:typographic"
+  - id: demo-swipe
+    beat: demo
+    text: "Swipe.|{approved} in under a second."
+    asset: "capture:/card"
+    receipt_index: 0
+  - id: demo-earn
+    beat: demo
+    text: "A private position lends at dinner.|Pays for the next one."
+    asset: "capture:/earn"
+    receipt_index: 1
+  - id: demo-tx
+    beat: demo
+    text: "One transaction.|Private STRK out. USDC to the merchant."
+    asset: "generated:receipt:2"
+  - id: demo-fund
+    beat: demo
+    text: "Fund from Base in USDC.|Arrive shielded on Starknet."
+    asset: "capture:/fund"
+    receipt_index: 4
+  - id: proof
+    beat: proof
+    text: "A viewing key proves it.|Nobody else reads it."
+    asset: "capture:/statements"
+    receipt_index: 5
+  - id: cta
+    beat: cta
+    text: "Sotto.|wealth, sotto voce."
+    asset: "generated:typographic"
+
+routes:
+  - path: "/card"
+    label: "card swipe / approve-decline"
+    wait_for: "text=Approve"
+  - path: "/earn"
+    label: "shielded lend position"
+    wait_for: "text=Vault"
+  - path: "/fund"
+    label: "Base -> Starknet shielded funding"
+    wait_for: "text=Fund"
+  - path: "/statements"
+    label: "viewing-key statement proof"
+    wait_for: "text=Statement"
+
+music:
+  track: "assets/music/quiet-account.mp3"
+  mood: "restrained, low-tempo, single sustained low synth pad, no drums until proof beat"

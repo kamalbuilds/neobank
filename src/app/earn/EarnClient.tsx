@@ -75,9 +75,9 @@ export function EarnClient() {
             Card spend at restaurants funds this vault
           </h1>
           <p className="mt-3 max-w-xl text-[14px] leading-relaxed text-[#7a859c]">
-            Every time your card settles a restaurant purchase, 10 STRK from your private balance
-            lends into this vault. The balance below is read live from the contract. No yield rate
-            is shown because this vault doesn&apos;t publish one yet.
+            Every time your card settles a restaurant purchase, 10 STRK from the hosted settlement
+            account lends into this vault. The balance below is read live from the contract. No
+            yield rate is shown because this vault doesn&apos;t publish one yet.
           </p>
         </div>
 
@@ -125,8 +125,9 @@ export function EarnClient() {
             {vault}
           </a>
           <p className="mt-2 text-[12px] text-[#7a859c]">
-            {shortHex(vault)}. This shows the vault&apos;s public total - your own private share
-            stays in your shielded balance.
+            {shortHex(vault)}. This shows the vault&apos;s public total. The share earned from
+            your card spend sits in the hosted account, which Sealed&apos;s operator can see - it
+            is not part of your self-custody shielded balance.
           </p>
           <HowThisWorks className="mt-3" label="Where this number comes from">
             <p>
