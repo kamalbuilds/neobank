@@ -1,0 +1,46 @@
+Every payment you make onchain is a public receipt. Your salary, your rent, what you spent last night, sitting on a block explorer forever, readable by anyone who bothers to look.
+
+I built Sealed to stop that. It's a private money account on Starknet.
+
+Most "private" crypto tools shield one step: a transfer, a mixer hop. Then you spend from a normal wallet and the trail reconnects on the other side. Sealed shields the loop instead.
+
+Shielded balances. A card that spends straight from them. A fresh funding identity per transaction. And spend rules you program, so one swipe both pays the merchant and moves money where you told it to.
+
+The part nobody else does is that last one. You set a rule once, and every restaurant purchase lends 10 STRK into the Earn vault in the same transaction that pays the merchant. No second signature, no separate trip.
+
+To be exact about that vault, because precision matters more than sounding impressive: it's our own ERC-4626 contract, 1:1. Deposit STRK, mint the same number of shares, redeem to get it back. It's a lockbox, not a yield strategy. There's no rate to quote and I'm not quoting one.
+
+Here is an actual transaction, not a mockup. A Sealed account sells private STRK and pays a merchant in USDC in a single call:
+
+0x1f815361cd9cb1b378f208c8def10dddf5452ead190cb199a1da37adf4fe5df
+
+Block 14130415, Accepted on L1. Pull it up yourself.
+
+Every merchant sees a fresh identity, not your main account, so one payment's funding leg doesn't link to the next:
+
+0x48ccd889292f406734d97a27c53db53910fb0f9ef3c056668bd64e20ccb111b
+
+The honest caveat: settlement itself still lands on a fixed program address today. Per-merchant settlement addressing is the next piece, not something I'm claiming now.
+
+Funding bridges in from another chain. USDC moves from Base, mints on Starknet, then shields into the pool in the very next transaction. The mint is briefly visible, the shield is not:
+
+0x28b053d9a670650604bf8f7ae8b67fc7f296d2f4fa630a987e7a6f775b11fe2
+
+The card ran against Lithic's Authorization Stream API, a real issuer sandbox: an over-limit swipe declined, an in-policy grocery swipe approved, both recorded on Lithic's side.
+
+And when someone needs proof a payment happened, you don't hand over your history. A viewing key generates a statement for that one authorization: proves it happened, exposes nothing else.
+
+Where this actually stands, plainly, because a privacy product that hides its own stage isn't one you should trust:
+
+Everything in the video runs on Starknet Sepolia. Real transactions, test money. The card is Lithic's sandbox, not a live card program.
+
+What is on mainnet: real STRK shielded into the canonical STRK20 privacy pool, and those transactions are Accepted on L1, settled on Ethereum rather than merely sequenced. Two of the contract classes are declared on mainnet too. Declared isn't deployed, so no, Sealed itself doesn't run on mainnet yet.
+
+One more carve-out: the card's settlement leg runs through a hosted account I operate. That account is custodial and it's labelled as such in the app.
+
+Work went back upstream as well, a PR and an issue against StarkWare's own privacy SDK:
+github.com/starkware-libs/starknet-privacy/pull/977
+
+sealed.cash
+
+Go watch the transactions move, then tell me what breaks it.
