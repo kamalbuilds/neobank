@@ -99,7 +99,7 @@ export function ContractsFooter() {
 
         <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.06] pt-6 text-[12px] text-[#687287]">
           <span>Sepolia testnet &middot; real transactions, test money.</span>
-          <span>Sealed &middot; a private money account on Starknet</span>
+          <span>Sealed.cash &middot; a private money account on Starknet</span>
         </div>
       </div>
     </footer>
