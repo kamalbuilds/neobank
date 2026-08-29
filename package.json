@@ -16,7 +16,9 @@
     "card:status": "node --env-file=.env scripts/card-account.mjs status",
     "card:register": "node --env-file=.env scripts/card-account.mjs register",
     "card:deposit": "node --env-file=.env scripts/card-account.mjs deposit",
-    "card:balance": "node --env-file=.env scripts/card-account.mjs balance"
+    "card:balance": "node --env-file=.env scripts/card-account.mjs balance",
+    "verify:evidence": "node scripts/verify-evidence.mjs",
+    "verify:deployment": "node scripts/verify-deployment.mjs"
   },
   "dependencies": {
     "@avnu/avnu-sdk": "^4.2.0",

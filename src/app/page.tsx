@@ -58,6 +58,9 @@ export default function LandingPage() {
           <a href="#proof" className="hidden transition-colors hover:text-[#eaf0f8] sm:inline">
             Proof
           </a>
+          <Link href="/docs" className="transition-colors hover:text-[#eaf0f8]">
+            Docs
+          </Link>
           <Link
             href="/app"
             className="rounded-full bg-gradient-to-br from-[#2dd4bf] to-[#38bdf8] px-4 py-2 text-[13px] font-semibold text-[#04140f] shadow-[0_4px_16px_-6px_rgba(45,212,191,0.5)] transition-transform duration-150 active:scale-[0.97]"
@@ -85,12 +88,12 @@ export default function LandingPage() {
             >
               Open your account
             </Link>
-            <a
-              href="#proof"
+            <Link
+              href="/docs"
               className="rounded-2xl border border-white/[0.12] bg-white/[0.03] px-6 py-3.5 text-[14.5px] font-medium text-[#d8deea] transition-colors duration-150 hover:border-white/[0.2] hover:bg-white/[0.06]"
             >
-              See the proof
-            </a>
+              Read the docs
+            </Link>
           </div>
           <p className="mt-5 max-w-md text-[12.5px] leading-relaxed text-[#687287]">
             Sepolia testnet &middot; real transactions, test money. Not a licensed bank. Not a
@@ -142,6 +145,26 @@ export default function LandingPage() {
         <div className="mt-6">
           <ThreatModelTable />
         </div>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Link
+            href="/docs/privacy/who-sees-what"
+            className="rounded-xl border border-white/[0.1] bg-white/[0.03] px-4 py-2.5 text-[13px] font-medium text-[#d8deea] transition-colors hover:border-white/[0.2] hover:bg-white/[0.06]"
+          >
+            Who sees what, party by party →
+          </Link>
+          <Link
+            href="/docs/privacy/the-hosted-account"
+            className="rounded-xl border border-white/[0.1] bg-white/[0.03] px-4 py-2.5 text-[13px] font-medium text-[#d8deea] transition-colors hover:border-white/[0.2] hover:bg-white/[0.06]"
+          >
+            The custodial exception →
+          </Link>
+          <Link
+            href="/docs/privacy/refused-claims"
+            className="rounded-xl border border-white/[0.1] bg-white/[0.03] px-4 py-2.5 text-[13px] font-medium text-[#d8deea] transition-colors hover:border-white/[0.2] hover:bg-white/[0.06]"
+          >
+            What we refuse to claim →
+          </Link>
+        </div>
         <div className="mt-6 max-w-3xl rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5 text-[13px] leading-relaxed text-[#a3acbd]">
           <p className="font-semibold text-[#eaf0f8]">Who holds the key that unlocks the &ldquo;revealed&rdquo; column?</p>
           <p className="mt-2">
@@ -173,6 +196,12 @@ export default function LandingPage() {
         <div className="mt-6">
           <ProofPoints />
         </div>
+        <Link
+          href="/docs/evidence"
+          className="mt-5 inline-block text-[13px] font-medium text-[#6ee9d5] underline decoration-[#6ee9d5]/30 underline-offset-4 transition-colors hover:decoration-[#6ee9d5]"
+        >
+          Every contract and transaction, with the file each value comes from →
+        </Link>
       </section>
 
       <ContractsFooter />
