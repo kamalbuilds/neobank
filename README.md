@@ -1,4 +1,4 @@
-# Fully Programmable Private money account
+# Fully Programmable Private money account to spend from the pvt pool
 
 Hold and send on the live STRK20 pool without publishing salary or net worth. Yield is planned, not in this repo.
 
