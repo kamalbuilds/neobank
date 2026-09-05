@@ -77,19 +77,20 @@ export function AccountChrome({ children }: { children: ReactNode }) {
   const refresh = useCallback(async () => {
     if (!myWalletAccount || !address) return;
     setBalancesLoading(true);
-    try {
-      const [priv, pub] = await Promise.all([
-        readPrivateBalance(myWalletAccount, TOKENS.STRK.address),
-        getPublicBalance(net, TOKENS.STRK.address, address),
-      ]);
-      setShielded(fromBaseUnits(priv, TOKENS.STRK.decimals));
-      setPublicGas(fromBaseUnits(pub, TOKENS.STRK.decimals));
-    } catch {
-      setShielded(null);
-      setPublicGas(null);
-    } finally {
-      setBalancesLoading(false);
-    }
+    // Settled independently, not Promise.all. The private read scans notes and
+    // can take a minute or hang outright on some routes; with Promise.all a
+    // slow private read also withheld the public balance, so both sat as
+    // skeletons forever and the account looked empty rather than loading.
+    // Each balance now lands as soon as its own read returns.
+    const privatePromise = readPrivateBalance(myWalletAccount, TOKENS.STRK.address)
+      .then((priv) => setShielded(fromBaseUnits(priv, TOKENS.STRK.decimals)))
+      .catch(() => setShielded(null));
+    const publicPromise = getPublicBalance(net, TOKENS.STRK.address, address)
+      .then((pub) => setPublicGas(fromBaseUnits(pub, TOKENS.STRK.decimals)))
+      .catch(() => setPublicGas(null));
+
+    await Promise.allSettled([privatePromise, publicPromise]);
+    setBalancesLoading(false);
   }, [myWalletAccount, address, net]);
 
   useEffect(() => {
