@@ -1,0 +1,26 @@
+[
+  {
+    "image": "marketing/thread-cards/explorer.jpg",
+    "text": "1/ Why one shielded transfer isn't enough\n\nMixers and one-off shields break the link once. Then you spend from a normal wallet and the trail stitches itself back together.\n\nAnyone can open this."
+  },
+  {
+    "image": "marketing/thread-cards/card.jpg",
+    "text": "2/ Balance on your screen. Not on the explorer.\n\nOne account. Your shielded balance, and a card that draws from it directly. Nothing about it has to be published to be spendable."
+  },
+  {
+    "image": "marketing/thread-cards/rule.jpg",
+    "text": "3/ You program the swipe\n\nDinner paid. 10 STRK moved where you told it to. One transaction, one signature.\n\nThis is the part nobody else does: the rule fires inside the payment, not after it."
+  },
+  {
+    "image": "marketing/thread-cards/receipt.jpg",
+    "text": "4/ Prove the $84 dinner. Not the rest of the account.\n\nWhen someone needs proof a payment happened, a viewing key generates a statement for that single authorization and exposes nothing else."
+  },
+  {
+    "image": null,
+    "text": "5/ How to try it, 3 steps\n\n1. Connect @ready_co (it holds the viewing key on your device)\n2. Get Sepolia STRK from a faucet\n3. Shield, then swipe\n\nTakes about 5 minutes. sealed.cash"
+  },
+  {
+    "image": null,
+    "text": "6/ Where this actually stands\n\nEverything above is @Starknet Sepolia. Real transactions, test money. The card is Lithic's issuer sandbox, not a live program.\n\nOn mainnet we've shielded real STRK into the canonical STRK20 pool, Accepted on L1. Sealed itself isn't on mainnet yet.\n\nIf you break it, reply with the hash. I'll look at every one tonight."
+  }
+]

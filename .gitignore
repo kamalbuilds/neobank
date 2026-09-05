@@ -53,3 +53,6 @@ testnet.txt
 
 marketing/*.mp4
 marketing/*.mov
+
+# Third-party reference videos and analysis dumps used for measurement only; not ours to redistribute.
+marketing/_ref/
