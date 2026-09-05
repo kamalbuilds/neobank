@@ -1,0 +1,13 @@
+Introducing sealed.cash
+
+Every onchain payment is a public receipt.
+Salary. Rent. Last night's dinner. Forever, on an explorer.
+
+Shielding one transfer doesn't fix it. The next spend from a normal wallet stitches the trail back together.
+
+Sealed is one private balance on @Starknet plus a card that spends from it. The merchant sees a card number. The explorer sees nothing useful.
+
+Not a mixer. A private checking account you can spend from.
+
+Demo below.
+sealed.cash
