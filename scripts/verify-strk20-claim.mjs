@@ -24,7 +24,12 @@ import { parseArgs } from "node:util";
 const NETWORKS = {
   mainnet: {
     pool: "0x040337b1af3c663e86e333bab5a4b28da8d4652a15a69beee2b677776ffe812a",
-    rpc: process.env.STARKNET_RPC || "https://rpc.starknet.lava.build",
+    // rpc.starknet.lava.build now answers every call with "This endpoint has
+    // been discontinued", and this tool reported that as "transaction not
+    // found on mainnet" - a dead endpoint reading exactly like a submission
+    // with fabricated hashes. Checked 2026-09-07: mainnet.nodes.starknet.org
+    // returns the receipts, lava returns the discontinuation notice.
+    rpc: process.env.STARKNET_RPC || "https://mainnet.nodes.starknet.org/rpc/v0_10",
   },
   sepolia: {
     pool: "0x0254a6b2997ef52e9f830ce1f543f6b29768295e8d17e2267d672c552cfe0d91",
