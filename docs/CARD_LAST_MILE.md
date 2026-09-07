@@ -51,17 +51,28 @@ V2 `deposit_for_burn` on domain 25 out to Base (6) or Solana (5). Public on both
 construction. Later, route the outbound leg through the Privacy Bridge's `OutboundAnonymizer` so
 the Starknet wallet and the destination address are not linked.
 
-**B2, third-party no-KYC virtual cards. Not recommended, and not shipping.** The suggestion is
-that a user bridges out privately, then tops up an offshore minimal-KYC virtual card. The
-privacy argument is sound: the pool plus the bridge break the link between the STRK20 identity
-and the card top-up.
+**B2, third-party no-KYC virtual cards. Dead, and now on evidence rather than caution.** The
+suggestion is that a user bridges out privately, then tops up an offshore minimal-KYC virtual
+card. The privacy argument sounded fine: the pool plus the bridge break the link between the
+STRK20 identity and the card top-up.
 
-The reason it does not ship anyway: we cannot verify any of the named services are solvent,
-legitimate, or durable, and that category has a long history of frozen balances, vanishing
-support, and outright exit scams. Shipping a deep link is an implicit endorsement, and a user
-who loses funds lost them because our product pointed at it. Document the pattern generically if
-users ask. Do not name, integrate, or link a specific provider we have not verified, and do not
-route funds through one.
+It does not survive contact with the providers' own terms. Teardown of one of the category's
+current front-runners is in
+[`research/CARD_LEG_NOBODY_CARDS.md`](research/CARD_LEG_NOBODY_CARDS.md): their shipped bundle
+carries a `FROZEN_KYC_REQUESTED` card state and an AML policy that freezes any deposit with
+exposure to *"any services or mechanisms designed to anonymize, obfuscate, or conceal the origin
+of funds, including indirect usage through intermediary platforms"*, then demands passport,
+selfie, source of funds and signed wallet ownership, with a decision window of up to 90 business
+days. That sentence describes a pool withdrawal, and the "indirect usage" clause covers it after
+a CCTP hop too. These cards are no-KYC precisely until the money looks private, which is the
+only case we would ever route.
+
+So the failure mode is not a declined top-up. It is a frozen balance plus a demand for exactly
+the identity documents the user came to us to avoid. Add to that the older objection, that we
+cannot verify solvency or durability in a category with a history of vanishing support and exit
+scams, and shipping a deep link would be an implicit endorsement of both risks. Document the
+pattern generically if users ask. Do not name, integrate, or link a provider, and do not route
+funds through one.
 
 **B3, a real issuer, only on evidence.** Pursue Stripe+Bridge JIT, Gnosis Pay, or Rain only if
 usage shows people genuinely need POS and Apple Pay acceptance. Even then the CardSettle helper

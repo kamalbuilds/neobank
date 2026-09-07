@@ -18,7 +18,8 @@
     "card:deposit": "node --env-file=.env scripts/card-account.mjs deposit",
     "card:balance": "node --env-file=.env scripts/card-account.mjs balance",
     "verify:evidence": "node scripts/verify-evidence.mjs",
-    "verify:deployment": "node scripts/verify-deployment.mjs"
+    "verify:deployment": "node scripts/verify-deployment.mjs",
+    "verify:nokyc-card": "node scripts/verify-nokyc-card-policy.mjs"
   },
   "dependencies": {
     "@avnu/avnu-sdk": "^4.2.0",
