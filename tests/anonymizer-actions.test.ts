@@ -9,10 +9,16 @@ const TO = "0x0101ab74cf27f868fa42f02de17c5fca88697dd63dd850ee6626d74c25ed6a4a";
 const ME = "0x0202bc85df38f979fb53f13de28d6fdb99708ee74ee961ff7737e85d36fe7b5b";
 
 it("wires helpers to the verified Sepolia deployments", () => {
-  const programmable = claim.contracts.find(
+  // These live under `sepolia_contracts`, not `contracts`: the hub treats
+  // `contracts` as this project's own deployments and then requires every listed
+  // mainnet transaction to run through one of them, which scored our real
+  // mainnet pool transactions as unverified. See `_comment_contracts` in
+  // strk20.json. Move an entry back only when it has a mainnet address.
+  const deployments: { name: string; address: string }[] = claim.sepolia_contracts;
+  const programmable = deployments.find(
     (contract) => contract.name === "ProgrammableSpendAnonymizer",
   );
-  const card = claim.contracts.find(
+  const card = deployments.find(
     (contract) => contract.name === "CardSettlementAnonymizer",
   );
   expect(programmable).toBeDefined();
