@@ -1,9 +1,24 @@
 # Card issuer options: Phase 2 note, not sprint
 
-Date: 2026-08-14.
+Date: 2026-08-14. Screening question added 2026-09-07.
 Status: research only. No card code this sprint. Phase 0/1 stay on Ready + STRK20 pool, no BIN, no issuer integration.
 
 This doc answers one question for Phase 2: once a user unshields to public USDC, who turns that into a Visa/Mastercard swipe. It does not pick a winner. It re-verifies claims against primary docs where we had time, marks the rest UNVERIFIED, and corrects one line in `docs/PRODUCTION_BUILD_PLAN.md`.
+
+## The first question to any candidate, before BIN, fees or geography
+
+> What does your risk engine do with a USDC deposit whose immediate on-chain ancestor is a
+> withdrawal from a shielded privacy pool, and does a CCTP hop change that answer?
+
+A candidate with no written answer is not a candidate, however good their BIN, fees or coverage.
+This is not hypothetical: the teardown in
+[`CARD_LEG_NOBODY_CARDS.md`](CARD_LEG_NOBODY_CARDS.md) shows a live no-KYC card program shipping
+an AML policy that freezes any deposit with exposure to *"any services or mechanisms designed to
+anonymize, obfuscate, or conceal the origin of funds, including indirect usage through
+intermediary platforms"*, then demands passport, selfie and source of funds, with a decision
+window of up to 90 business days. The "indirect usage" clause survives a bridge hop. If the
+regulated candidates screen the same way, the whole card leg is worth nothing to our user and we
+should know that from an email, not from a frozen user balance.
 
 ## Why this note exists
 
