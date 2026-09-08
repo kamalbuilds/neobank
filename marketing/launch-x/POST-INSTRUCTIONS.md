@@ -13,11 +13,16 @@ actually rewards; a launch post with no author replies dies in an hour.
 
 ## Files
 
-- `sealed-launch-x.mp4` - the cut, re-encoded for X (H.264 high@4.0, yuv420p,
-  limited range, AAC 192k, faststart, 11 MB, 52.8 s). The site's own
-  `public/demo.mp4` is full-range yuvj420p, which shifts colour on some players,
-  so upload THIS file, not that one.
-- `thread.json` - the five posts in order.
+- `sealed-square-x.mp4` - **the file `post.sh` uploads.** 1080x1080, H.264
+  yuv420p, limited range, AAC, 30.1 s, 2.5 MB. Square, because the timeline
+  crops 16:9 and square takes more vertical space on mobile.
+- `sealed-launch-x.mp4` - the earlier 1920x1080 cut, 52.8 s, 9.6 MB. Kept for
+  the site and for anywhere landscape is wanted. Not what goes on X.
+- Neither is the site's `public/demo.mp4`, which is full-range yuvj420p and
+  shifts colour on some players.
+- `thread.json` - keys `post` (the opener) and `replies` (four), in order.
+- `post.sh` - the runnable publish sequence.
+- `posted-ids.json` - written by `post.sh`, one line per tweet it creates.
 
 ## Post
 
@@ -84,28 +89,58 @@ No em dashes, no curly quotes, every post under 280.
 
 ## Accounts
 
-`social account list` shows both `kamalbuilds` and `sealedcash`, so the retweet
-can run from the CLI as well. Note there are two rows whose username is
-`kamalbuilds` (named `kamal` and `kamalbuilds`); they point at the same handle.
+`social account list` returns account **names**, which are not the same as the
+X usernames. Verified 2026-09-08:
+
+| Account name | Username | Use |
+|---|---|---|
+| `kamalbuilds` | `kamalbuilds` | posts the thread |
+| `sealed` | `sealedcash` | retweets post 1 |
+
+There is no account named `sealedcash`, so `social account switch sealedcash`
+exits 1 with "Account 'sealedcash' not found". The product account is `sealed`.
+There are also two rows whose username is `kamalbuilds` (named `kamal` and
+`kamalbuilds`); both authenticate as @kamalbuilds, and the script uses
+`kamalbuilds`.
 
 ## Commands
 
+Run the script. It does the whole sequence, chains on the real ids, and stops on
+the first failure instead of unrolling the thread into orphan posts.
+
 ```bash
-cd ~/Desktop/neobank/marketing/launch-x
-
-# 1. main post with the video, from kamalbuilds
-social account use kamalbuilds
-social post --text "$(python3 -c "import json;print(json.load(open('thread.json'))[0])")" \
-  --video sealed-launch-x.mp4
-
-# 2. reply the remaining four IN ORDER, each to the id returned by the previous
-social reply <id-of-previous> --text "$(python3 -c "import json;print(json.load(open('thread.json'))[1])")"
-# ... repeat for indexes 2, 3, 4
-
-# 3. retweet the first post from the product account
-social account use sealedcash
-social retweet <id-of-post-1>
+bash ~/Desktop/neobank/marketing/launch-x/post.sh
 ```
+
+The verified syntax it uses, checked against `--help` and the social-cli /
+twitter-cli source on 2026-09-08. The earlier draft of this file had all four
+lines wrong:
+
+```bash
+social account switch kamalbuilds              # NOT `account use`
+social post "<text>" -v sealed-square-x.mp4 -a kamalbuilds   # text is POSITIONAL, there is no --text
+social reply <previous-id> "<text>" -a kamalbuilds           # id and text both positional
+social account switch sealed                   # the NAME, not the username sealedcash
+social retweet <post-1-id> -a sealed
+```
+
+`social thread "t1" "t2" ...` exists but takes no media flag, so it cannot carry
+the video on post 1. The post-then-reply chain is the only route.
+
+Success shapes differ between the two paths, which is why the script parses both:
+
+```jsonc
+// social post ... -v video   (GraphQL CreateTweet, data is a plain string)
+{"ok": true, "data": "https://x.com/i/web/status/1963..."}
+
+// social reply ...           (twitter-cli, OUTPUT=json)
+{"ok": true, "data": {"ok": true, "schema_version": "1",
+  "data": {"success": true, "action": "reply", "id": "1963...",
+           "replyTo": "1963...", "url": "https://x.com/i/status/1963..."}}}
+```
+
+Ids are appended to `posted-ids.json` as each one lands, so an interrupted run
+can be finished by hand.
 
 Then stay in the replies for the first hour. Reply velocity in the first hour is
 the part that actually moves distribution.
