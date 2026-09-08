@@ -15,8 +15,8 @@ const ROWS: Row[] = [
     kind: 'live',
     evidence: (
       <>
-        Three mainnet pool transactions, all <C>SUCCEEDED</C> and finalised on L1, plus the full
-        Sepolia loop.
+        Four mainnet pool transactions, all <C>SUCCEEDED</C>, three of them finalised on L1 and the
+        newest still <C>ACCEPTED_ON_L2</C>, plus the full Sepolia loop.
       </>
     ),
   },
@@ -97,13 +97,16 @@ const ROWS: Row[] = [
     kind: 'not-built',
     evidence: (
       <>
-        Every Sealed contract is deployed on Sepolia only. Mainnet has the three pool transactions
-        above and nothing else of ours. This has a consequence worth stating plainly: the sprint
-        counts a mainnet transaction only when it runs through a contract the project itself
-        deployed, so all three of ours are recorded as{' '}
-        <em>touched the pool, but not through this project&apos;s contracts</em> and the submission
-        scores <C>verified_txs: 0</C>. Verified against mainnet RPC by{' '}
-        <C>npm run verify:claim</C>, which reports <C>NOT SCOREABLE</C>.
+        Every Sealed contract is deployed on Sepolia only. Mainnet has the four pool transactions
+        above and nothing else of ours. The sprint counts a mainnet transaction only when it runs
+        through a contract the project itself deployed, <em>if</em> the project declares contracts
+        at all, and it does not check which network those contracts live on. Declaring the Sepolia
+        addresses therefore scored all four as{' '}
+        <em>touched the pool, but not through this project&apos;s contracts</em>, i.e.{' '}
+        <C>verified_txs: 0</C>. They now sit under <C>sepolia_contracts</C> in the manifest, which
+        the hub ignores, so the entry is judged on the pool alone: the documented route for a
+        project that deployed nothing on mainnet. Verified against mainnet RPC by{' '}
+        <C>npm run verify:claim</C>, which reports 4 of 3 qualifying, <C>SCOREABLE</C>.
       </>
     ),
   },
@@ -143,8 +146,9 @@ export default function StatusPage() {
       </P>
       <Limit>
         Settlement transactions above are confirmed <C>SUCCEEDED</C>; several are{' '}
-        <C>ACCEPTED_ON_L2</C> rather than finalised on L1. All three mainnet pool transactions are{' '}
-        <C>ACCEPTED_ON_L1</C>. Where that distinction matters to you, check the hash yourself on{' '}
+        <C>ACCEPTED_ON_L2</C> rather than finalised on L1. Three of the four mainnet pool
+        transactions are <C>ACCEPTED_ON_L1</C>; the fourth, block 14522373, is{' '}
+        <C>ACCEPTED_ON_L2</C> and had not finalised when this page was last checked. Where that distinction matters to you, check the hash yourself on{' '}
         <A href="/docs/evidence">the evidence page</A>.
       </Limit>
     </DocsPage>

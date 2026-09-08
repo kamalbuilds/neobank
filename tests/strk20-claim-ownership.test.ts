@@ -94,6 +94,9 @@ describe('the docs agree with the verifier', () => {
   const statusPage = readFileSync('src/app/docs/status/page.tsx', 'utf8');
 
   it('states the zero-verified consequence rather than only the cause', () => {
+    // Kept after the fix: the page has to explain why four real pool
+    // transactions scored zero, not quietly drop the episode now that
+    // `contracts` is empty and the same four verify.
     expect(statusPage).toContain('verified_txs: 0');
     expect(statusPage).toContain("not through this project");
   });
@@ -102,15 +105,34 @@ describe('the docs agree with the verifier', () => {
     // 'Contracts on mainnet' is the row NAME; what matters is that it stays
     // marked not-built while every deployment is Sepolia.
     const manifest = JSON.parse(readFileSync('strk20.json', 'utf8'));
-    const anyMainnet = manifest.contracts.some((c: { network?: string }) => c.network === 'mainnet');
+    const declared = [...(manifest.contracts ?? []), ...(manifest.sepolia_contracts ?? [])];
+    const anyMainnet = declared.some((c: { network?: string }) => c.network === 'mainnet');
     expect(anyMainnet, 'a mainnet contract exists - the status page needs updating').toBe(false);
+  });
+
+  it('keeps `contracts` empty while every deployment is Sepolia', () => {
+    /**
+     * The hub reads `contracts` as this project's own deployments and then
+     * requires each declared mainnet transaction to carry one of those
+     * addresses, without looking at which network the contract is on
+     * (build-projects.mjs: `own = contracts.map((c) => c.address)`). Declaring
+     * the Sepolia addresses there scored four real pool transactions as
+     * verified_txs 0. Putting an address back under `contracts` is only
+     * correct once it exists on mainnet AND a listed transaction runs through
+     * it, so this fails the moment the key reappears.
+     */
+    const manifest = JSON.parse(readFileSync('strk20.json', 'utf8'));
+    const own = manifest.contracts ?? [];
+    expect(own, 'declaring a Sepolia contract here scores every mainnet tx as zero').toHaveLength(0);
+    expect(manifest.sepolia_contracts.length).toBeGreaterThan(0);
   });
 
   it('counts the mainnet transactions the same way the manifest does', () => {
     const manifest = JSON.parse(readFileSync('strk20.json', 'utf8'));
-    expect(manifest.transactions).toHaveLength(3);
+    expect(manifest.transactions).toHaveLength(4);
     // The pages used to say "Two shields" while the manifest declared three.
     expect(statusPage).not.toMatch(/two mainnet shields/i);
+    expect(statusPage).not.toMatch(/three mainnet pool transactions/i);
   });
 });
 

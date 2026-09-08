@@ -264,11 +264,41 @@ export default function SendPanel({
       return;
     }
     if (address && fee !== undefined) {
+      // The pool fee is charged against the SHIELDED balance, not the public
+      // one. Measured on mainnet 2026-09-07: an account holding 19.616 public
+      // STRK and 2.0 shielded STRK was refused a 0.05 shielded STRK transfer
+      // with "Insufficient funds to pay fee" against a 6 STRK
+      // `get_fee_amount()`. This panel used to check public STRK alone, so it
+      // let that send through to the wallet and the user met the refusal at
+      // the approval screen with no explanation of which balance was short.
+      //
+      // The fee is denominated in STRK whatever token is being sent, so a USDC
+      // send needs shielded STRK for it and the two reads stay separate.
+      try {
+        const shieldedStrk =
+          token === "STRK"
+            ? privateUnits
+            : await readPrivateBalance(myWalletAccount, TOKENS.STRK.address);
+        const needed = token === "STRK" ? total + fee : fee;
+        if (shieldedStrk < needed) {
+          setResult(errorResult(
+            `The ${fromBaseUnits(fee, TOKENS.STRK.decimals)} STRK pool fee comes out of your shielded balance, not your public one. ` +
+              `This send needs ${fromBaseUnits(needed, TOKENS.STRK.decimals)} shielded STRK and you have ${fromBaseUnits(shieldedStrk, TOKENS.STRK.decimals)}. ` +
+              `Shield more STRK first, then send.`,
+          ));
+          return;
+        }
+      } catch (err: any) {
+        setResult(errorResult(err?.message ?? "Could not read your shielded STRK before sending."));
+        return;
+      }
+      // Public STRK still has to cover gas, which is charged separately and is
+      // small next to the fee.
       try {
         const publicStrk = await getPublicBalance(network, TOKENS.STRK.address, address);
-        if (publicStrk < fee) {
+        if (publicStrk === 0n) {
           setResult(errorResult(
-            `Need at least ${fromBaseUnits(fee, TOKENS.STRK.decimals)} public STRK for the pool fee. This wallet has ${fromBaseUnits(publicStrk, TOKENS.STRK.decimals)} public STRK. Ready will refuse the send until you top up.`,
+            "This wallet holds no public STRK for gas. Ready will refuse the send until you top up.",
           ));
           return;
         }
@@ -466,7 +496,8 @@ export default function SendPanel({
 
       <FeeRow fee={fee} />
       <div className={ui.subLine} style={{ color: "var(--muted)" }}>
-        Fee is public STRK, not taken from this note. Ready may require a buffer above the live pool fee shown here.
+        Fee comes out of your shielded STRK, not your public balance: measured on mainnet, a wallet with 19.6 public
+        STRK and 2.0 shielded was refused for insufficient fee funds. Public STRK still pays gas.
       </div>
       {rows.length > 1 && fee !== undefined && (
         <div className={ui.subLine} style={{ color: "var(--muted)" }}>
