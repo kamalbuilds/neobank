@@ -1,7 +1,14 @@
-[
- "You earn in crypto now.\n\nTry spending it without publishing your salary, your rent and everything you bought last month.\n\nSealed is a private account on Starknet. Shielded balance, programmable spending.\n\n@Starknet @StarkWareLtd",
- "Your balance sits in Starknet's canonical STRK20 privacy pool. The chain stores a proof instead of a number.\n\nYour wallet keeps the viewing key. The app never gets one.\n\nsealed.cash",
- "The account is programmable, which is the part I actually care about.\n\nWrite one rule: every restaurant charge lends a tenth into the Earn vault, in the same transaction that pays the merchant.\n\nOne tap, one signature. Dinner stays private and the vault still fills.",
- "Three real deposits into the canonical pool on Starknet mainnet. Each one Accepted on L1, so settled on Ethereum, not just sequenced.\n\n0xe08fd329...f0294  8.0 STRK\n0x059eb6c1...5586e  0.2 USDC\n0x04c4bea0...49193  6.1 STRK\n\nPull them up on Voyager before you believe me.",
- "What is live and what is not, written down so the video can never outrun the code.\n\nLive on mainnet: the STRK20 pool integration and those deposits.\nStill building: the card program, and Apple Pay.\n\nBuilt on @ready__x and @avnu_fi.\n\n#STRK20"
-]
+{
+ "post": "Sealed is a private account on Starknet. Your balance lives in the STRK20 pool as a proof instead of a number.\n\nThree mainnet deposits, Accepted on L1, in the replies. The card program is still in build.",
+ "replies": [
+  "Three deposits into the canonical STRK20 pool on Starknet mainnet. Each Accepted on L1.\n\n0xe08fd329...f0294  8.0 STRK\n0x059eb6c1...5586e  0.2 USDC\n0x04c4bea0...49193  6.1 STRK\n\nvoyager.online/tx/0xe08fd329091b483978c64f93288b7346b158e0dc485fd7c5f594899f0294",
+  "Try it: sealed.cash",
+  "What is live and what is not, so the video cannot outrun the code.\n\nLive on mainnet: the STRK20 pool integration, and the three deposits above.\nStill building: the card program, and Apple Pay.",
+  "Built on @ready__x, on the canonical STRK20 pool from @Starknet and @StarkWareLtd."
+ ],
+ "voyager_urls": [
+  "https://voyager.online/tx/0xe08fd329091b483978c64f93288b7346b158e0dc485fd7c5f594899f0294",
+  "https://voyager.online/tx/0x059eb6c1bdddd048006f372b4db6602560dbfc722536b94d59ece8abb865586e",
+  "https://voyager.online/tx/0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193"
+ ]
+}
