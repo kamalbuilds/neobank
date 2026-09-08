@@ -60,11 +60,52 @@ Privacy Pool".
 
 If anyone asks for a link, the pattern is `https://voyager.online/tx/<hash>`.
 
-## Command when you are ready
+## Voice
+
+`thread.json` was rewritten against @kamalbuilds' own recent posts, not written in
+a generic launch register. His habits: blunt openings, colon-label lists
+("Hidden until settlement: exact order size"), receipts over adjectives
+("Measured, not vibes"), and limits stated out loud ("A lockbox, not a yield
+strategy. There's no rate to quote, so we don't quote one").
+
+The pre-humanizer draft is kept at `thread-pre-humanizer.json`. What changed:
+
+- Cut "The part nobody else ships". An unverifiable superlative, and the opposite
+  of how this account argues; it counts things instead ("Still running a private
+  DEX: zero"). Replaced with a first-person reason, which is an opinion and not
+  a claim that can be wrong.
+- Broke up two runs of dramatic three-beat fragments.
+- Cut the "How it works." heading that the next line only restated.
+- Cut "Not a mockup" as a clipped negative opener; post 4 leads with the deposits.
+- Post 5 now echoes his own line about writing things down so the marketing
+  cannot outrun the code.
+
+No em dashes, no curly quotes, every post under 280.
+
+## Accounts
+
+`social account list` shows both `kamalbuilds` and `sealedcash`, so the retweet
+can run from the CLI as well. Note there are two rows whose username is
+`kamalbuilds` (named `kamal` and `kamalbuilds`); they point at the same handle.
+
+## Commands
 
 ```bash
 cd ~/Desktop/neobank/marketing/launch-x
+
+# 1. main post with the video, from kamalbuilds
 social account use kamalbuilds
-social post --text "$(python3 -c "import json;print(json.load(open('thread.json'))[0])")" --video sealed-launch-x.mp4
-# then reply the remaining four in order to the previous post id
+social post --text "$(python3 -c "import json;print(json.load(open('thread.json'))[0])")" \
+  --video sealed-launch-x.mp4
+
+# 2. reply the remaining four IN ORDER, each to the id returned by the previous
+social reply <id-of-previous> --text "$(python3 -c "import json;print(json.load(open('thread.json'))[1])")"
+# ... repeat for indexes 2, 3, 4
+
+# 3. retweet the first post from the product account
+social account use sealedcash
+social retweet <id-of-post-1>
 ```
+
+Then stay in the replies for the first hour. Reply velocity in the first hour is
+the part that actually moves distribution.

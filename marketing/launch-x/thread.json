@@ -1,7 +1,7 @@
 [
- "You earn in crypto now.\n\nTry spending it in real life without publishing your salary, your rent, and every coffee you ever bought.\n\nSealed is a private account on Starknet. Real money is already in the STRK20 pool, settled on Ethereum.\n\n@Starknet @StarkWareLtd",
- "How it works.\n\nYour balance sits in Starknet's canonical STRK20 privacy pool. The chain sees a proof, never a number. Your wallet holds the viewing key. The app never does.\n\nsealed.cash",
- "The part nobody else ships: the account is programmable.\n\nWrite one rule. Every restaurant charge sends a tenth into your Earn vault, in the same transaction that pays the merchant.\n\nOne tap. One signature. Dinner stays private, the vault still fills.",
- "Not a mockup. Three real deposits into the canonical pool on Starknet mainnet, each Accepted on L1, meaning settled on Ethereum and not merely sequenced:\n\n0xe08fd329\u2026f0294 - 8.0 STRK\n0x059eb6c1\u20265586e - 0.2 USDC\n0x04c4bea0\u202649193 - 6.1 STRK\n\nPull them up on Voyager yourself.",
- "Where it stands today, plainly.\n\nLive on Starknet mainnet: the STRK20 pool integration, real deposits, settled on Ethereum.\n\nShipping next: the card program and Apple Pay.\n\nBuilt on @ready__x and @avnu_fi.\n\n#STRK20"
+ "You earn in crypto now.\n\nTry spending it without publishing your salary, your rent and everything you bought last month.\n\nSealed is a private account on Starknet. Shielded balance, programmable spending.\n\n@Starknet @StarkWareLtd",
+ "Your balance sits in Starknet's canonical STRK20 privacy pool. The chain stores a proof instead of a number.\n\nYour wallet keeps the viewing key. The app never gets one.\n\nsealed.cash",
+ "The account is programmable, which is the part I actually care about.\n\nWrite one rule: every restaurant charge lends a tenth into the Earn vault, in the same transaction that pays the merchant.\n\nOne tap, one signature. Dinner stays private and the vault still fills.",
+ "Three real deposits into the canonical pool on Starknet mainnet. Each one Accepted on L1, so settled on Ethereum, not just sequenced.\n\n0xe08fd329...f0294  8.0 STRK\n0x059eb6c1...5586e  0.2 USDC\n0x04c4bea0...49193  6.1 STRK\n\nPull them up on Voyager before you believe me.",
+ "What is live and what is not, written down so the video can never outrun the code.\n\nLive on mainnet: the STRK20 pool integration and those deposits.\nStill building: the card program, and Apple Pay.\n\nBuilt on @ready__x and @avnu_fi.\n\n#STRK20"
 ]
