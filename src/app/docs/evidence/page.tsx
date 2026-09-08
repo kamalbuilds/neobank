@@ -124,9 +124,10 @@ export default function Evidence() {
       <H2>What this does not prove</H2>
       <Limit>
         A transaction succeeding proves the code did what it did, not that the code is correct.
-        None of the Sealed contracts have been audited. Everything except the three mainnet shields
-        is on Sepolia with test money, and the two mainnet shields exercise StarkWare&apos;s pool
-        rather than any contract of ours.
+        None of the Sealed contracts have been audited. Four transactions are on mainnet with real
+        STRK: two shields and two viewing-key registrations. Everything else is on Sepolia with
+        test money, and all four mainnet transactions exercise StarkWare&apos;s pool rather than
+        any contract of ours, so nothing this project wrote has run on mainnet.
       </Limit>
       <P>
         The source repository is{' '}

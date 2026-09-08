@@ -120,12 +120,18 @@ export function AccountChrome({ children }: { children: ReactNode }) {
               </span>
               <span className="text-[#6b7689]">.cash</span>
             </Link>
+            {/* Printed "mainnet testnet" on a mainnet wallet, which read as a
+                claim that the live pool is a test one. */}
             <span
               className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#7a859c] px-2.5 py-1 rounded-full bg-white/[0.03] border border-white/[0.07]"
-              title="Sepolia testnet: real transactions, test money"
+              title={
+                net === 'mainnet'
+                  ? 'Mainnet: the live STRK20 pool, real STRK'
+                  : 'Sepolia testnet: real transactions, test money'
+              }
             >
               <span className="w-1.5 h-1.5 rounded-full bg-[#34d399] shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-              {net} testnet
+              {net === 'mainnet' ? 'mainnet' : 'sepolia testnet'}
             </span>
           </div>
           <div className="flex items-center gap-2">

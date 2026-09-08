@@ -9,7 +9,7 @@ import { TestnetNotice } from './components/marketing/TestnetNotice';
 export const metadata: Metadata = {
   title: 'Sealed: a private money account on Starknet',
   description:
-    'Hold, spend, and move money without publishing your balance to a public ledger. Sepolia testnet today, real transactions, test money.',
+    'Hold, spend, and move money without publishing your balance to a public ledger. Live on Starknet mainnet through the STRK20 pool; the card, vault and bridge loops run on Sepolia.',
 };
 
 const USES = [
@@ -96,8 +96,9 @@ export default function LandingPage() {
             </Link>
           </div>
           <p className="mt-5 max-w-md text-[12.5px] leading-relaxed text-[#687287]">
-            Sepolia testnet &middot; real transactions, test money. Not a licensed bank. Not a
-            mixer.
+            Live on Starknet mainnet for holding and shielding, through the canonical STRK20 pool.
+            The card, vault and bridge loops run on Sepolia, where this project&apos;s own contracts
+            are deployed. Not a licensed bank. Not a mixer.
           </p>
         </div>
 
@@ -187,11 +188,11 @@ export default function LandingPage() {
       {/* Proof */}
       <section id="proof" className="mx-auto max-w-[1100px] px-6 py-14">
         <h2 className="font-[family-name:var(--font-display)] text-[22px] font-semibold tracking-[-0.02em]">
-          Not a demo recording - three settled transactions
+          Not a demo recording - four settled transactions
         </h2>
         <p className="mt-2 max-w-2xl text-[13.5px] leading-relaxed text-[#7a859c]">
-          Each of these is a real, confirmed Sepolia transaction. Click through to Voyager and read
-          it yourself.
+          One on mainnet against the live STRK20 pool, three on Sepolia through this project&apos;s
+          own contracts. Each is confirmed on chain: click through to Voyager and read it yourself.
         </p>
         <div className="mt-6">
           <ProofPoints />

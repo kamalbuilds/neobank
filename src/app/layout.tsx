@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     template: '%s',
   },
   description:
-    'Hold, spend, and move money without publishing your balance. Sepolia testnet, real transactions, test money. Your wallet holds the viewing key for your self-custody balance; the hosted card account is a custodial exception the operator can see.',
+    'Hold, spend, and move money without publishing your balance. Live on Starknet mainnet for holding and shielding through the STRK20 pool; the card, vault and bridge loops run on Sepolia. Your wallet holds the viewing key for your self-custody balance; the hosted card account is a custodial exception the operator can see.',
 }
 
 export default function RootLayout({

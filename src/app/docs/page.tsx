@@ -47,8 +47,8 @@ const SURFACES: { name: string; kind: StatusKind; body: string }[] = [
   },
   {
     name: 'Mainnet',
-    kind: 'not-built',
-    body: 'Three transactions have settled against the STRK20 pool on mainnet. Every contract in this documentation is deployed on Sepolia only, which is why the sprint scores those transactions as zero - see surface status.',
+    kind: 'partial',
+    body: 'Four transactions have settled against the live STRK20 pool on mainnet: two shields and two viewing-key registrations, all SUCCEEDED. Holding and shielding are therefore live with real STRK. Every contract in this documentation is still deployed on Sepolia only, so the card, vault and bridge loops are not on mainnet - see surface status.',
   },
 ];
 
@@ -67,9 +67,14 @@ export default function DocsOverview() {
         records the settlement, all inside one transaction on chain.
       </P>
       <P>
-        Everything below runs on <strong className="font-semibold text-[#dce3ee]">Sepolia testnet</strong>
-        : real transactions, test money. That is stated here first because it is the single most
-        important qualifier on every other sentence in this documentation.
+        Holding and shielding are{' '}
+        <strong className="font-semibold text-[#dce3ee]">live on Starknet mainnet</strong>, through
+        the canonical STRK20 pool, with four settled transactions and real STRK spent on the pool
+        fee. Everything built on top of that - the card swipe, the earn vault, the CCTP bridge -
+        runs on <strong className="font-semibold text-[#dce3ee]">Sepolia testnet</strong> with test
+        money, because those are this project&apos;s own contracts and they are deployed on Sepolia
+        only. That split is stated here first because it qualifies every other sentence in this
+        documentation: check which network a page names before reading a number off it.
       </P>
 
       <H2>The part that is actually different</H2>
