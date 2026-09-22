@@ -41,7 +41,18 @@ command -v python3 >/dev/null || { echo "python3 not on PATH" >&2; exit 1; }
 [ -s "$VIDEO" ]       || { echo "missing or empty $VIDEO" >&2; exit 1; }
 
 reply_count="$(python3 -c 'import json,sys;print(len(json.load(open(sys.argv[1]))["replies"]))' "$THREAD_JSON")"
-[ "$reply_count" = "4" ] || { echo "expected 4 replies in thread.json, found $reply_count" >&2; exit 1; }
+[ "$reply_count" -ge 1 ] || { echo "thread.json has no replies" >&2; exit 1; }
+
+# X rejects anything over 280 without Premium, and it rejects it mid-thread,
+# which leaves a half-posted launch. Check every post before the first one goes.
+python3 - "$THREAD_JSON" <<'PY' || exit 1
+import json, sys
+d = json.load(open(sys.argv[1]))
+over = [(i, len(t)) for i, t in enumerate([d["post"]] + d["replies"], 1) if len(t) > 280]
+for i, n in over:
+    print(f"post {i} is {n} chars, over the 280 limit", file=sys.stderr)
+sys.exit(1 if over else 0)
+PY
 
 # Both accounts must resolve to a configured NAME before anything is published.
 for acct in "$AUTHOR_ACCOUNT" "$PRODUCT_ACCOUNT"; do
@@ -148,11 +159,11 @@ record "post" "$root_id"
 echo "post 1 id: $root_id  https://x.com/kamalbuilds/status/$root_id"
 echo
 
-# --- 2. the four replies, each chained to the one before -------------------
+# --- 2. the replies, each chained to the one before ------------------------
 
 prev_id="$root_id"
-for i in 0 1 2 3; do
-  echo "replying to $prev_id (reply $((i + 1))/4)"
+for ((i = 0; i < reply_count; i++)); do
+  echo "replying to $prev_id (reply $((i + 1))/$reply_count)"
   reply_out="$(social reply "$prev_id" "$(thread_text reply "$i")" -a "$AUTHOR_ACCOUNT")"
   echo "$reply_out"
   reply_id="$(printf '%s' "$reply_out" | extract_id)"

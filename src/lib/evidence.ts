@@ -174,12 +174,13 @@ function tx(
 }
 
 /**
- * Finality below is read from mainnet.nodes.starknet.org, last on 2026-09-22.
- * Real finality only moves ACCEPTED_ON_L2 to ACCEPTED_ON_L1, so a stale row
- * understates rather than overclaims. The host is load balanced and individual
- * nodes lag, so the same hash can report either value minutes apart; treat the
- * string as indicative and `execution_status` as the claim that matters.
- * `npm run verify:evidence` re-reads both against chain.
+ * Mainnet rows state execution status only, deliberately. The public RPC is
+ * load balanced and individual nodes disagree on finality: the same hash
+ * returned ACCEPTED_ON_L2 and ACCEPTED_ON_L1 minutes apart on 2026-09-22. A
+ * hardcoded finality string is therefore a claim a reader can catch wrong
+ * through no fault of ours. The block number is published instead, which lets a
+ * reader judge finality themselves, and `npm run verify:evidence` reads the
+ * live value against chain.
  */
 export const TX_RECORD: TxRow[] = [
   tx(
@@ -187,7 +188,7 @@ export const TX_RECORD: TxRow[] = [
     '0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193',
     'mainnet',
     'Registers the viewing key and deposits into the canonical mainnet pool: 0.1 STRK shielded, 6 STRK pool fee. 17 events, 4 from the pool.',
-    'SUCCEEDED / ACCEPTED_ON_L2',
+    'SUCCEEDED',
     13281484,
   ),
   tx(
@@ -195,7 +196,7 @@ export const TX_RECORD: TxRow[] = [
     '0x059eb6c1bdddd048006f372b4db6602560dbfc722536b94d59ece8abb865586e',
     'mainnet',
     'Second mainnet deposit. 0.2 public USDC in, 0.0395 shielded after the pool fee. 15 events, 3 from the pool.',
-    'SUCCEEDED / ACCEPTED_ON_L2',
+    'SUCCEEDED',
     13288349,
   ),
   tx(
@@ -203,7 +204,7 @@ export const TX_RECORD: TxRow[] = [
     '0xe08fd329091b483978c64f93288b7346b158e0dc485fd7c5f594899f0294',
     'mainnet',
     'One apply_actions: ViewingKeySet, then 8 STRK deposited, 6 to the pool fee and 2 shielded. 17 events, 4 from the pool.',
-    'SUCCEEDED / ACCEPTED_ON_L1',
+    'SUCCEEDED',
     13948493,
   ),
   tx(
@@ -211,7 +212,7 @@ export const TX_RECORD: TxRow[] = [
     '0x428d5947280d2c670162aa7a3d666bcaa4d5256e016fab460c1b7a560609578',
     'mainnet',
     'ViewingKeySet plus a 6 STRK deposit consumed exactly by the pool fee, so the account is registered with a zero shielded balance and no note is created. 16 events, 3 from the pool.',
-    'SUCCEEDED / ACCEPTED_ON_L1',
+    'SUCCEEDED',
     14522373,
   ),
   tx(

@@ -1,14 +1,17 @@
 {
- "post": "Sealed is a private account on Starknet. Your balance lives in the STRK20 pool as a proof instead of a number.\n\nThree mainnet deposits, Accepted on L1, in the replies. The card program is still in build.",
- "replies": [
-  "Three deposits into the canonical STRK20 pool on Starknet mainnet. Each Accepted on L1.\n\n0xe08fd329...f0294  8.0 STRK\n0x059eb6c1...5586e  0.2 USDC\n0x04c4bea0...49193  6.1 STRK\n\nvoyager.online/tx/0xe08fd329091b483978c64f93288b7346b158e0dc485fd7c5f594899f0294",
-  "Try it: sealed.cash",
-  "What is live and what is not, so the video cannot outrun the code.\n\nLive on mainnet: the STRK20 pool integration, and the three deposits above.\nStill building: the card program, and Apple Pay.",
-  "Built on @ready__x, on the canonical STRK20 pool from @Starknet and @StarkWareLtd."
- ],
- "voyager_urls": [
-  "https://voyager.online/tx/0xe08fd329091b483978c64f93288b7346b158e0dc485fd7c5f594899f0294",
-  "https://voyager.online/tx/0x059eb6c1bdddd048006f372b4db6602560dbfc722536b94d59ece8abb865586e",
-  "https://voyager.online/tx/0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193"
- ]
+  "post": "Introducing sealed cash: a fully programmable private account on @Starknet\n\nSpend in real life from the private STRK20 pool. Your balance stays a proof, never a number.\n\nFour mainnet pool transactions in the replies. Every one of them opens.",
+  "replies": [
+    "Four transactions into the canonical STRK20 pool on Starknet mainnet. Each SUCCEEDED.\n\n0x428d5947...09578  6.0 STRK\n0xe08fd329...f0294  8.0 STRK\n0x059eb6c1...5586e  0.2 USDC\n0x04c4bea0...49193  6.1 STRK\n\nsealed.cash/docs/evidence",
+    "Write one rule and the account keeps it.\n\nEvery restaurant charge lends a tenth into the Earn vault, in the same transaction that pays the merchant.\n\nOne receipt: 10.24 STRK out, 0.24 to the merchant, 10 into the vault. AuthorizationSettled and PositionOpened, same tx.",
+    "Try it: sealed.cash",
+    "Live and not live, so the video cannot outrun the code.\n\nMainnet: the pool integration and the four transactions above.\nSepolia: a swipe paid from shielded value, and that same swipe opening a lending position.\nNot built: a Visa BIN, or Apple Pay.\n\nsealed.cash/docs/status",
+    "Built on @ready__x, on the canonical STRK20 pool from @Starknet and @StarkWareLtd. #STRK20"
+  ],
+  "voyager_urls": [
+    "https://voyager.online/tx/0x428d5947280d2c670162aa7a3d666bcaa4d5256e016fab460c1b7a560609578",
+    "https://voyager.online/tx/0xe08fd329091b483978c64f93288b7346b158e0dc485fd7c5f594899f0294",
+    "https://voyager.online/tx/0x059eb6c1bdddd048006f372b4db6602560dbfc722536b94d59ece8abb865586e",
+    "https://voyager.online/tx/0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193",
+    "https://sepolia.voyager.online/tx/0x4d94fa79724d3e997604e4a42a54daab3cc68f4ec17672b3ca9644a843e2639"
+  ]
 }
