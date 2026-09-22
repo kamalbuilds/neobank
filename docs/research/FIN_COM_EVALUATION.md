@@ -106,11 +106,11 @@ a stablecoin on one side. There is no fiat to fiat corridor today.**"
 
 Specific line items on the order form that contradict Fin's own published state:
 
-- **"Fed Now (Instant 24/7): $1.00"** — the 2026-09-09 changelog records `FEDNOW` being **removed**
+- **"Fed Now (Instant 24/7): $1.00"**. The 2026-09-09 changelog records `FEDNOW` being **removed**
   from virtual account source rails, which now accept only ACH, SWIFT, FEDWIRE and SPEI. The order
   form prices a rail Fin deleted thirteen days before sending it.
   Source: https://developer.fin.com/changelogs/2026-09-09
-- **"ACH (same day or standard): $1.00"** — the same changelog states "USD ACH payouts are not yet
+- **"ACH (same day or standard): $1.00"**. The same changelog states "USD ACH payouts are not yet
   available". ACH payin works; ACH payout does not exist. Inbound off-ramp to a US bank account via
   ACH, which is the obvious consumer use case, cannot be done today.
 - **The currency table** lists Kenya, Nigeria, UAE, South Africa and Mexico as available. Fin's own
