@@ -1,10 +1,12 @@
-# Fully Programmable Private money account to spend from the pvt pool
+# Sealed
 
-Hold and send on the live STRK20 pool without publishing salary or net worth. Yield is planned, not in this repo.
+A private money account on Starknet. Hold, send, spend and earn on the live STRK20 pool without
+publishing your salary or your net worth.
 
-First mainnet shield is live: [`0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193`](https://voyager.online/tx/0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193).
+Live: [sealed.cash](https://sealed.cash) · Evidence: [sealed.cash/docs/evidence](https://sealed.cash/docs/evidence) · Per-surface status: [sealed.cash/docs/status](https://sealed.cash/docs/status)
 
-This is a non-custodial Starknet app. It is not a licensed bank and not a mixer. The dapp never holds a viewing key. Ready does the proving.
+Non-custodial. Not a licensed bank, not a mixer. The dapp never holds a viewing key; Ready does the
+proving.
 
 ## What is private, what is not
 
@@ -12,32 +14,44 @@ This is a non-custodial Starknet app. It is not a licensed bank and not a mixer.
 |---|---|
 | Who paid whom, and the size of a private transfer | Deposit and withdrawal amounts |
 | The owner's shielded book | That an address touched the pool, and when |
-| | Screening decision on deposit |
+| Statement detail without the viewing key | Screening decision on deposit |
 | | Open-note fill amounts on DeFi |
 
-A Visa that spends a shielded note is not in v0. No issuer does that.
+## What runs today
 
-## Sprint floor
+Every row below is a transaction hash you can open, not a description of intent. Network is stated
+on every row because it is the difference between a claim and a demo.
 
-1. Connect Ready. Detect Wallet API with `compareVersions` against `"0.10"`.
-2. Shield USDC or STRK (deploy account, then deposit). Two wallet prompts: approve, then deposit. Notes mature about 10 blocks.
-3. Private send to a second Ready wallet that is already registered.
-4. Receive by QR or link, to a registered pool address.
-5. Unshield back to a public balance.
+| Capability | Network | Proof |
+|---|---|---|
+| Shield and hold | **mainnet** | Four pool transactions, all SUCCEEDED. [`0x04c4bea0…9193`](https://voyager.online/tx/0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193) is the first shield |
+| A swipe settles from shielded value | sepolia | [`0x1f815361…fe5df`](https://sepolia.voyager.online/tx/0x1f815361cd9cb1b378f208c8def10dddf5452ead190cb199a1da37adf4fe5df) block 14,130,415. Sells shielded STRK and pays the merchant in USDC in one transaction |
+| Dinner paid and a lending position opened, atomically | sepolia | [`0x4d94fa79…2639`](https://sepolia.voyager.online/tx/0x4d94fa79724d3e997604e4a42a54daab3cc68f4ec17672b3ca9644a843e2639) block 14,109,923. Pool withdrew 10.24 STRK: 0.24 to the merchant, 10 into the vault. `AuthorizationSettled` and `PositionOpened` in one receipt |
+| The same dinner paid by redeeming vault shares | sepolia | [`0x45b8c5d7…f0e0`](https://sepolia.voyager.online/tx/0x45b8c5d7a7cae0a9f98d69e92c1120c0bee831e68f9795fde00e1f3ffa3f0e0) block 14,111,945. `PositionRedeemed` plus `AuthorizationSettled`; vault `total_assets` 10 STRK to 0 |
+| Funding in from Base over CCTP V2 | sepolia | [`0x28b053d9…11fe2`](https://sepolia.voyager.online/tx/0x28b053d9a670650604bf8f7ae8b67fc7f296d2f4fa630a987e7a6f775b11fe2) block 14,139,603. Bridged USDC lands and shields in the same flow |
+| Viewing-key scoped statements | sepolia | `GET /api/card/statement?authorizationId=…&full=1` returns the settlement and the lend. Without the key it omits amounts |
+| Repeat swipes do not link | sepolia, partial | [`0x48ccd889…cc111b`](https://sepolia.voyager.online/tx/0x48ccd889292f406734d97a27c53db53910fb0f9ef3c056668bd64e20ccb111b) block 14,130,089. One shadow spend settled through a per-merchant identity |
 
-Card is later, not in this repo.
+Contracts deployed for this, all on Sepolia: `CardSettlementAnonymizer`, `CardProgramAnonymizer`,
+`ProgrammableSpendAnonymizer`, `PrivateSpendAnonymizer`, `PrivatePayoutAnonymizer`, `EarnVault`,
+`EarnAdapter`, JIT converter. Addresses and the file each value comes from are in
+[`src/lib/evidence.ts`](src/lib/evidence.ts) and [`strk20.json`](strk20.json).
 
-Stretch: AVNU private swap from an already-shielded balance, paymaster-relayed only. Self-submit publishes a public STRK fee from the user on every private op. Live pool fee is read from `get_fee_amount` (6 STRK at the last mainnet read).
+## The honest boundary
 
-Vesu is not on mainnet. The published class hash is undeclared there.
+**There is no Visa BIN here, and no issuer.** No issuer debits a STRK20 note: Visa authorizes in
+about two seconds against a public liquid balance, and a note is encrypted and needs a proof. What
+is live is a settlement path that pays a merchant out of shielded value, with card policy (per-swipe
+cap, daily cap, blocked categories) enforced in a contract rather than in a dashboard. Calling that
+a card number would invite someone to type it into a checkout where it would fail.
 
-## How it talks to STRK20
+**Mainnet has deposits only so far.** The four mainnet transactions are pool registrations and
+shields. No unshield and no private send has been run on mainnet, and none is claimed. The code path
+for both is real and exercised on Sepolia. The mainnet blocker is public STRK for the 6 STRK pool
+fee plus wallet buffer, not missing code.
 
-- Wallet API via `WalletAccountV6` (`starknet@10.4.0`, get-starknet `6.0.4`).
-- Canonical pool: [`0x040337b1af3c663e86e333bab5a4b28da8d4652a15a69beee2b677776ffe812a`](https://voyager.online/contract/0x040337b1af3c663e86e333bab5a4b28da8d4652a15a69beee2b677776ffe812a)
-- History reads the pool `Deposit` event first indexed key, never `tx.sender`.
-
-Plan: [`STRK20_INTEGRATION_PLAN.md`](STRK20_INTEGRATION_PLAN.md). Production judgment: [`docs/PRODUCTION_BUILD_PLAN.md`](docs/PRODUCTION_BUILD_PLAN.md).
+Reasoning behind the card position, including why third-party no-KYC virtual cards are rejected on
+evidence: [`docs/CARD_LAST_MILE.md`](docs/CARD_LAST_MILE.md).
 
 ## Run
 
@@ -46,40 +60,45 @@ npm install
 npm run dev
 ```
 
-Connect Ready. Private actions appear only when the wallet advertises Wallet API `>= 0.10`. Shielding is two wallet prompts (approve, then deposit). Notes mature about 10 blocks. A private send needs a recipient already registered in the pool.
+Connect Ready. Private actions appear only when the wallet advertises Wallet API `>= 0.10`
+(`compareVersions` against `"0.10"`). Shielding is two wallet prompts, approve then deposit. Notes
+mature in about 10 blocks. A private send needs a recipient already registered in the pool.
 
-## Status, for a judge opening the demo
+## Verify the claims
 
-Public demo: https://sealed.cash
+Nothing above is taken on trust. Three gates, each hitting a live RPC or the live site:
 
-Four mainnet transactions, each one an `apply_actions` on the pool
-`0x040337b1af3c663e86e333bab5a4b28da8d4652a15a69beee2b677776ffe812a`. Private
-transactions are relayed, so the on-chain sender is a relayer; the account each
-one belongs to is the `user_addr` on its pool events, listed here.
+```bash
+npm run verify:claim       # every mainnet tx exists, succeeded, and carries a pool event
+npm run verify:evidence    # every hash and address on the evidence page, checked against chain
+npm run verify:deployment  # all 22 routes on sealed.cash return 200, demo video probed with ffprobe
+```
 
-| Live on mainnet | Pool account | Pool events | Tx |
-|---|---|---|---|
-| Register the viewing key and shield 0.1 STRK, 6 STRK deposited to cover the pool fee | [`0x0101ab74…6a4a`](https://voyager.online/contract/0x0101ab74cf27f868fa42f02de17c5fca88697dd63dd850ee6626d74c25ed6a4a) | ViewingKeySet, Deposit, EncNoteCreated, Withdrawal | [`0x04c4bea0…9193`](https://voyager.online/tx/0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193) |
-| Shield 0.2 USDC, 0.0395 left after the pool fee | [`0x0101ab74…6a4a`](https://voyager.online/contract/0x0101ab74cf27f868fa42f02de17c5fca88697dd63dd850ee6626d74c25ed6a4a) | Deposit, EncNoteCreated, Withdrawal | [`0x059eb6c1…586e`](https://voyager.online/tx/0x059eb6c1bdddd048006f372b4db6602560dbfc722536b94d59ece8abb865586e) |
-| Enable private tokens on a second account: 8 STRK deposited, 6 to the pool fee, 2 shielded | [`0x00801e71…c9e1`](https://voyager.online/contract/0x0801e718e9f717a066fbaad4f71d3f244b2254e6119fca4cf3904daa47cc9e1) | ViewingKeySet, Deposit, EncNoteCreated, Withdrawal | [`0xe08fd329…0294`](https://voyager.online/tx/0xe08fd329091b483978c64f93288b7346b158e0dc485fd7c5f594899f0294) |
-| Enable private tokens on the owner account: 6 STRK deposited, all of it the pool fee, so nothing is shielded and no note is created | [`0x071c62df…494d`](https://voyager.online/contract/0x071c62dfb692c3821a9ef120919f388b4559cb2d414c7378da62e6bf7f4f494d) | ViewingKeySet, Deposit, Withdrawal | [`0x428d5947…9578`](https://voyager.online/tx/0x428d5947280d2c670162aa7a3d666bcaa4d5256e016fab460c1b7a560609578) |
+`verify:claim` fails the submission unless each listed hash exists, succeeded, and carries a pool
+event.
 
-All four are logged in [`strk20.json`](strk20.json) and re-checked against the
-chain by `npm run verify:claim`, which fails the submission unless each hash
-exists, succeeded, and carries a pool event.
+## How it talks to STRK20
 
-The account deploy `0x02cbfccea…a735` also succeeded on mainnet and is not in
-that list: it emits no pool event, so it does not count toward the sprint's
-three-transaction bar. It stays recorded in `strk20.json` notes as part of the
-first-shield flow.
+- Wallet API via `WalletAccountV6` (`starknet@10.4.0`, get-starknet `6.0.4`).
+- Canonical mainnet pool: [`0x040337b1…812a`](https://voyager.online/contract/0x040337b1af3c663e86e333bab5a4b28da8d4652a15a69beee2b677776ffe812a)
+- History reads the pool `Deposit` event first indexed key, never `tx.sender`.
+- Live pool fee is read from `get_fee_amount` at runtime, never hardcoded. It was 6 STRK at the last
+  mainnet read.
 
-| Blocked, not shipped | Why |
+Integration plan: [`STRK20_INTEGRATION_PLAN.md`](STRK20_INTEGRATION_PLAN.md). Production judgment:
+[`docs/PRODUCTION_BUILD_PLAN.md`](docs/PRODUCTION_BUILD_PLAN.md).
+
+## Known gaps
+
+| Gap | State |
 |---|---|
-| Unshield | The live pool fee is 6 STRK, paid in public STRK plus whatever buffer Ready needs. The demo wallet does not hold enough public STRK past that fee. Code path is real and untested past that point. |
-| Private send | No longer blocked on a recipient: `0x00801e71…c9e1` and `0x071c62df…494d` are both registered in the mainnet pool, checked with `get_public_key`. Blocked on a run: the sending account holds 0.1 shielded STRK and nobody has pressed Send on mainnet, so no transfer tx exists to point at. |
-| AVNU private swap | Server route needs `AVNU_PAYMASTER_API_KEY`. Not set on this deployment; `/api/avnu/status` returns `configured: false` and the Swap tab degrades honestly with a 503. |
+| Mainnet unshield and private send | Not run. Needs public STRK past the 6 STRK pool fee. Exercised on Sepolia |
+| AVNU private swap | Server route needs `AVNU_PAYMASTER_API_KEY`. Not set on this deployment; `/api/avnu/status` returns `{"configured":false}` and the Swap tab degrades with a 503 |
+| Shadow spend identities | One settled transaction. Marked PARTIAL on the status page rather than LIVE |
+| Vesu | Not on mainnet. The published class hash is undeclared there |
+| Mainnet contracts | None. Every contract this project deployed is on Sepolia, recorded under `sepolia_contracts` |
 
-No unshield or private send tx exists yet, and none is claimed here. Card is later, not in this repo. `npm run typecheck` and `npm run build` pass.
+`npm run typecheck` and `npm run build` pass.
 
 ## License
 
