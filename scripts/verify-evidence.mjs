@@ -8,8 +8,11 @@
  */
 import { readFileSync } from 'node:fs';
 
+// rpc.starknet.lava.build answers every call with "This endpoint has been
+// discontinued.", which reads as a failed claim rather than a dead endpoint.
+// verify-strk20-claim.mjs already moved to this host; this script was missed.
 const RPC = {
-  mainnet: 'https://rpc.starknet.lava.build',
+  mainnet: process.env.STARKNET_RPC || 'https://mainnet.nodes.starknet.org/rpc/v0_10',
   sepolia: 'https://starknet-sepolia-rpc.publicnode.com',
 };
 

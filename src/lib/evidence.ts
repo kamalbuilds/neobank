@@ -173,27 +173,46 @@ function tx(
   return { label, hash, network, detail, status, block, href: explorerTxUrl(network, hash) };
 }
 
+/**
+ * Finality below is read from mainnet.nodes.starknet.org, last on 2026-09-22.
+ * Real finality only moves ACCEPTED_ON_L2 to ACCEPTED_ON_L1, so a stale row
+ * understates rather than overclaims. The host is load balanced and individual
+ * nodes lag, so the same hash can report either value minutes apart; treat the
+ * string as indicative and `execution_status` as the claim that matters.
+ * `npm run verify:evidence` re-reads both against chain.
+ */
 export const TX_RECORD: TxRow[] = [
   tx(
     'First mainnet shield (STRK)',
     '0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193',
     'mainnet',
-    'Deposit into the canonical mainnet pool. 17 events, 4 from the pool.',
-    'SUCCEEDED / ACCEPTED_ON_L1',
+    'Registers the viewing key and deposits into the canonical mainnet pool: 0.1 STRK shielded, 6 STRK pool fee. 17 events, 4 from the pool.',
+    'SUCCEEDED / ACCEPTED_ON_L2',
+    13281484,
   ),
   tx(
     'Mainnet shield (USDC)',
     '0x059eb6c1bdddd048006f372b4db6602560dbfc722536b94d59ece8abb865586e',
     'mainnet',
-    'Second mainnet deposit. 15 events, 3 from the pool.',
-    'SUCCEEDED / ACCEPTED_ON_L1',
+    'Second mainnet deposit. 0.2 public USDC in, 0.0395 shielded after the pool fee. 15 events, 3 from the pool.',
+    'SUCCEEDED / ACCEPTED_ON_L2',
+    13288349,
   ),
   tx(
-    'Third mainnet pool transaction',
+    'Private tokens enabled on a second account',
     '0xe08fd329091b483978c64f93288b7346b158e0dc485fd7c5f594899f0294',
     'mainnet',
-    '17 events, 4 from the pool.',
+    'One apply_actions: ViewingKeySet, then 8 STRK deposited, 6 to the pool fee and 2 shielded. 17 events, 4 from the pool.',
     'SUCCEEDED / ACCEPTED_ON_L1',
+    13948493,
+  ),
+  tx(
+    'Private tokens enabled on the owner account',
+    '0x428d5947280d2c670162aa7a3d666bcaa4d5256e016fab460c1b7a560609578',
+    'mainnet',
+    'ViewingKeySet plus a 6 STRK deposit consumed exactly by the pool fee, so the account is registered with a zero shielded balance and no note is created. 16 events, 3 from the pool.',
+    'SUCCEEDED / ACCEPTED_ON_L1',
+    14522373,
   ),
   tx(
     'A swipe settles privately',
