@@ -7,12 +7,12 @@ import { useStoreWallet } from "../Wallet/walletContext";
 import { TOKENS, getPublicBalance, type TokenSymbol, type NetworkKey } from "@/utils/constants";
 import { toBaseUnits, fromBaseUnits } from "../lib/format";
 import { submitStrk20, waitStrk20Transaction, readPrivateBalance } from "../lib/strk20";
-import { usePoolFee } from "../lib/useFee";
 import { useMaturity, useShieldedBalances } from "../lib/usePrivateBalance";
 import TokenSelect from "./TokenSelect";
 import FeeRow from "./FeeRow";
 import { ResultCard, errorResult, receiptToResult, walletErrorResult, type ActionResult } from "./ActionResult";
-import { HowThisWorks } from "../v2/ui";
+import { Figure, HowThisWorks, PanelState } from "../v2/ui";
+import PoolFacts, { usePoolSnapshot } from "./PoolFacts";
 
 export default function UnshieldPanel({ network }: { network: NetworkKey }) {
   const myWalletAccount = useStoreWallet((s) => s.myWalletAccount);
@@ -26,25 +26,33 @@ export default function UnshieldPanel({ network }: { network: NetworkKey }) {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<ActionResult | null>(null);
 
-  const { fee } = usePoolFee(network);
+  const pool = usePoolSnapshot(network);
+  const fee = pool.fee;
   const tokenConfig = TOKENS[token];
   const maturity = useMaturity(token);
   const shielded = useShieldedBalances();
 
   const [publicStrk, setPublicStrk] = useState<bigint | undefined>(undefined);
+  const [publicStrkError, setPublicStrkError] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (!address) {
       setPublicStrk(undefined);
+      setPublicStrkError(undefined);
       return;
     }
     let cancelled = false;
+    setPublicStrkError(undefined);
     getPublicBalance(network, TOKENS.STRK.address, address)
       .then((balance) => {
         if (!cancelled) setPublicStrk(balance);
       })
-      .catch(() => {
-        if (!cancelled) setPublicStrk(undefined);
+      .catch((err: any) => {
+        if (cancelled) return;
+        setPublicStrk(undefined);
+        // A failed read is not a zero balance. Saying so is what stops the
+        // shortfall warning below from firing on an RPC hiccup.
+        setPublicStrkError(err?.message ?? "Could not read your public STRK balance.");
       });
     return () => {
       cancelled = true;
@@ -135,8 +143,9 @@ export default function UnshieldPanel({ network }: { network: NetworkKey }) {
 
   return (
     <div className={ui.panel}>
-      <div className="px-3 pt-2">
-        <p className="text-[13px] leading-relaxed text-[#7a859c]">
+      <div>
+        <h2 className={ui.heading}>Withdraw to a public address</h2>
+        <p className={`${ui.note} mt-1.5`}>
           Move funds out of your shielded balance to a public wallet. Leave the destination blank
           to withdraw back to this wallet.
         </p>
@@ -146,9 +155,12 @@ export default function UnshieldPanel({ network }: { network: NetworkKey }) {
       </div>
 
       <div className={ui.inputBlock}>
-        <div className={ui.inputLabel}>Amount to withdraw</div>
+        <label htmlFor="unshield-amount" className={ui.inputLabel}>
+          Amount to withdraw
+        </label>
         <div className={ui.inputMain}>
           <input
+            id="unshield-amount"
             className={ui.bigValue}
             placeholder="0"
             inputMode="decimal"
@@ -159,64 +171,95 @@ export default function UnshieldPanel({ network }: { network: NetworkKey }) {
           <TokenSelect value={token} onChange={setToken} />
         </div>
         <input
-          className={cx(ui.inputField, "mt-2 w-full")}
+          className={cx(ui.inputField, "mt-2")}
           aria-label="Public destination address"
           placeholder="Public destination (blank = this wallet)"
           value={recipient}
           onChange={(e) => setRecipient(e.target.value)}
         />
-        <div className={cx(ui.subLine, "mt-2")}>
+        <div className={cx(ui.subLine, "mt-3")}>
           <button type="button" className={ui.tab} onClick={useMax} disabled={maxLoading || !myWalletAccount}>
             {maxLoading ? "reading shielded balance…" : "Use max"}
           </button>
         </div>
       </div>
 
-      <FeeRow fee={fee} />
+      <div>
+        <FeeRow fee={fee} error={pool.error} />
+        {address && fee !== undefined && (
+          <p className={`${ui.note} mt-2`}>
+            <Figure className="text-ink">
+              public STRK:{" "}
+              {publicStrkError
+                ? "read failed"
+                : publicStrk !== undefined
+                ? fromBaseUnits(publicStrk, TOKENS.STRK.decimals)
+                : "…"}{" "}
+              / fee: {fromBaseUnits(fee, TOKENS.STRK.decimals)}
+            </Figure>
+          </p>
+        )}
+        {publicStrkError ? (
+          <PanelState kind="error" title="Could not read your public STRK" className="mt-2">
+            {publicStrkError} The shortfall check below is skipped rather than guessed, so Ready
+            stays the authority on whether the fee is covered.
+          </PanelState>
+        ) : null}
+        {feeShortfall && (
+          <div className={`${ui.warn} mt-2`}>
+            Need at least {fromBaseUnits(fee!, TOKENS.STRK.decimals)} public STRK for the pool fee. This wallet has{" "}
+            {fromBaseUnits(publicStrk!, TOKENS.STRK.decimals)} public STRK. Ready will refuse the unshield until you top up.
+          </div>
+        )}
+        <p className={`${ui.note} mt-2`}>
+          Ready may require a buffer above the live pool fee shown here. The fee itself is still public STRK, not taken from this note.
+        </p>
+      </div>
 
-      {address && fee !== undefined && (
+      <div>
         <div className={ui.subLine}>
-          <span className={ui.subMono}>
-            public STRK: {publicStrk !== undefined ? fromBaseUnits(publicStrk, TOKENS.STRK.decimals) : "…"} / fee:{" "}
-            {fromBaseUnits(fee, TOKENS.STRK.decimals)}
-          </span>
+          <button
+            type="button"
+            className={ui.tab}
+            onClick={shielded.revealed ? shielded.hide : shielded.reveal}
+            disabled={shielded.loading || !myWalletAccount}
+          >
+            {shielded.loading
+              ? "reading shielded balances…"
+              : shielded.revealed
+              ? "Hide shielded balances"
+              : "Show shielded STRK/USDC"}
+          </button>
         </div>
-      )}
-      {feeShortfall && (
-        <div className={ui.warn}>
-          Need at least {fromBaseUnits(fee!, TOKENS.STRK.decimals)} public STRK for the pool fee. This wallet has{" "}
-          {fromBaseUnits(publicStrk!, TOKENS.STRK.decimals)} public STRK. Ready will refuse the unshield until you top up.
-        </div>
-      )}
-      <div className={ui.subLine} style={{ color: "var(--muted)" }}>
-        Ready may require a buffer above the live pool fee shown here. The fee itself is still public STRK, not taken from this note.
+        {shielded.loading ? (
+          <PanelState
+            kind="loading"
+            rows={1}
+            title="Scanning your notes for a shielded balance"
+            className="mt-2"
+          />
+        ) : shielded.error ? (
+          <PanelState kind="error" title="Could not read your shielded balances" className="mt-2">
+            {shielded.error} Nothing is shown from a cache, so try the button again once Ready is
+            responding.
+          </PanelState>
+        ) : shielded.revealed ? (
+          <div className={cx(ui.subLine, "mt-2 justify-start gap-6")}>
+            <Figure className="text-ink">
+              {shielded.balances.STRK !== undefined
+                ? fromBaseUnits(shielded.balances.STRK, TOKENS.STRK.decimals)
+                : "…"}{" "}
+              STRK
+            </Figure>
+            <Figure className="text-ink">
+              {shielded.balances.USDC !== undefined
+                ? fromBaseUnits(shielded.balances.USDC, TOKENS.USDC.decimals)
+                : "…"}{" "}
+              USDC
+            </Figure>
+          </div>
+        ) : null}
       </div>
-
-      <div className={ui.subLine}>
-        <button
-          type="button"
-          className={ui.tab}
-          onClick={shielded.revealed ? shielded.hide : shielded.reveal}
-          disabled={shielded.loading || !myWalletAccount}
-        >
-          {shielded.loading
-            ? "reading shielded balances…"
-            : shielded.revealed
-            ? "Hide shielded balances"
-            : "Show shielded STRK/USDC"}
-        </button>
-      </div>
-      {shielded.error ? <div className={ui.warn}>{shielded.error}</div> : null}
-      {shielded.revealed && (
-        <div className={cx(ui.subLine, "gap-4")}>
-          <span className={ui.subMono}>
-            {shielded.balances.STRK !== undefined ? fromBaseUnits(shielded.balances.STRK, TOKENS.STRK.decimals) : "…"} STRK
-          </span>
-          <span className={ui.subMono}>
-            {shielded.balances.USDC !== undefined ? fromBaseUnits(shielded.balances.USDC, TOKENS.USDC.decimals) : "…"} USDC
-          </span>
-        </div>
-      )}
 
       {maturity.locked && (
         <div className={ui.warn}>
@@ -242,6 +285,9 @@ export default function UnshieldPanel({ network }: { network: NetworkKey }) {
       </button>
 
       {result ? <ResultCard r={result} network={network} /> : null}
+
+      {/* Reads with no wallet connected, so this panel is never an empty shell. */}
+      <PoolFacts network={network} snapshot={pool} />
     </div>
   );
 }

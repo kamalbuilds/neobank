@@ -5,11 +5,11 @@ import { useStoreWallet } from "../Wallet/walletContext";
 import { TOKENS, getPublicBalance, type TokenSymbol, type NetworkKey } from "@/utils/constants";
 import { toBaseUnits, fromBaseUnits } from "../lib/format";
 import { submitConnectedShield, waitStrk20Transaction, isScreeningRevert } from "../lib/strk20";
-import { usePoolFee } from "../lib/useFee";
 import TokenSelect from "./TokenSelect";
 import FeeRow from "./FeeRow";
 import { ResultCard, errorResult, receiptToResult, walletErrorResult, type ActionResult } from "./ActionResult";
 import { HowThisWorks } from "../v2/ui";
+import PoolFacts, { usePoolSnapshot } from "./PoolFacts";
 
 // Matches the pool's documented note-maturity window. Applied to a real
 // receipt block_number - never used to fabricate a countdown on its own.
@@ -28,7 +28,11 @@ export default function ShieldPanel({ network }: { network: NetworkKey }) {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<ActionResult | null>(null);
 
-  const { fee } = usePoolFee(network);
+  // One snapshot for the whole panel: the fee and the block it was read at come
+  // back together, so the figure on screen and its provenance line can never
+  // describe two different chain states.
+  const pool = usePoolSnapshot(network);
+  const fee = pool.fee;
   const tokenConfig = TOKENS[token];
 
   async function useMax() {
@@ -141,8 +145,9 @@ export default function ShieldPanel({ network }: { network: NetworkKey }) {
 
   return (
     <div className={ui.panel}>
-      <div className="px-3 pt-2">
-        <p className="text-[13px] leading-relaxed text-[#7a859c]">
+      <div>
+        <h2 className={ui.heading}>Shield a deposit</h2>
+        <p className={`${ui.note} mt-1.5`}>
           Moving money into your shielded balance. The deposit is public; what it becomes is
           readable only with your viewing key.
         </p>
@@ -153,16 +158,19 @@ export default function ShieldPanel({ network }: { network: NetworkKey }) {
             shielding with this wallet, it needs one extra approval first to activate your account
             for private actions.
           </p>
-          <p className="mt-2">
+          <p>
             New deposits take about 10 blocks (roughly a minute) before they can be spent or sent.
           </p>
         </HowThisWorks>
       </div>
 
       <div className={ui.inputBlock}>
-        <div className={ui.inputLabel}>Amount to shield</div>
+        <label htmlFor="shield-amount" className={ui.inputLabel}>
+          Amount to shield
+        </label>
         <div className={ui.inputMain}>
           <input
+            id="shield-amount"
             className={ui.bigValue}
             placeholder="0"
             inputMode="decimal"
@@ -173,28 +181,25 @@ export default function ShieldPanel({ network }: { network: NetworkKey }) {
           <TokenSelect value={token} onChange={setToken} />
         </div>
         <div className={ui.subLine}>
-          <button
-            type="button"
-            className="text-[13px] font-medium text-[#7a859c] transition-colors hover:text-[#eaf0f8] disabled:opacity-50 disabled:cursor-not-allowed"
-            onClick={useMax}
-            disabled={maxLoading || !address}
-          >
+          <button type="button" className={ui.tab} onClick={useMax} disabled={maxLoading || !address}>
             {maxLoading ? "reading balance…" : "Use max (public balance minus fee)"}
           </button>
         </div>
       </div>
 
-      <FeeRow fee={fee} />
-      <div className={ui.subLine} style={{ color: "var(--muted)" }}>
-        The fee is separate public STRK from your wallet, not taken out of this deposit.
+      <div>
+        <FeeRow fee={fee} error={pool.error} />
+        <p className={`${ui.note} mt-2`}>
+          The fee is separate public STRK from your wallet, not taken out of this deposit.
+        </p>
       </div>
 
       {token === "USDC" && (
-        <div className={ui.warn} style={{ color: "var(--muted)" }}>
+        <p className={ui.note}>
           Some wallets also set aside a small extra amount when shielding USDC, on top of the pool
           fee above. That is wallet behavior, not a charge from this app, and the amount is not
           fixed - your wallet will show it before you approve.
-        </div>
+        </p>
       )}
 
       {!strk20Capable && (
@@ -211,6 +216,9 @@ export default function ShieldPanel({ network }: { network: NetworkKey }) {
       </button>
 
       {result ? <ResultCard r={result} network={network} /> : null}
+
+      {/* Reads with no wallet connected, so this panel is never an empty shell. */}
+      <PoolFacts network={network} snapshot={pool} />
     </div>
   );
 }

@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { explorerTxUrl, type NetworkKey } from '@/utils/constants';
 import { fromBaseUnits, shortHex } from '../lib/format';
-import { HowThisWorks } from '../v2/ui';
+import { ui } from '../lib/panelUi';
+import { Figure, HowThisWorks, PanelState } from '../v2/ui';
 
 const USDC_DECIMALS = 6;
 
@@ -42,13 +43,15 @@ interface ShieldResult {
   privateAfter: string;
 }
 
-const CARD = 'rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4';
-const LABEL = 'text-[11px] uppercase tracking-[0.14em] text-[#7a859c]';
-const MONO = 'font-mono text-[13px] text-[#eaf0f8] break-all';
-const BTN_PRIMARY =
-  'rounded-xl px-4 py-2.5 text-[13px] font-semibold text-[#04140f] bg-gradient-to-br from-[#2dd4bf] to-[#38bdf8] shadow-[0_4px_16px_-6px_rgba(45,212,191,0.5)] disabled:opacity-40 disabled:cursor-not-allowed transition-opacity';
-const BTN_GHOST =
-  'rounded-xl px-4 py-2.5 text-[13px] font-medium text-[#eaf0f8] border border-white/[0.12] hover:bg-white/[0.05] disabled:opacity-40 disabled:cursor-not-allowed transition-colors';
+// A numbered step is a document section, not a floating card: a hairline box,
+// a ruled caption, and figures in the same mono column as everywhere else.
+const CARD = 'doc p-4 sm:p-5';
+const LABEL =
+  'text-[11px] font-semibold uppercase tracking-[0.16em] text-muted border-b-[3px] border-double border-[var(--line-strong)] pb-2.5 block';
+const MONO = 'figure text-[13px] text-ink break-all';
+const BTN_PRIMARY = `${ui.btnCta} w-auto px-4 py-2.5 text-[13px]`;
+const BTN_GHOST = `${ui.tab} px-4 py-2.5`;
+const ERROR_TEXT = 'mt-2 border-l-2 border-[var(--seal)] pl-3 text-[13px] font-medium text-seal-bright';
 
 function usdc(units: string | undefined): string {
   if (!units) return '…';
@@ -248,9 +251,12 @@ export default function InboundPanel({ network }: { network: NetworkKey }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-[13px] leading-relaxed text-[#7a859c]">
-        Bring USDC in from Base and shield it into the hosted account&apos;s balance, three steps.
-      </p>
+      <div>
+        <h2 className={ui.heading}>Bring USDC in from Base</h2>
+        <p className={`${ui.note} mt-1.5`}>
+          Bring USDC in from Base and shield it into the hosted account&apos;s balance, three steps.
+        </p>
+      </div>
       <HowThisWorks>
         <p>
           The transfer from Base and the mint on Starknet are both public onchain events, the
@@ -263,12 +269,12 @@ export default function InboundPanel({ network }: { network: NetworkKey }) {
 
       <div className={CARD}>
         <div className={LABEL}>Step 1 - Send USDC from Base</div>
-        <div className="mt-2 flex flex-col gap-1.5">
-          <div className="text-[13px] text-[#7a859c]">Send to this account:</div>
+        <div className="mt-3 flex flex-col gap-2">
+          <div className={ui.note}>Send to this account:</div>
           {hosted ? (
             <button
               type="button"
-              className="group flex items-center gap-2 text-left"
+              className="group flex items-center gap-2 rounded-[3px] text-left"
               onClick={() => {
                 navigator.clipboard?.writeText(hosted);
                 setCopied(true);
@@ -276,36 +282,45 @@ export default function InboundPanel({ network }: { network: NetworkKey }) {
               }}
             >
               <span className={MONO}>{hosted}</span>
-              <span className="shrink-0 text-[11px] text-[#2dd4bf] opacity-0 transition-opacity group-hover:opacity-100">
+              <span className="figure shrink-0 text-[13px] text-seal-bright opacity-0 transition-opacity group-hover:opacity-100">
                 {copied ? 'copied' : 'copy'}
               </span>
             </button>
+          ) : runtimeError ? (
+            <PanelState kind="error" title="Could not read the hosted account">
+              {runtimeError} Nothing on this route can be started until the server runtime answers,
+              so no address is shown rather than a guessed one.
+            </PanelState>
           ) : (
-            <span className={MONO}>{runtimeError ?? '…'}</span>
+            <PanelState kind="loading" rows={1} title="Reading the hosted account from the server" />
           )}
-          <div className="text-[12px] leading-relaxed text-[#7a859c]">
+          <p className={ui.note}>
             Use any Base wallet or bridge that supports Circle&apos;s CCTP transfer to Starknet, no
             Circle fee, finalizes in a few minutes.
-          </div>
+          </p>
           <HowThisWorks label="Calling this without a bridge UI">
             <p>
-              Call <span className="font-mono">depositForBurn</span> on TokenMessengerV2{' '}
-              <span className="font-mono">
+              Call <Figure className="text-ink">depositForBurn</Figure> on TokenMessengerV2{' '}
+              <Figure className="text-ink">
                 {runtime ? shortHex(runtime.contracts.baseSepolia.tokenMessengerV2) : '…'}
-              </span>{' '}
-              with destination domain {runtime?.contracts.starknetSepolia.domain ?? 25}, this address
-              left-padded to bytes32 as the mint recipient, and finality threshold 2000 (Standard
-              Transfer).
+              </Figure>{' '}
+              with destination domain{' '}
+              <Figure className="text-ink">
+                {runtime?.contracts.starknetSepolia.domain ?? 25}
+              </Figure>
+              , this address left-padded to bytes32 as the mint recipient, and finality threshold
+              2000 (Standard Transfer).
             </p>
           </HowThisWorks>
         </div>
 
         {runtime?.evmSignerConfigured ? (
-          <div className="mt-3 flex flex-col gap-2 border-t border-white/[0.06] pt-3 sm:flex-row sm:items-center">
+          <div className="mt-3 flex flex-col gap-2 border-t border-[var(--line)] pt-3 sm:flex-row sm:items-center">
             <input
-              className="w-full rounded-xl border border-white/[0.12] bg-transparent px-3 py-2.5 font-mono text-[13px] text-[#eaf0f8] placeholder-[#5b6478] outline-none focus:border-[#2dd4bf]/50 sm:w-40"
+              className={`${ui.inputField} py-2.5 sm:w-40`}
               placeholder="0.5"
               inputMode="decimal"
+              aria-label="USDC amount to send from the hosted Base wallet"
               value={burnAmount}
               onChange={(e) => setBurnAmount(e.target.value)}
             />
@@ -319,15 +334,16 @@ export default function InboundPanel({ network }: { network: NetworkKey }) {
             </button>
           </div>
         ) : null}
-        {burnError ? <div className="mt-2 text-[13px] text-[#f0716f]">{burnError}</div> : null}
+        {burnError ? <div className={ERROR_TEXT}>{burnError}</div> : null}
       </div>
 
       <div className={CARD}>
         <div className={LABEL}>Step 2 - Claim the mint on Starknet</div>
-        <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
           <input
-            className="w-full rounded-xl border border-white/[0.12] bg-transparent px-3 py-2.5 font-mono text-[13px] text-[#eaf0f8] placeholder-[#5b6478] outline-none focus:border-[#2dd4bf]/50"
+            className={`${ui.inputField} py-2.5`}
             placeholder="Base Sepolia burn transaction hash (0x…)"
+            aria-label="Base Sepolia burn transaction hash"
             value={txInput}
             onChange={(e) => setTxInput(e.target.value)}
           />
@@ -341,23 +357,31 @@ export default function InboundPanel({ network }: { network: NetworkKey }) {
           </button>
         </div>
 
-        {status ? (
+        {checking && !status ? (
+          <PanelState
+            kind="loading"
+            rows={1}
+            title="Asking Circle about this burn"
+            className="mt-3"
+          />
+        ) : status ? (
           <div className="mt-3 flex flex-col gap-1.5 text-[13px]">
             {status.error ? (
-              <div className="text-[#f0716f]">{status.error}</div>
+              <PanelState kind="error" title="Circle could not be asked about this burn">
+                {status.error} Paste the Base Sepolia burn hash exactly as the explorer shows it,
+                then press Check again.
+              </PanelState>
             ) : (
               <>
                 <div className="flex items-center gap-2">
                   <span
-                    className={`inline-block h-1.5 w-1.5 rounded-full ${
-                      status.phase === 'claimed'
-                        ? 'bg-[#2dd4bf]'
-                        : status.phase === 'ready_to_claim'
-                          ? 'bg-[#38bdf8]'
-                          : 'bg-[#eab308] animate-pulse'
+                    className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${
+                      status.phase === 'claimed' || status.phase === 'ready_to_claim'
+                        ? 'bg-[var(--green)]'
+                        : 'bg-[var(--muted)] animate-pulse-soft'
                     }`}
                   />
-                  <span className="text-[#eaf0f8]">
+                  <span className="text-ink">
                     {status.phase === 'not_found' &&
                       'Circle has not indexed this burn yet - polling…'}
                     {status.phase === 'attesting' &&
@@ -368,14 +392,19 @@ export default function InboundPanel({ network }: { network: NetworkKey }) {
                   </span>
                 </div>
                 {status.amount ? (
-                  <div className="text-[#7a859c]">
+                  <Figure className="text-muted">
                     Amount {usdc(status.amount)} · Circle fee {usdc(status.feeExecuted ?? '0')}
-                  </div>
+                  </Figure>
                 ) : null}
               </>
             )}
           </div>
-        ) : null}
+        ) : (
+          <PanelState kind="empty" title="No burn to track yet" className="mt-3">
+            Paste the Base Sepolia transaction hash from step 1. This panel then polls Circle every
+            six seconds until the transfer is attested and claimable.
+          </PanelState>
+        )}
 
         <button
           type="button"
@@ -385,30 +414,31 @@ export default function InboundPanel({ network }: { network: NetworkKey }) {
         >
           {claiming ? 'Claiming…' : 'Claim on Starknet'}
         </button>
-        {claimError ? <div className="mt-2 text-[13px] text-[#f0716f]">{claimError}</div> : null}
+        {claimError ? <div className={ERROR_TEXT}>{claimError}</div> : null}
         {claim?.starknetTxHash ? (
-          <div className="mt-2 text-[13px] text-[#7a859c]">
-            Minted {usdc(claim.mintedDelta ?? claim.amount)} ·{' '}
+          <Figure className="mt-2 block text-[13px] text-muted">
+            Minted {usdc(claim.mintedDelta ?? claim.amount)} on{' '}
+            {network === 'mainnet' ? 'Starknet mainnet' : 'Starknet Sepolia'} ·{' '}
             <a
-              className="text-[#38bdf8] hover:underline"
+              className="font-semibold text-seal-bright underline decoration-[var(--seal-soft-2)] underline-offset-[3px] hover:decoration-[var(--seal-text)]"
               href={explorerTxUrl(network, claim.starknetTxHash)}
               target="_blank"
               rel="noreferrer"
             >
               {shortHex(claim.starknetTxHash)} ↗
             </a>
-          </div>
+          </Figure>
         ) : null}
         {claim?.phase === 'already_claimed' ? (
-          <div className="mt-2 text-[13px] text-[#7a859c]">
+          <p className={`${ui.note} mt-2`}>
             This burn was already claimed on Starknet - continue to shielding.
-          </div>
+          </p>
         ) : null}
       </div>
 
       <div className={CARD}>
         <div className={LABEL}>Step 3 - Shield it</div>
-        <p className="mt-2 text-[13px] leading-relaxed text-[#7a859c]">
+        <p className={`${ui.note} mt-3`}>
           Move the USDC you just received into the hosted account&apos;s shielded balance. This
           step moves it behind the STRK20 pool - kept as its own step so the public arrival and
           the pool deposit are each visible on their own. The operator still holds the viewing
@@ -422,24 +452,36 @@ export default function InboundPanel({ network }: { network: NetworkKey }) {
         >
           {shielding ? 'Shielding…' : 'Shield it'}
         </button>
-        {shieldError ? <div className="mt-2 text-[13px] text-[#f0716f]">{shieldError}</div> : null}
-        {shield ? (
-          <div className="mt-2 flex flex-col gap-1 text-[13px] text-[#7a859c]">
-            <div>
+        {shieldError ? <div className={ERROR_TEXT}>{shieldError}</div> : null}
+        {shielding && !shield ? (
+          <PanelState
+            kind="loading"
+            rows={1}
+            title="Depositing the minted USDC into the pool"
+            className="mt-3"
+          />
+        ) : shield ? (
+          <div className="mt-3 flex flex-col gap-1">
+            <Figure className="text-[13px] text-muted">
               Shielded {usdc(shield.amount)} ·{' '}
               <a
-                className="text-[#38bdf8] hover:underline"
+                className="font-semibold text-seal-bright underline decoration-[var(--seal-soft-2)] underline-offset-[3px] hover:decoration-[var(--seal-text)]"
                 href={explorerTxUrl(network, shield.starknetTxHash)}
                 target="_blank"
                 rel="noreferrer"
               >
                 {shortHex(shield.starknetTxHash)} ↗
               </a>
-            </div>
-            <div>
-              Shielded USDC notes: {usdc(shield.privateBefore)} → {usdc(shield.privateAfter)}
-            </div>
+            </Figure>
+            <Figure className="text-[13px] text-muted">
+              Shielded USDC notes: {usdc(shield.privateBefore)} to {usdc(shield.privateAfter)}
+            </Figure>
           </div>
+        ) : !claimed ? (
+          <PanelState kind="empty" title="Nothing to shield yet" className="mt-3">
+            Finish step 2 first. Once the mint is claimed, the minted amount becomes shieldable
+            here and the before and after note balances print below.
+          </PanelState>
         ) : null}
       </div>
     </div>

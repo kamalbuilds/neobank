@@ -9,31 +9,49 @@ const ROWS: { hidden: string; visible: string }[] = [
   { hidden: "", visible: "The pool fee, paid in public STRK by tx.caller" },
 ];
 
+/**
+ * The threat model, stated as a two-column ledger. Every row here is a claim
+ * a reviewer can check against the contract, so it is set as a document with
+ * ruled columns rather than as another soft card of marketing copy.
+ */
 export default function HonestTable() {
   return (
-    <div className={`${ui.inputBlock} mt-6`}>
-      <div className={ui.inputLabel}>What stays private, what stays public</div>
-      <div className="mt-3 flex flex-wrap gap-6">
+    <section className="doc p-4 sm:p-5" aria-label="What stays private, what stays public">
+      <h2 className={`${ui.caption} border-b-[3px] border-double border-[var(--line-strong)] pb-2.5`}>
+        What stays private, what stays public
+      </h2>
+      <div className="mt-3 flex flex-wrap gap-x-8 gap-y-5">
         <div className="min-w-[220px] flex-1">
-          <div className="mb-2 font-[family-name:var(--font-mono-ui)] font-bold text-[#34d399]">PRIVATE</div>
+          <div className="figure text-[13px] font-semibold tracking-[0.08em] text-seal-bright">
+            PRIVATE
+          </div>
           {ROWS.filter((r) => r.hidden).map((r) => (
-            <div key={r.hidden} className="border-t border-white/[0.06] py-1.5 text-[13px] text-[#eaf0f8] first:border-t-0">
+            <div
+              key={r.hidden}
+              className="mt-2 border-t border-[var(--line)] pt-2 text-[13px] leading-snug text-ink first:border-t-0 first:pt-0"
+            >
               {r.hidden}
             </div>
           ))}
         </div>
         <div className="min-w-[220px] flex-1">
-          <div className="mb-2 font-[family-name:var(--font-mono-ui)] font-bold text-[#6ee9d5]">PUBLIC</div>
+          <div className="figure text-[13px] font-semibold tracking-[0.08em] text-muted">
+            PUBLIC
+          </div>
           {ROWS.map((r) => (
-            <div key={r.visible} className="border-t border-white/[0.06] py-1.5 text-[13px] text-[#eaf0f8] first:border-t-0">
+            <div
+              key={r.visible}
+              className="mt-2 border-t border-[var(--line)] pt-2 text-[13px] leading-snug text-ink first:border-t-0 first:pt-0"
+            >
               {r.visible}
             </div>
           ))}
         </div>
       </div>
-      <div className={`${ui.subLine} mt-3`}>
-        <span>A private transfer needs a recipient already registered. Your own first shield in this app registers you. This app cannot register someone else.</span>
-      </div>
-    </div>
+      <p className={`${ui.note} mt-4 border-t border-[var(--line)] pt-3`}>
+        A private transfer needs a recipient already registered. Your own first shield in this app
+        registers you. This app cannot register someone else.
+      </p>
+    </section>
   );
 }

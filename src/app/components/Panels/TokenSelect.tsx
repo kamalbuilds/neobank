@@ -46,11 +46,11 @@ export default function TokenSelect({
                 focusIndex(i - 1);
               }
             }}
-            className={`inline-flex items-center gap-1.5 rounded-full border-none py-1.5 pr-3 pl-1.5 font-semibold transition-colors duration-150 cursor-pointer ${
-              selected ? "bg-[#2dd4bf]/20 text-[#6ee9d5]" : "bg-transparent text-[#eaf0f8] hover:bg-white/[0.04]"
+            className={`inline-flex cursor-pointer items-center gap-1.5 rounded-[3px] border-none py-1.5 pr-2.5 pl-1.5 text-[15px] font-semibold transition-[color,background-color] duration-150 ${
+              selected ? "bg-white/[0.1] text-ink" : "bg-transparent text-muted hover:text-ink"
             }`}
           >
-            <span className={ui.tokenDot} style={{ opacity: selected ? 1 : 0.55 }}>
+            <span className={ui.tokenDot} style={{ opacity: selected ? 1 : 0.5 }}>
               <Icon size={22} />
             </span>
             {t.symbol}

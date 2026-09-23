@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { ui } from "../lib/panelUi";
-import { cx } from "../v2/ui";
+import { cx, Figure, PanelState } from "../v2/ui";
 import { useStoreWallet } from "../Wallet/walletContext";
 import { CCTP, TOKENS, getPublicBalance, explorerTxUrl, type CctpChain, type NetworkKey } from "@/utils/constants";
 import { toBaseUnits, fromBaseUnits, shortHex } from "../lib/format";
@@ -15,6 +15,7 @@ import {
 import { waitStrk20Transaction } from "../lib/strk20";
 import { errorResult, type ActionResult } from "./ActionResult";
 import { HowThisWorks } from "../v2/ui";
+import PoolFacts, { usePoolSnapshot } from "./PoolFacts";
 
 const CHAIN_LABEL: Record<CctpChain, string> = { base: "Base", solana: "Solana" };
 
@@ -26,24 +27,38 @@ export default function HopPanel({ network }: { network: NetworkKey }) {
   const [amount, setAmount] = useState("");
   const [recipient, setRecipient] = useState("");
   const [publicUsdc, setPublicUsdc] = useState<bigint | undefined>(undefined);
+  const [publicUsdcError, setPublicUsdcError] = useState<string | undefined>(undefined);
+  const [publicUsdcLoading, setPublicUsdcLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<ActionResult | null>(null);
   const [txHash, setTxHash] = useState<string | undefined>(undefined);
   const [attestation, setAttestation] = useState<AttestationOutcome | null>(null);
   const [attestationLoading, setAttestationLoading] = useState(false);
+  const pool = usePoolSnapshot(network);
 
   useEffect(() => {
     if (!address) {
       setPublicUsdc(undefined);
+      setPublicUsdcError(undefined);
+      setPublicUsdcLoading(false);
       return;
     }
     let cancelled = false;
+    setPublicUsdcLoading(true);
+    setPublicUsdcError(undefined);
     getPublicBalance(network, TOKENS.USDC.address, address)
       .then((balance) => {
         if (!cancelled) setPublicUsdc(balance);
       })
-      .catch(() => {
-        if (!cancelled) setPublicUsdc(undefined);
+      .catch((err: any) => {
+        if (cancelled) return;
+        // A failed read is not a zero balance, so it must not be allowed to
+        // silently disable the button as if the wallet were empty.
+        setPublicUsdc(undefined);
+        setPublicUsdcError(err?.message ?? "Could not read your public USDC balance.");
+      })
+      .finally(() => {
+        if (!cancelled) setPublicUsdcLoading(false);
       });
     return () => {
       cancelled = true;
@@ -154,8 +169,9 @@ export default function HopPanel({ network }: { network: NetworkKey }) {
 
   return (
     <div className={ui.panel}>
-      <div className="px-3 pt-2">
-        <p className="text-[13px] leading-relaxed text-[#7a859c]">
+      <div>
+        <h2 className={ui.heading}>Send USDC out to {CHAIN_LABEL[chain]}</h2>
+        <p className={`${ui.note} mt-1.5`}>
           Send public USDC from Starknet out to {CHAIN_LABEL[chain]}. This moves money out of the
           app, not a card swipe.
         </p>
@@ -169,9 +185,12 @@ export default function HopPanel({ network }: { network: NetworkKey }) {
       </div>
 
       <div className={ui.inputBlock}>
-        <div className={ui.inputLabel}>Amount to send out</div>
+        <label htmlFor="hop-amount" className={ui.inputLabel}>
+          Amount to send out
+        </label>
         <div className={ui.inputMain}>
           <input
+            id="hop-amount"
             className={ui.bigValue}
             placeholder="0"
             inputMode="decimal"
@@ -179,7 +198,7 @@ export default function HopPanel({ network }: { network: NetworkKey }) {
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
           />
-          <span className={ui.subMono}>USDC</span>
+          <span className="figure text-[15px] font-semibold text-ink">USDC</span>
         </div>
 
         <div className="mt-3 flex items-center gap-1.5" role="radiogroup" aria-label="Destination chain">
@@ -201,7 +220,7 @@ export default function HopPanel({ network }: { network: NetworkKey }) {
         </div>
 
         <input
-          className={cx(ui.inputField, "mt-2 w-full")}
+          className={cx(ui.inputField, "mt-2")}
           aria-label={chain === "base" ? "Base mint recipient" : "Solana mint recipient"}
           placeholder={chain === "base" ? "Base mint recipient (0x… EVM address)" : "Solana mint recipient (base58 public key)"}
           value={recipient}
@@ -209,17 +228,34 @@ export default function HopPanel({ network }: { network: NetworkKey }) {
         />
       </div>
 
-      <div className={ui.subLine}>
-        <span className={ui.subMono}>
-          public native USDC: {publicUsdc !== undefined ? fromBaseUnits(publicUsdc, TOKENS.USDC.decimals) : "…"}
-        </span>
-      </div>
-      {insufficientBalance && (
-        <div className={ui.warn}>Not enough public native USDC for this amount.</div>
-      )}
-
-      <div className={ui.subLine} style={{ color: "var(--muted)" }}>
-        No bridge fee, finalizes in a few minutes. Native USDC only - bridged USDC.e isn&apos;t supported here.
+      <div>
+        {!address ? (
+          <PanelState kind="empty" title="No account linked yet">
+            The burn spends public native USDC from your own Starknet wallet, so link one and your
+            balance is read and shown here before anything is submitted.
+          </PanelState>
+        ) : publicUsdcLoading && publicUsdc === undefined && !publicUsdcError ? (
+          <PanelState kind="loading" rows={1} title="Reading your public native USDC" />
+        ) : publicUsdcError ? (
+          <PanelState kind="error" title="Could not read your public native USDC">
+            {publicUsdcError} No figure is shown rather than a stale one, and the balance is
+            re-read against the chain again just before the burn is submitted.
+          </PanelState>
+        ) : (
+          <p className={ui.note}>
+            <Figure className="text-ink">
+              public native USDC:{" "}
+              {publicUsdc !== undefined ? fromBaseUnits(publicUsdc, TOKENS.USDC.decimals) : "…"}
+            </Figure>{" "}
+            on {network === "mainnet" ? "Starknet mainnet" : "Starknet Sepolia"}.
+          </p>
+        )}
+        {insufficientBalance && (
+          <div className={`${ui.warn} mt-2`}>Not enough public native USDC for this amount.</div>
+        )}
+        <p className={`${ui.note} mt-2`}>
+          No bridge fee, finalizes in a few minutes. Native USDC only - bridged USDC.e isn&apos;t supported here.
+        </p>
       </div>
 
       <button
@@ -244,10 +280,10 @@ export default function HopPanel({ network }: { network: NetworkKey }) {
               className={cx(
                 ui.receiptIcon,
                 result.status === "ok"
-                  ? "bg-[#34d399] shadow-[0_0_12px_rgba(52,211,153,0.55)]"
+                  ? "bg-[#2f6f4f]"
                   : result.status === "error"
-                    ? "bg-[#f87171]"
-                    : "bg-[#2dd4bf]",
+                    ? "bg-[var(--seal)]"
+                    : "bg-[var(--paper-muted)]",
               )}
               aria-hidden="true"
             >
@@ -272,34 +308,52 @@ export default function HopPanel({ network }: { network: NetworkKey }) {
             </div>
           ) : null}
           {result.note ? <pre className={ui.receiptNote}>{result.note}</pre> : null}
+          <p className="mt-3 border-t border-[var(--paper-line)] pt-2.5 text-[13px] leading-relaxed text-paper-muted">
+            Burned on{" "}
+            {network === "mainnet" ? (
+              <span className="figure font-semibold text-paper-ink">Starknet mainnet</span>
+            ) : (
+              <span className="figure">Starknet Sepolia</span>
+            )}
+            , minting on {CHAIN_LABEL[chain]}. Every hash above opens on Voyager.
+          </p>
         </div>
       ) : null}
 
       {txHash && result?.status === "ok" ? (
-        <div className={cx(ui.panel, "mt-3")}>
-          <div className={ui.inputLabel}>Finishing on {CHAIN_LABEL[chain]}</div>
+        <section className="doc p-4 sm:p-5">
+          <h3 className={`${ui.caption} border-b-[3px] border-double border-[var(--line-strong)] pb-2.5`}>
+            Finishing on {CHAIN_LABEL[chain]}
+          </h3>
           {attestationLoading && !attestation ? (
-            <div className={ui.subMono}>Waiting on Circle to attest the transfer…</div>
+            <PanelState
+              kind="loading"
+              rows={1}
+              title={`Waiting on Circle to attest the transfer to ${CHAIN_LABEL[chain]}`}
+              className="mt-3"
+            />
           ) : null}
           {attestation?.status === "complete" ? (
             <>
-              <div className={cx(ui.subLine, "mt-1")} style={{ color: "var(--muted)" }}>
+              <p className={`${ui.note} mt-3`}>
                 Ready to complete on {CHAIN_LABEL[chain]}. This app doesn&apos;t hold a signer on{" "}
                 {CHAIN_LABEL[chain]}, so you finish the mint from a {CHAIN_LABEL[chain]} wallet. Nothing
                 lands until that step runs.
-              </div>
+              </p>
               <HowThisWorks className="mt-2" label="Call details for a wallet or script">
                 <p>
-                  Call <span className={ui.subMono}>receive_message</span> on MessageTransmitterV2 on{" "}
-                  {CHAIN_LABEL[chain]} with this attestation ({shortHex(attestation.attestation)}) and the
-                  message bytes from Circle&apos;s Iris API (source domain {CCTP.starknetDomain}, transaction{" "}
-                  {shortHex(txHash)}).
+                  Call <Figure className="text-ink">receive_message</Figure> on MessageTransmitterV2 on{" "}
+                  {CHAIN_LABEL[chain]} with this attestation (
+                  <Figure className="text-ink">{shortHex(attestation.attestation)}</Figure>) and the
+                  message bytes from Circle&apos;s Iris API (source domain{" "}
+                  <Figure className="text-ink">{CCTP.starknetDomain}</Figure>, transaction{" "}
+                  <Figure className="text-ink">{shortHex(txHash)}</Figure>).
                 </p>
               </HowThisWorks>
             </>
           ) : null}
           {attestation?.status === "timeout" ? (
-            <div className={ui.warn}>
+            <div className={`${ui.warn} mt-3`}>
               Still waiting on Circle after 2 minutes - that&apos;s normal for this transfer type. Check{" "}
               <a
                 href={`https://iris-api.circle.com/v2/messages/${CCTP.starknetDomain}?transactionHash=${txHash}`}
@@ -311,8 +365,11 @@ export default function HopPanel({ network }: { network: NetworkKey }) {
               again shortly.
             </div>
           ) : null}
-        </div>
+        </section>
       ) : null}
+
+      {/* Reads with no wallet connected, so this panel is never an empty shell. */}
+      <PoolFacts network={network} snapshot={pool} />
     </div>
   );
 }

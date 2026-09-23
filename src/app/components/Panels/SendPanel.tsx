@@ -9,12 +9,12 @@ import { toBaseUnits, fromBaseUnits, shortHex } from "../lib/format";
 import { submitStrk20, waitStrk20Transaction, readPrivateBalance, findNotRegisteredRecipient } from "../lib/strk20";
 import { isExpired, readPaymentRequest, type PaymentRequest } from "../lib/paymentRequest";
 import type { WALLET_API } from "@starknet-io/types-js";
-import { usePoolFee } from "../lib/useFee";
 import { useMaturity, useShieldedBalances } from "../lib/usePrivateBalance";
 import TokenSelect from "./TokenSelect";
 import FeeRow from "./FeeRow";
 import { ResultCard, errorResult, receiptToResult, walletErrorResult, type ActionResult } from "./ActionResult";
-import { HowThisWorks } from "../v2/ui";
+import { Figure, HowThisWorks, PanelState } from "../v2/ui";
+import PoolFacts, { usePoolSnapshot } from "./PoolFacts";
 
 export interface BatchRow {
   recipient: string;
@@ -109,7 +109,8 @@ export default function SendPanel({
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<ActionResult | null>(null);
 
-  const { fee } = usePoolFee(network);
+  const pool = usePoolSnapshot(network);
+  const fee = pool.fee;
   const tokenConfig = TOKENS[token];
   const maturity = useMaturity(token);
   const shielded = useShieldedBalances();
@@ -371,10 +372,11 @@ export default function SendPanel({
 
   return (
     <div className={ui.panel}>
-      <div className="px-3 pt-2">
-        <p className="text-[13px] leading-relaxed text-[#7a859c]">
+      <div>
+        <h2 className={ui.heading}>Send privately</h2>
+        <p className={`${ui.note} mt-1.5`}>
           Send from your shielded balance. The recipient needs to have shielded funds at least once
-          before - this app can&apos;t set that up for them.
+          before. This app cannot set that up for them.
         </p>
         <HowThisWorks className="mt-2">
           <p>
@@ -386,9 +388,12 @@ export default function SendPanel({
       </div>
 
       <div className={ui.inputBlock}>
-        <div className={ui.inputLabel}>Amount to send</div>
+        <label htmlFor="send-amount" className={ui.inputLabel}>
+          Amount to send
+        </label>
         <div className={ui.inputMain}>
           <input
+            id="send-amount"
             className={ui.bigValue}
             placeholder="0"
             inputMode="decimal"
@@ -399,23 +404,24 @@ export default function SendPanel({
           <TokenSelect value={token} onChange={setToken} />
         </div>
         <input
-          className={cx(ui.inputField, "mt-2 w-full")}
+          className={cx(ui.inputField, "mt-2")}
           aria-label="Recipient address"
           placeholder="Recipient address (0x…)"
           value={rows[0].recipient}
           onChange={(e) => updateRow(0, { recipient: e.target.value })}
         />
         {request ? (
-          <div className={cx(ui.subLine, "mt-2")} style={{ color: "var(--muted)" }}>
-            Payment request loaded: {fromBaseUnits(request.units, TOKENS[request.token].decimals)}{" "}
-            {request.token} to {shortHex(request.recipient)}
+          <p className={cx(ui.note, "mt-2")}>
+            Payment request loaded:{" "}
+            <Figure className="text-ink">
+              {fromBaseUnits(request.units, TOKENS[request.token].decimals)} {request.token}
+            </Figure>{" "}
+            to <Figure className="text-ink">{shortHex(request.recipient)}</Figure>
             {request.memo ? `, labeled ${request.memo}` : ""}. Confirm these details instead of
             retyping them; this is a payment request, not a card.
-          </div>
+          </p>
         ) : initialRecipient ? (
-          <div className={cx(ui.subLine, "mt-2")} style={{ color: "var(--muted)" }}>
-            Recipient filled from a receive link.
-          </div>
+          <p className={cx(ui.note, "mt-2")}>Recipient filled from a receive link.</p>
         ) : null}
         {requestError ? <div className={ui.warn} role="alert">{requestError}</div> : null}
         <div className={cx(ui.subLine, "mt-2")}>
@@ -452,7 +458,7 @@ export default function SendPanel({
           </div>
         ))}
 
-        <div className={cx(ui.subLine, "mt-2")}>
+        <div className={cx(ui.subLine, "mt-2 flex flex-wrap gap-2")}>
           <button type="button" className={ui.tab} onClick={addRow}>
             Add another recipient
           </button>
@@ -484,58 +490,87 @@ export default function SendPanel({
               <button type="button" className={ui.tab} onClick={addFromPaste}>
                 Add lines to the batch
               </button>
-              {pasteNote ? (
-                <span className={ui.subMono} style={{ color: "var(--muted)" }}>
-                  {pasteNote}
-                </span>
-              ) : null}
+              {pasteNote ? <span className={ui.note}>{pasteNote}</span> : null}
             </div>
           </>
         )}
       </div>
 
-      <FeeRow fee={fee} />
-      <div className={ui.subLine} style={{ color: "var(--muted)" }}>
-        Fee comes out of your shielded STRK, not your public balance: measured on mainnet, a wallet with 19.6 public
-        STRK and 2.0 shielded was refused for insufficient fee funds. Public STRK still pays gas.
+      <div>
+        <FeeRow fee={fee} error={pool.error} />
+        <p className={`${ui.note} mt-2`}>
+          Fee comes out of your shielded STRK, not your public balance: measured on mainnet, a
+          wallet with 19.6 public STRK and 2.0 shielded was refused for insufficient fee funds.
+          Public STRK still pays gas.
+        </p>
+        {rows.length > 1 && fee !== undefined && (
+          <p className={`${ui.note} mt-2`}>
+            These {rows.length} transfers go in one transaction: the pool fee is charged once (
+            <Figure className="text-ink">
+              {fromBaseUnits(fee, TOKENS.STRK.decimals)} STRK
+            </Figure>
+            ) instead of {rows.length} times (
+            <Figure className="text-ink">
+              {fromBaseUnits(fee * BigInt(rows.length), TOKENS.STRK.decimals)} STRK
+            </Figure>
+            ). You save{" "}
+            <Figure className="text-ink">
+              {fromBaseUnits(fee * BigInt(rows.length - 1), TOKENS.STRK.decimals)} STRK
+            </Figure>
+            .
+          </p>
+        )}
       </div>
-      {rows.length > 1 && fee !== undefined && (
-        <div className={ui.subLine} style={{ color: "var(--muted)" }}>
-          These {rows.length} transfers go in one transaction: the pool fee is charged once (
-          {fromBaseUnits(fee, TOKENS.STRK.decimals)} STRK) instead of {rows.length} times (
-          {fromBaseUnits(fee * BigInt(rows.length), TOKENS.STRK.decimals)} STRK). You save{" "}
-          {fromBaseUnits(fee * BigInt(rows.length - 1), TOKENS.STRK.decimals)} STRK.
-        </div>
-      )}
 
-      <div className={ui.subLine}>
-        <button
-          type="button"
-          className={ui.tab}
-          onClick={shielded.revealed ? shielded.hide : shielded.reveal}
-          disabled={shielded.loading || !myWalletAccount}
-        >
-          {shielded.loading
-            ? "reading shielded balances…"
-            : shielded.revealed
-            ? "Hide shielded balances"
-            : "Show shielded STRK/USDC"}
-        </button>
-      </div>
-      {shielded.error ? <div className={ui.warn} role="alert">{shielded.error}</div> : null}
-      {shielded.revealed && (
-        <div className={cx(ui.subLine, "gap-4")}>
-          <span className={ui.subMono}>
-            {shielded.balances.STRK !== undefined ? fromBaseUnits(shielded.balances.STRK, TOKENS.STRK.decimals) : "…"} STRK
-          </span>
-          <span className={ui.subMono}>
-            {shielded.balances.USDC !== undefined ? fromBaseUnits(shielded.balances.USDC, TOKENS.USDC.decimals) : "…"} USDC
-          </span>
+      <div>
+        <div className={ui.subLine}>
+          <button
+            type="button"
+            className={ui.tab}
+            onClick={shielded.revealed ? shielded.hide : shielded.reveal}
+            disabled={shielded.loading || !myWalletAccount}
+          >
+            {shielded.loading
+              ? "reading shielded balances…"
+              : shielded.revealed
+              ? "Hide shielded balances"
+              : "Show shielded STRK/USDC"}
+          </button>
         </div>
-      )}
-      {shielded.revealed && shielded.balances[token] === 0n && (
-        <div className={ui.warn}>You have no shielded {token} to send.</div>
-      )}
+        {shielded.loading ? (
+          <PanelState
+            kind="loading"
+            rows={1}
+            title="Scanning your notes for a shielded balance"
+            className="mt-2"
+          />
+        ) : shielded.error ? (
+          <PanelState kind="error" title="Could not read your shielded balances" className="mt-2">
+            {shielded.error} Nothing is shown from a cache, so try the button again once Ready is
+            responding.
+          </PanelState>
+        ) : shielded.revealed ? (
+          <div className={cx(ui.subLine, "mt-2 justify-start gap-6")}>
+            <Figure className="text-ink">
+              {shielded.balances.STRK !== undefined
+                ? fromBaseUnits(shielded.balances.STRK, TOKENS.STRK.decimals)
+                : "…"}{" "}
+              STRK
+            </Figure>
+            <Figure className="text-ink">
+              {shielded.balances.USDC !== undefined
+                ? fromBaseUnits(shielded.balances.USDC, TOKENS.USDC.decimals)
+                : "…"}{" "}
+              USDC
+            </Figure>
+          </div>
+        ) : null}
+        {shielded.revealed && shielded.balances[token] === 0n && (
+          <div className={`${ui.warn} mt-2`}>
+            You have no shielded {token} to send. Shield some on the Home tab first.
+          </div>
+        )}
+      </div>
 
       {maturity.locked && (
         <div className={ui.warn}>
@@ -583,6 +618,9 @@ export default function SendPanel({
       </button>
 
       {result ? <ResultCard r={result} network={network} /> : null}
+
+      {/* Reads with no wallet connected, so this panel is never an empty shell. */}
+      <PoolFacts network={network} snapshot={pool} />
     </div>
   );
 }

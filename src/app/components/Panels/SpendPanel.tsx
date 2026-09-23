@@ -14,7 +14,6 @@ import {
 } from "../lib/format";
 import { isExpired, readPaymentRequest } from "../lib/paymentRequest";
 import { readPrivateBalance, submitStrk20, waitStrk20Transaction } from "../lib/strk20";
-import { usePoolFee } from "../lib/useFee";
 import { useMaturity } from "../lib/usePrivateBalance";
 import {
   ResultCard,
@@ -25,6 +24,7 @@ import {
 } from "./ActionResult";
 import FeeRow from "./FeeRow";
 import { HowThisWorks } from "../v2/ui";
+import PoolFacts, { usePoolSnapshot } from "./PoolFacts";
 
 export interface SpendLeg {
   recipient: string;
@@ -44,7 +44,8 @@ export default function SpendPanel({ network }: SpendPanelProps) {
   const [result, setResult] = useState<ActionResult | null>(null);
   const [maxLoading, setMaxLoading] = useState(false);
 
-  const { fee } = usePoolFee(network);
+  const pool = usePoolSnapshot(network);
+  const fee = pool.fee;
   const tokenConfig = TOKENS["STRK"];
   const maturity = useMaturity("STRK");
 
@@ -162,8 +163,9 @@ export default function SpendPanel({ network }: SpendPanelProps) {
 
   return (
     <div className={ui.panel}>
-      <div className="px-3 pt-2">
-        <p className="text-[13px] leading-relaxed text-[#7a859c]">
+      <div>
+        <h2 className={ui.heading}>Settle a payment</h2>
+        <p className={`${ui.note} mt-1.5`}>
           Pay a merchant or acquirer directly from your shielded balance.
         </p>
         <HowThisWorks className="mt-2">
@@ -175,17 +177,20 @@ export default function SpendPanel({ network }: SpendPanelProps) {
       </div>
 
       <div className={ui.inputBlock}>
-        <div className={ui.inputLabel}>Amount to pay</div>
-        <div className="mt-2.5 flex flex-col gap-2.5">
+        <label htmlFor="spend-recipient" className={ui.inputLabel}>
+          Amount to pay
+        </label>
+        <div className="mt-3 flex flex-col gap-2.5">
           <input
-            className={`${ui.inputField} w-full`}
+            id="spend-recipient"
+            className={ui.inputField}
             aria-label="Acquirer or merchant address"
             placeholder="Acquirer or merchant address (0x…)"
             value={legs[0].recipient}
             onChange={(e) => updateLeg({ recipient: e.target.value })}
           />
           <input
-            className={`${ui.inputField} w-full`}
+            className={ui.inputField}
             aria-label="Purchase amount"
             placeholder="Purchase amount"
             inputMode="decimal"
@@ -193,21 +198,23 @@ export default function SpendPanel({ network }: SpendPanelProps) {
             onChange={(e) => updateLeg({ amount: e.target.value })}
           />
         </div>
+        <div className={`${ui.subLine} mt-3`}>
+          <button
+            type="button"
+            className={ui.tab}
+            onClick={useMax}
+            disabled={maxLoading || !myWalletAccount}
+          >
+            {maxLoading ? "reading shielded balance…" : "Use max"}
+          </button>
+        </div>
       </div>
 
-      <FeeRow fee={fee} />
-      <div className={ui.subLine} style={{ color: "var(--muted)" }}>
-        Ready shows the settlement amount and STRK pool fee before you approve.
-      </div>
-      <div className={ui.subLine}>
-        <button
-          type="button"
-          className="text-[13px] font-medium text-[#7a859c] transition-colors hover:text-[#eaf0f8] disabled:opacity-50 disabled:cursor-not-allowed"
-          onClick={useMax}
-          disabled={maxLoading || !myWalletAccount}
-        >
-          {maxLoading ? "reading shielded balance…" : "Use max"}
-        </button>
+      <div>
+        <FeeRow fee={fee} error={pool.error} />
+        <p className={`${ui.note} mt-2`}>
+          Ready shows the settlement amount and STRK pool fee before you approve.
+        </p>
       </div>
 
       {!strk20Capable && (
@@ -239,6 +246,9 @@ export default function SpendPanel({ network }: SpendPanelProps) {
       </button>
 
       {result ? <ResultCard r={result} network={network} /> : null}
+
+      {/* Reads with no wallet connected, so this panel is never an empty shell. */}
+      <PoolFacts network={network} snapshot={pool} />
     </div>
   );
 }

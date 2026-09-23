@@ -3,6 +3,7 @@ import { ui } from "../lib/panelUi";
 import SelectWallet from "../client/WalletHandle/SelectWallet";
 import { useStoreWallet } from "../Wallet/walletContext";
 import { NETWORKS } from "@/utils/constants";
+import { NetworkChip } from "./PoolFacts";
 
 export default function AppNav() {
   const network = useStoreWallet((s) => s.network);
@@ -10,13 +11,15 @@ export default function AppNav() {
 
   return (
     <div className={ui.nav}>
-      <div className={ui.brand}>Sealed.cash</div>
       <div className={ui.brand}>
+        <span>
+          <span className="text-ink">Sealed</span>
+          <span className="text-muted">.cash</span>
+        </span>
+      </div>
+      <div className="flex items-center gap-3">
         {isConnected && network ? (
-          <span className={`${ui.feeVal} text-[13px]`}>
-            <span className={`${ui.netDot} ${ui.netOkDot}`} />
-            {NETWORKS[network].label}
-          </span>
+          <NetworkChip network={network} aria-label={NETWORKS[network].label} />
         ) : null}
         <SelectWallet variant="nav" />
       </div>

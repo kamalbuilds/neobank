@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
 import { ui } from "../lib/panelUi";
-import { cx } from "../v2/ui";
+import { cx, Figure, PanelState } from "../v2/ui";
 import { useStoreWallet } from "../Wallet/walletContext";
 import {
   DEFAULT_NETWORK,
@@ -15,6 +15,7 @@ import { buildPaymentRequestUrl, type PaymentRequest } from "../lib/paymentReque
 import { encodePublicAddress, encodeShieldedReceiver } from "../lib/beam";
 import TokenSelect from "./TokenSelect";
 import { HowThisWorks } from "../v2/ui";
+import PoolFacts, { usePoolSnapshot } from "./PoolFacts";
 
 const EXPIRY_OPTIONS: { value: string; label: string }[] = [
   { value: "0", label: "No expiry" },
@@ -36,9 +37,12 @@ export default function ReceivePanel() {
   const [expiryChoice, setExpiryChoice] = useState("0");
   const [copied, setCopied] = useState<CopyKind>("");
   const [qr, setQr] = useState<string>("");
+  const [qrPending, setQrPending] = useState(false);
+  const [qrError, setQrError] = useState("");
 
   const tokenConfig = TOKENS[token];
   const poolHex = poolAddressFor(network);
+  const pool = usePoolSnapshot(network);
 
   const checksummed = useMemo(() => {
     if (!address) return "";
@@ -94,15 +98,30 @@ export default function ReceivePanel() {
   useEffect(() => {
     if (!requestLink) {
       setQr("");
+      setQrError("");
+      setQrPending(false);
       return;
     }
     let cancelled = false;
-    QRCode.toDataURL(requestLink, { width: 240, margin: 1, color: { dark: "#06070b", light: "#eaf0f8" } })
+    setQrPending(true);
+    setQrError("");
+    // Dark ink on the cream sheet, so the code is part of the document rather
+    // than a pasted-in white square.
+    QRCode.toDataURL(requestLink, {
+      width: 240,
+      margin: 1,
+      color: { dark: "#16161a", light: "#f4f1ea" },
+    })
       .then((data) => {
         if (!cancelled) setQr(data);
       })
-      .catch(() => {
-        if (!cancelled) setQr("");
+      .catch((err: any) => {
+        if (cancelled) return;
+        setQr("");
+        setQrError(err?.message ?? "This request could not be encoded as a QR code.");
+      })
+      .finally(() => {
+        if (!cancelled) setQrPending(false);
       });
     return () => {
       cancelled = true;
@@ -123,7 +142,19 @@ export default function ReceivePanel() {
   if (!address) {
     return (
       <div className={ui.panel}>
-        <div className={ui.warn}>Connect a wallet to build a payment request.</div>
+        <div>
+          <h2 className={ui.heading}>Ask to be paid</h2>
+          <p className={`${ui.note} mt-1.5`}>
+            Build a link or QR code asking someone to pay you privately.
+          </p>
+        </div>
+        <PanelState kind="empty" title="No account linked yet">
+          A request has to name the address it pays into, so link a wallet and this panel fills in
+          with your account hex, your pool address, your checksummed <Figure>strk</Figure> string
+          and your shielded <Figure>strkx</Figure> receiver, each one copyable.
+        </PanelState>
+        {/* Reads with no wallet connected, so this panel is never an empty shell. */}
+        <PoolFacts network={network} snapshot={pool} />
       </div>
     );
   }
@@ -135,23 +166,29 @@ export default function ReceivePanel() {
 
   return (
     <div className={ui.panel}>
-      {!strk20Capable ? (
-        <div className={ui.warn}>
-          This wallet does not support STRK20 private transfers yet. You cannot receive private
-          transfers until you install or update a STRK20-capable wallet. The payment request below
-          is shown for reference only.
-        </div>
-      ) : (
-        <p className="px-3 pt-2 text-[13px] leading-relaxed text-[#7a859c]">
-          Build a link or QR code asking someone to pay you privately. You need to have shielded
-          funds at least once before you can receive this way.
-        </p>
-      )}
+      <div>
+        <h2 className={ui.heading}>Ask to be paid</h2>
+        {!strk20Capable ? (
+          <div className={`${ui.warn} mt-2`}>
+            This wallet does not support STRK20 private transfers yet. You cannot receive private
+            transfers until you install or update a STRK20-capable wallet. The payment request below
+            is shown for reference only.
+          </div>
+        ) : (
+          <p className={`${ui.note} mt-1.5`}>
+            Build a link or QR code asking someone to pay you privately. You need to have shielded
+            funds at least once before you can receive this way.
+          </p>
+        )}
+      </div>
 
       <div className={ui.inputBlock}>
-        <div className={ui.inputLabel}>Create a payment request</div>
+        <label htmlFor="receive-amount" className={ui.inputLabel}>
+          Create a payment request
+        </label>
         <div className={ui.inputMain}>
           <input
+            id="receive-amount"
             className={ui.bigValue}
             placeholder="0"
             inputMode="decimal"
@@ -162,7 +199,7 @@ export default function ReceivePanel() {
           <TokenSelect value={token} onChange={setToken} />
         </div>
         <input
-          className={cx(ui.inputField, "mt-2 w-full")}
+          className={cx(ui.inputField, "mt-2")}
           aria-label="Request label"
           placeholder="Label (optional, e.g. Invoice 42)"
           maxLength={60}
@@ -170,7 +207,7 @@ export default function ReceivePanel() {
           onChange={(e) => setMemo(e.target.value)}
         />
         <select
-          className={cx(ui.inputField, "mt-2 w-full")}
+          className={cx(ui.inputField, "mt-2 py-2.5")}
           value={expiryChoice}
           onChange={(e) => setExpiryChoice(e.target.value)}
           aria-label="Request expiry"
@@ -183,25 +220,39 @@ export default function ReceivePanel() {
         </select>
 
         {amount.trim() && amountState.error ? (
-          <div className={ui.warn} role="alert">{amountState.error}</div>
+          <div className={`${ui.warn} mt-2`} role="alert">{amountState.error}</div>
         ) : null}
         {!amount.trim() ? (
-          <div className={cx(ui.subLine, "mt-2")} style={{ color: "var(--muted)" }}>
-            Pick a token and an amount to build the link and QR.
-          </div>
+          <PanelState kind="empty" title="No request built yet" className="mt-3">
+            Pick a token and enter an amount. The link and QR are generated on this device, and
+            anyone who opens them can read the token, amount and label.
+          </PanelState>
+        ) : null}
+
+        {qrPending && !qr ? (
+          <PanelState kind="loading" rows={1} title="Encoding the request as a QR code" className="mt-3" />
+        ) : null}
+        {qrError ? (
+          <PanelState kind="error" title="Could not build the QR code" className="mt-3">
+            {qrError} The copyable request link below still works; send that instead.
+          </PanelState>
         ) : null}
 
         {qr ? (
-          <div className="my-3 flex justify-center">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={qr} alt="Payment request QR" width={200} height={200} className="rounded-xl" />
+          <div className="my-4 flex justify-center">
+            {/* Cream matte on the code so it reads as part of the same sheet
+                as the request it encodes. */}
+            <div className="paper p-2.5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={qr} alt="Payment request QR" width={200} height={200} className="block rounded-[2px]" />
+            </div>
           </div>
         ) : null}
 
         {preview ? (
-          <div className={cx(ui.subMono, "mt-2.5 break-all text-[13px]")}>
-            Requests {preview} to your pool address.
-          </div>
+          <p className={`${ui.note} mt-2.5 break-all`}>
+            Requests <Figure className="text-ink">{preview}</Figure> to your pool address.
+          </p>
         ) : null}
 
         <HowThisWorks className="mt-3" label="Not a card - what opening this link does">
@@ -213,64 +264,78 @@ export default function ReceivePanel() {
           </p>
         </HowThisWorks>
 
-        <div className="mt-4">
-          <div className={ui.inputLabel}>Your receive address</div>
-          <div className={cx(ui.subLine, "mt-1.5")} style={{ color: "var(--muted)" }}>
-            Share the account address for a direct transfer, or use one of the formatted strings
-            below.
-          </div>
-
-          <div className={cx(ui.inputLabel, "mt-3.5")}>Account (hex)</div>
-          <div className={cx(ui.subMono, "mt-2 break-all text-[13px]")}>{address}</div>
-          <div className={cx(ui.subLine, "mt-2")}>
-            <button type="button" className={ui.tab} onClick={() => copy("address", address)}>
-              {copied === "address" ? "Copied account" : "Copy account hex"}
-            </button>
-          </div>
-
-          <div className={cx(ui.inputLabel, "mt-3.5")}>Privacy pool (hex)</div>
-          <div className={cx(ui.subMono, "mt-2 break-all text-[13px]")}>{poolHex}</div>
-          <div className={cx(ui.subLine, "mt-2")}>
-            <button type="button" className={ui.tab} onClick={() => copy("pool", poolHex)}>
-              {copied === "pool" ? "Copied pool" : "Copy pool hex"}
-            </button>
-          </div>
-
-          <div className={cx(ui.inputLabel, "mt-3.5")}>Checksummed address (strk)</div>
-          <div className={cx(ui.subMono, "mt-2 break-all text-[13px]")}>{checksummed || "-"}</div>
-          <div className={cx(ui.subLine, "mt-2")}>
-            <button
-              type="button"
-              className={ui.tab}
-              onClick={() => copy("strk", checksummed)}
-              disabled={!checksummed}
-            >
-              {copied === "strk" ? "Copied checksummed address" : "Copy checksummed address"}
-            </button>
-          </div>
-
-          <div className={cx(ui.inputLabel, "mt-3.5")}>Shielded receiver string (strkx)</div>
-          <div className={cx(ui.subMono, "mt-2 break-all text-[13px]")}>{shieldedReceiver || "-"}</div>
-          <div className={cx(ui.subLine, "mt-2 flex-wrap gap-y-2")}>
-            <button
-              type="button"
-              className={ui.tab}
-              onClick={() => copy("strkx", shieldedReceiver)}
-              disabled={!shieldedReceiver}
-            >
-              {copied === "strkx" ? "Copied shielded receiver" : "Copy shielded receiver string"}
-            </button>
-            <button
-              type="button"
-              className={ui.tab}
-              onClick={() => requestLink && copy("link", requestLink)}
-              disabled={!requestLink}
-            >
-              {copied === "link" ? "Copied request link" : "Copy payment request link"}
-            </button>
-          </div>
-        </div>
       </div>
+
+      {/*
+        The address block is evidence, not copy: four exact strings a payer has
+        to be able to read character by character. It prints on paper, in a
+        monospace column, at a size you can check against a wallet.
+      */}
+      <section className="paper p-4 sm:p-5" aria-label="Your receive address">
+        <div className="flex items-center justify-between gap-3 border-b-[3px] border-double border-[var(--paper-line)] pb-2.5">
+          <h3 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-paper-muted">
+            Your receive address
+          </h3>
+          <Figure
+            className={
+              network === "mainnet"
+                ? "text-[13px] font-semibold text-paper-ink"
+                : "text-[13px] text-paper-muted"
+            }
+          >
+            {network === "mainnet" ? "mainnet" : "sepolia"}
+          </Figure>
+        </div>
+        <p className="mt-3 text-[13px] leading-relaxed text-paper-muted">
+          Share the account address for a direct transfer, or use one of the formatted strings
+          below.
+        </p>
+
+        {(
+          [
+            { key: "address" as const, label: "Account (hex)", value: address, copy: "Copy account hex", done: "Copied account" },
+            { key: "pool" as const, label: "Privacy pool (hex)", value: poolHex, copy: "Copy pool hex", done: "Copied pool" },
+            { key: "strk" as const, label: "Checksummed address (strk)", value: checksummed, copy: "Copy checksummed address", done: "Copied checksummed address" },
+            { key: "strkx" as const, label: "Shielded receiver string (strkx)", value: shieldedReceiver, copy: "Copy shielded receiver string", done: "Copied shielded receiver" },
+          ]
+        ).map((row) => (
+          <div key={row.key} className="mt-4 border-t border-[var(--paper-line)] pt-3">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-paper-muted">
+              {row.label}
+            </div>
+            <Figure className="mt-1.5 block break-all text-[13px] leading-relaxed text-paper-ink">
+              {row.value || "not available for this wallet"}
+            </Figure>
+            <button
+              type="button"
+              className="mt-2 rounded-[4px] border border-[var(--paper-line)] px-2.5 py-1 text-[13px] font-semibold text-paper-ink transition-[background-color,transform] duration-150 hover:bg-[var(--paper-2)] active:scale-[0.97] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--seal)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--paper)]"
+              onClick={() => copy(row.key, row.value)}
+              disabled={!row.value}
+            >
+              {copied === row.key ? row.done : row.copy}
+            </button>
+          </div>
+        ))}
+
+        <div className="mt-4 border-t border-[var(--paper-line)] pt-3">
+          <button
+            type="button"
+            className="rounded-[4px] border border-[var(--paper-line)] px-2.5 py-1 text-[13px] font-semibold text-paper-ink transition-[background-color,transform] duration-150 hover:bg-[var(--paper-2)] active:scale-[0.97] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--seal)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--paper)]"
+            onClick={() => requestLink && copy("link", requestLink)}
+            disabled={!requestLink}
+          >
+            {copied === "link" ? "Copied request link" : "Copy payment request link"}
+          </button>
+          {!requestLink ? (
+            <p className="mt-2 text-[13px] leading-relaxed text-paper-muted">
+              Enter an amount above and the request link becomes copyable.
+            </p>
+          ) : null}
+        </div>
+      </section>
+
+      {/* Reads with no wallet connected, so this panel is never an empty shell. */}
+      <PoolFacts network={network} snapshot={pool} />
     </div>
   );
 }

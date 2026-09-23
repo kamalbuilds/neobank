@@ -69,11 +69,13 @@ export function receiptToResult(receipt: any, txHash: string, amountLabel: strin
   };
 }
 
+// A receipt is paper, so the stamp is ink on cream: ledger green for settled,
+// seal vermilion for refused or reverted, plain ink while it is still open.
 const ICON_BG: Record<ActionResult["status"], string> = {
-  ok: "bg-[#34d399] shadow-[0_0_12px_rgba(52,211,153,0.55)]",
-  error: "bg-[#f87171]",
-  screened: "bg-[#f87171]",
-  pending: "bg-[#2dd4bf]",
+  ok: "bg-[#2f6f4f]",
+  error: "bg-[var(--seal)]",
+  screened: "bg-[var(--seal)]",
+  pending: "bg-[var(--paper-muted)]",
 };
 
 export function ResultCard({ r, network }: { r: ActionResult; network: NetworkKey }) {
@@ -114,11 +116,23 @@ export function ResultCard({ r, network }: { r: ActionResult; network: NetworkKe
         </div>
       ) : null}
       {r.status === "pending" ? (
-        <div className={cx(ui.receiptLabel, "mt-1")} aria-live="polite">
+        <div className={cx(ui.receiptLabel, "mt-2 text-[13px]")} aria-live="polite">
           Pending is not a failure. Paymaster-relayed txs can take a while to land.
         </div>
       ) : null}
       {r.note ? <pre className={ui.receiptNote}>{r.note}</pre> : null}
+      {/* Which chain this settled on belongs on the receipt itself. A hash with
+          no network beside it is unverifiable: the same string means different
+          money on mainnet and on Sepolia. */}
+      <p className="mt-3 border-t border-[var(--paper-line)] pt-2.5 text-[13px] leading-relaxed text-paper-muted">
+        Settles on{" "}
+        {network === "mainnet" ? (
+          <span className="figure font-semibold text-paper-ink">Starknet mainnet</span>
+        ) : (
+          <span className="figure">Starknet Sepolia</span>
+        )}
+        . Every hash above opens on Voyager.
+      </p>
     </div>
   );
 }

@@ -11,7 +11,8 @@ import { useMaturity, useShieldedBalances } from "../lib/usePrivateBalance";
 import TokenSelect from "./TokenSelect";
 import FeeRow from "./FeeRow";
 import { ResultCard, errorResult, receiptToResult, type ActionResult } from "./ActionResult";
-import { HowThisWorks } from "../v2/ui";
+import { Figure, HowThisWorks, PanelState } from "../v2/ui";
+import PoolFacts, { usePoolSnapshot } from "./PoolFacts";
 
 const SLIPPAGE = 0.05;
 
@@ -45,6 +46,7 @@ export default function SwapPanel({ network }: { network: NetworkKey }) {
 
   const maturity = useMaturity(sellToken);
   const shielded = useShieldedBalances();
+  const pool = usePoolSnapshot(network);
 
   useEffect(() => {
     let cancelled = false;
@@ -164,8 +166,9 @@ export default function SwapPanel({ network }: { network: NetworkKey }) {
 
   return (
     <div className={ui.panel}>
-      <div className="px-3 pt-2">
-        <p className="text-[13px] leading-relaxed text-[#7a859c]">
+      <div>
+        <h2 className={ui.heading}>Convert inside the pool</h2>
+        <p className={`${ui.note} mt-1.5`}>
           Convert between STRK and USDC without leaving your shielded balance. The token you sell
           needs to already be shielded first.
         </p>
@@ -177,14 +180,21 @@ export default function SwapPanel({ network }: { network: NetworkKey }) {
         </HowThisWorks>
       </div>
 
-      {configured === false && (
-        <div className={ui.warn}>Convert is temporarily unavailable. Try again shortly.</div>
-      )}
+      {configured === undefined ? (
+        <PanelState kind="loading" rows={1} title="Checking whether the AVNU router is reachable" />
+      ) : null}
+      {/* The unconfigured case is rendered once, by the route, which can name the
+          missing variable. Repeating it here said "temporarily unavailable, try
+          again shortly" over the top of it, which is both a duplicate and a
+          softer claim than the truth: no key is set and retrying changes nothing. */}
 
       <div className={ui.inputBlock}>
-        <div className={ui.inputLabel}>Amount to convert</div>
+        <label htmlFor="convert-amount" className={ui.inputLabel}>
+          Amount to convert
+        </label>
         <div className={ui.inputMain}>
           <input
+            id="convert-amount"
             className={ui.bigValue}
             placeholder="0"
             inputMode="decimal"
@@ -198,30 +208,45 @@ export default function SwapPanel({ network }: { network: NetworkKey }) {
           <TokenSelect value={sellToken} onChange={flipTokens} />
         </div>
         <div className={ui.subLine}>
-          <span>Buying {buyToken} · 5% slippage</span>
+          <span>
+            Buying {buyToken} · <Figure>5%</Figure> slippage
+          </span>
         </div>
       </div>
 
-      <div className={ui.subLine}>
-        <button
-          type="button"
-          className="text-[13px] font-medium text-[#7a859c] transition-colors hover:text-[#eaf0f8] disabled:opacity-50 disabled:cursor-not-allowed"
-          onClick={shielded.revealed ? shielded.hide : shielded.reveal}
-          disabled={shielded.loading || !myWalletAccount}
-        >
-          {shielded.loading ? "reading shielded balances…" : shielded.revealed ? "Hide shielded balances" : "Show shielded STRK/USDC"}
-        </button>
-      </div>
-      {shielded.error ? <div className={ui.warn}>{shielded.error}</div> : null}
-      {shielded.revealed && (
+      <div>
         <div className={ui.subLine}>
-          <span className={ui.subMono}>
-            {shielded.balances[sellToken] !== undefined
-              ? `${fromBaseUnits(shielded.balances[sellToken]!, TOKENS[sellToken].decimals)} ${sellToken} shielded`
-              : "…"}
-          </span>
+          <button
+            type="button"
+            className={ui.tab}
+            onClick={shielded.revealed ? shielded.hide : shielded.reveal}
+            disabled={shielded.loading || !myWalletAccount}
+          >
+            {shielded.loading ? "reading shielded balances…" : shielded.revealed ? "Hide shielded balances" : "Show shielded STRK/USDC"}
+          </button>
         </div>
-      )}
+        {shielded.loading ? (
+          <PanelState
+            kind="loading"
+            rows={1}
+            title="Scanning your notes for a shielded balance"
+            className="mt-2"
+          />
+        ) : shielded.error ? (
+          <PanelState kind="error" title="Could not read your shielded balances" className="mt-2">
+            {shielded.error} Nothing is shown from a cache, so try the button again once Ready is
+            responding.
+          </PanelState>
+        ) : shielded.revealed ? (
+          <p className={`${ui.note} mt-2`}>
+            <Figure className="text-ink">
+              {shielded.balances[sellToken] !== undefined
+                ? `${fromBaseUnits(shielded.balances[sellToken]!, TOKENS[sellToken].decimals)} ${sellToken} shielded`
+                : "…"}
+            </Figure>
+          </p>
+        ) : null}
+      </div>
 
       {maturity.locked && (
         <div className={ui.warn}>
@@ -233,33 +258,47 @@ export default function SwapPanel({ network }: { network: NetworkKey }) {
         </div>
       )}
 
-      {feeAmount === undefined ? (
-        <div className={ui.feeRow}>
-          <span>Fee</span>
-          <span className={ui.feeVal}>shown when you submit</span>
-        </div>
-      ) : (
-        <FeeRow fee={feeAmount} />
-      )}
+      <div>
+        {feeAmount === undefined ? (
+          <div className={ui.feeRow}>
+            <div className="min-w-0">
+              <span>Swap fee</span>
+              <div className="mt-1 text-[11px] leading-snug text-muted">
+                quoted by the paymaster at submit time, not before
+              </div>
+            </div>
+            <span className={ui.feeVal}>shown when you submit</span>
+          </div>
+        ) : (
+          <FeeRow fee={feeAmount} />
+        )}
 
-      {quote ? (
-        <div className={ui.feeRow}>
-          <span>Quoted buy amount</span>
-          <span className={ui.feeVal}>
-            {fromBaseUnits(quote.buyAmount, TOKENS[buyToken].decimals)} {buyToken}
-          </span>
-        </div>
-      ) : null}
+        {quoting ? (
+          <PanelState kind="loading" rows={1} title="Asking AVNU for a quote" className="mt-3" />
+        ) : quote ? (
+          <div className={ui.feeRow}>
+            <span>Quoted buy amount</span>
+            <span className={ui.feeVal}>
+              {fromBaseUnits(quote.buyAmount, TOKENS[buyToken].decimals)} {buyToken}
+            </span>
+          </div>
+        ) : (
+          <PanelState kind="empty" title="No quote yet" className="mt-3">
+            Enter an amount and press Get quote. AVNU prices the fill before anything is signed,
+            and the quote is what the Convert button then executes.
+          </PanelState>
+        )}
+      </div>
 
       {!strk20Capable && (
         <div className={ui.warn}>This wallet doesn&apos;t support private balances yet. Install or update Ready to continue.</div>
       )}
 
       {configured !== false && (
-        <>
+        <div className="flex flex-col gap-2">
           <button
             type="button"
-            className={ui.btnCta}
+            className={ui.tab + " w-full py-3 text-[15px]"}
             disabled={!strk20Capable || quoting || !amount || maturity.locked}
             onClick={handleQuote}
           >
@@ -273,10 +312,13 @@ export default function SwapPanel({ network }: { network: NetworkKey }) {
           >
             {submitting ? "Converting…" : "Convert"}
           </button>
-        </>
+        </div>
       )}
 
       {result ? <ResultCard r={result} network={network} /> : null}
+
+      {/* Reads with no wallet connected, so this panel is never an empty shell. */}
+      <PoolFacts network={network} snapshot={pool} />
     </div>
   );
 }
