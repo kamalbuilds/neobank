@@ -111,6 +111,36 @@ const ROWS: Row[] = [
     ),
   },
   {
+    // The brief this product was built against names four verbs: hold, send,
+    // spend and earn. Three had a row here and send did not, which read as an
+    // omission rather than as the honest answer. It gets its own row now, and
+    // the answer is no.
+    name: 'Private send between two accounts',
+    kind: 'not-built',
+    evidence: (
+      <>
+        Never run, on any network. None of the settled transactions on the evidence page is a
+        shielded-to-shielded transfer. The contract path exists and a second recipient is already
+        registered on mainnet (<C>0xe08fd329…0294</C> sets its viewing key), so the blocker is
+        public STRK for the 6 STRK pool fee rather than missing code. Earlier versions of the
+        README and of the grant application said this path was exercised on Sepolia. That was
+        wrong, and both were corrected once the record was checked row by row.
+      </>
+    ),
+  },
+  {
+    name: 'Unshield to your own address',
+    kind: 'not-built',
+    evidence: (
+      <>
+        Never run as a user action. The pool <C>withdraw</C> it depends on has executed on Sepolia
+        inside card settlements, where the destination was chosen by the card runtime rather than
+        typed into a form: <C>0x4d94fa79…2639</C> withdrew 10.24 STRK and{' '}
+        <C>0x1f815361…fe5df</C> settled a swipe.
+      </>
+    ),
+  },
+  {
     name: 'Real money, real card network',
     kind: 'not-built',
     evidence: <>No production issuer, no licence, no real funds. Test money throughout.</>,
@@ -139,9 +169,10 @@ export default function StatusPage() {
 
       <H2>Known defects</H2>
       <P>
-        These are open, and listed here rather than discovered by you. Vault tabs do not preview
-        their panel until a wallet is connected, so some spend and send copy sits behind the
-        connect wall. Pool size and TVL figures disagree across sources, so no figure is published
+        These are open, and listed here rather than discovered by you. Vault tabs now show what
+        each verb has already settled on chain before a wallet is connected, but the forms
+        themselves still sit behind the connect wall, so you cannot exercise a spend or a send
+        without Ready. Pool size and TVL figures disagree across sources, so no figure is published
         anywhere in this product.
       </P>
       <Limit>

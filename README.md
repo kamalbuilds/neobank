@@ -46,9 +46,15 @@ cap, daily cap, blocked categories) enforced in a contract rather than in a dash
 a card number would invite someone to type it into a checkout where it would fail.
 
 **Mainnet has deposits only so far.** The four mainnet transactions are pool registrations and
-shields. No unshield and no private send has been run on mainnet, and none is claimed. The code path
-for both is real and exercised on Sepolia. The mainnet blocker is public STRK for the 6 STRK pool
-fee plus wallet buffer, not missing code.
+shields. No unshield and no private send has been run on mainnet, and none is claimed.
+
+Being exact about the two, because an earlier version of this paragraph was not. A private send has
+never run on **any** network: none of the ten transactions in `src/lib/evidence.ts` is a
+shielded-to-shielded transfer, so "exercised on Sepolia", which this file used to say, was wrong.
+Unshield has never run as a user action either, though the pool `withdraw` it uses has executed on
+Sepolia inside card settlements. For the mainnet send specifically the blocker is public STRK for
+the 6 STRK pool fee plus wallet buffer rather than missing code, and the second recipient is already
+registered on mainnet.
 
 Reasoning behind the card position, including why third-party no-KYC virtual cards are rejected on
 evidence: [`docs/CARD_LAST_MILE.md`](docs/CARD_LAST_MILE.md).
@@ -98,7 +104,8 @@ Integration plan: [`STRK20_INTEGRATION_PLAN.md`](STRK20_INTEGRATION_PLAN.md). Pr
 
 | Gap | State |
 |---|---|
-| Mainnet unshield and private send | Not run. Needs public STRK past the 6 STRK pool fee. Exercised on Sepolia |
+| Private send | **Never run, on any network.** No transaction in `src/lib/evidence.ts` is a shielded-to-shielded transfer between two accounts. The code path exists and the second recipient is registered on mainnet (`0xe08fd329…0294` sets a viewing key), but no send has been executed. The earlier wording here said "exercised on Sepolia", which was wrong |
+| Unshield | Not run as a user action on any network. The pool `withdraw` action it uses has executed on Sepolia inside card settlements: `0x4d94fa79…2639` withdrew 10.24 STRK, `0x1f815361…fe5df` settled a swipe. Mainnet needs public STRK past the 6 STRK pool fee |
 | Private swap | Server route needs `AVNU_PAYMASTER_API_KEY`. Not set on this deployment; `/api/avnu/status` returns `{"configured":false}` and the Swap tab degrades with a 503. Private swaps on Ekubo went live through STRK20 on 2026-09-22 and are the route this should use instead; not integrated yet |
 | Shadow spend identities | One settled transaction. Marked PARTIAL on the status page rather than LIVE |
 | Vesu | Not on mainnet. The published class hash is undeclared there |

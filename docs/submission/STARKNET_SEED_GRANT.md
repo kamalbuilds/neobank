@@ -436,8 +436,16 @@ Ecosystem context as of 2026-09-23, which shapes several answers below:
 > merchant out of shielded value, with the transaction hash public and the `AuthorizationSettled`
 > event readable on Voyager.
 >
-> One unshield and one private transfer executed on Starknet mainnet, hashes published. Both code
-> paths are exercised on Sepolia today and neither has ever run on mainnet.
+> One private transfer between two shielded accounts, executed on Starknet mainnet, hash published.
+> Stated precisely because it is the weakest claim in this application: this has never run on any
+> network. Ten transactions are recorded in `src/lib/evidence.ts` and not one of them is a
+> shielded-to-shielded transfer. The contract path exists and the second recipient is already
+> registered on mainnet, but the transfer itself is unexecuted, and an earlier draft of this
+> document wrongly said it was exercised on Sepolia.
+>
+> One unshield executed on Starknet mainnet, hash published. The pool `withdraw` action it depends
+> on has run on Sepolia inside card settlements, but never as a user withdrawing to their own
+> public address.
 >
 > An atomic pay-and-lend transaction on Starknet mainnet: `AuthorizationSettled` and
 > `PositionOpened` in a single mainnet receipt.
