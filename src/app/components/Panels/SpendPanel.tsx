@@ -37,6 +37,7 @@ export interface SpendPanelProps {
 
 export default function SpendPanel({ network }: SpendPanelProps) {
   const myWalletAccount = useStoreWallet((s) => s.myWalletAccount);
+  const address = useStoreWallet((s) => s.address);
   const strk20Capable = useStoreWallet((s) => s.strk20Capable);
 
   const [legs, setLegs] = useState<SpendLeg[]>([{ recipient: "", amount: "" }]);
@@ -217,7 +218,7 @@ export default function SpendPanel({ network }: SpendPanelProps) {
         </p>
       </div>
 
-      {!strk20Capable && (
+      {address !== "" && !strk20Capable && (
         <div className={ui.warn}>This wallet doesn&apos;t support private balances yet. Install or update Ready to continue.</div>
       )}
       {maturity.locked && (

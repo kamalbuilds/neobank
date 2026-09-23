@@ -22,7 +22,13 @@ function lendOnRestaurantsLabel(): string | undefined {
 export default function CardPage() {
   const policy: PublicCardPolicy = {
     perSwipeCap: publicValue("CARD_MAX_PER_TX_USDC"),
-    dailyCap: publicValue("CARD_DAILY_CAP_LABEL") || "100 STRK onchain",
+    // No literal fallback. This used to read `|| "100 STRK onchain"`, and
+    // CARD_DAILY_CAP_LABEL is not set on this deployment, so the page printed an
+    // invented number carrying the word "onchain" while the contract's own
+    // daily_limit is 5 STRK. Wrong by 20x, in the one panel a reader is most
+    // likely to check. Undefined here means the dashboard reads the cap off the
+    // settlement contract instead, which is the system of record anyway.
+    dailyCap: publicValue("CARD_DAILY_CAP_LABEL"),
     lendOnRestaurants: lendOnRestaurantsLabel(),
     allowedCountries: publicValue("CARD_ALLOWED_COUNTRIES"),
     blockedCategories: publicValue("CARD_BLOCKED_MERCHANT_CATEGORIES"),

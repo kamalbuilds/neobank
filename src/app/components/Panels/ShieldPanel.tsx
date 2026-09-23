@@ -202,7 +202,7 @@ export default function ShieldPanel({ network }: { network: NetworkKey }) {
         </p>
       )}
 
-      {!strk20Capable && (
+      {address !== "" && !strk20Capable && (
         <div className={ui.warn}>This wallet doesn&apos;t support private balances yet. Install or update Ready to continue.</div>
       )}
 

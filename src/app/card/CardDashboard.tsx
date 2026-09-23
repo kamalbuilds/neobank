@@ -122,6 +122,36 @@ function policyValue(value: string | undefined, suffix = ""): string {
   return value ? `${value}${suffix}` : "Server enforced";
 }
 
+/**
+ * A cap read off the settlement contract, formatted as STRK.
+ *
+ * The contract is the system of record for these limits: max_per_transaction
+ * and daily_limit are set at deploy and checked at settlement, so an env label
+ * that disagrees with them is wrong rather than merely stale. Returns undefined
+ * when the runtime probe has not loaded, and the caller falls back to the label.
+ */
+function contractCap(
+  runtimeHealth: JsonRecord | undefined,
+  key: "maxPerTransaction" | "dailyLimit",
+): string | undefined {
+  if (!runtimeHealth || !isRecord(runtimeHealth.cardSettlement)) return undefined;
+  const config = runtimeHealth.cardSettlement.config;
+  if (!isRecord(config)) return undefined;
+  const raw = stringValue(config, key);
+  if (!raw) return undefined;
+  try {
+    const units = BigInt(raw);
+    const whole = units / 1_000_000_000_000_000_000n;
+    const frac = (units % 1_000_000_000_000_000_000n)
+      .toString()
+      .padStart(18, "0")
+      .replace(/0+$/, "");
+    return frac ? `${whole}.${frac} STRK` : `${whole} STRK`;
+  } catch {
+    return undefined;
+  }
+}
+
 function formatSettledAmount(record: JsonRecord): string {
   const amount = stringValue(record, "amount");
   const token = stringValue(record, "token");
@@ -945,8 +975,16 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
               </h2>
               <dl className="mt-4">
                 {[
-                  ["Per-swipe cap", policyValue(policy.perSwipeCap, " USD")],
-                  ["Daily cap", policyValue(policy.dailyCap)],
+                  [
+                    "Per-swipe cap",
+                    contractCap(runtimeHealth, "maxPerTransaction") ??
+                      policyValue(policy.perSwipeCap, " USD"),
+                  ],
+                  [
+                    "Daily cap",
+                    contractCap(runtimeHealth, "dailyLimit") ??
+                      policyValue(policy.dailyCap),
+                  ],
                   [
                     "Allowed countries",
                     policyValue(policy.allowedCountries),

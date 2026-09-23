@@ -3,6 +3,7 @@ import { ui } from "../../lib/panelUi";
 import { useStoreWallet } from "../../Wallet/walletContext";
 import { useFrontendProvider } from "../provider/providerContext";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { walletV6, validateAndParseAddress, WalletAccountV6 } from "starknet";
 import { WALLET_API } from "@starknet-io/types-js";
 import { networkForChainId, providerFor } from "@/utils/constants";
@@ -38,6 +39,8 @@ export default function SelectWallet({ variant = "ctaBig" }: { variant?: "nav" |
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string>("");
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   // Detected Starknet wallets, in render state so the picker updates as wallets register.
   const [wallets, setWallets] = useState<WalletWithStarknetFeatures[]>([]);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
@@ -141,7 +144,14 @@ export default function SelectWallet({ variant = "ctaBig" }: { variant?: "nav" |
 
   const shortAddr = address ? `${address.slice(0, 6)}…${address.slice(-4)}` : "";
 
-  const picker = pickerOpen ? (
+  // Portalled to document.body on purpose. `fixed inset-0` is relative to the
+  // nearest ancestor carrying a transform, and this modal renders inside
+  // .animate-rise-in, whose `both` fill-mode leaves a transform applied after
+  // the animation ends. That made the wrapper the containing block, so the
+  // scrim covered one column instead of the viewport: measured at 1440 the
+  // overlay was [468, 184, 868, 1265], leaving the header and the statement
+  // sheet at full brightness, and at 375 it scrolled with the page.
+  const pickerBody = pickerOpen ? (
     <div
       className={ui.modalOverlay}
       onClick={() => !connecting && setPickerOpen(false)}
@@ -194,6 +204,11 @@ export default function SelectWallet({ variant = "ctaBig" }: { variant?: "nav" |
       </div>
     </div>
   ) : null;
+
+  // document.body does not exist during the server render, so the portal waits
+  // for mount. Both call sites below render `picker`, so neither can reintroduce
+  // the containing-block bug by rendering the overlay inline.
+  const picker = mounted && pickerBody ? createPortal(pickerBody, document.body) : null;
 
   // Nav variant: a compact Connect pill, or the connected address with disconnect.
   if (variant === "nav") {
