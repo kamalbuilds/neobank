@@ -5,7 +5,7 @@ import type { NetworkKey } from '@/utils/constants';
 
 /**
  * The one thing every prior pass got wrong: a network badge styled like a
- * product name. This is not decoration - it is the honesty disclosure that a
+ * product name. This is not decoration. It is the honesty disclosure that a
  * transaction on this build moves test money, not real funds.
  *
  * Which makes it wrong to show on a mainnet wallet, where the opposite is
@@ -35,9 +35,12 @@ export function TestnetNotice({ className = '' }: { className?: string }) {
   return (
     <div
       role="note"
-      className={`flex items-center justify-center gap-2 border-b border-[#f59e0b]/20 bg-[#f59e0b]/[0.06] px-4 py-2 text-center text-[12.5px] font-medium text-[#fbbf78] ${className}`}
+      className={`flex items-center justify-center gap-2.5 border-b border-[color:var(--seal-soft-2)] bg-[color:var(--seal-soft)] px-4 py-2.5 text-center text-[13px] font-medium text-seal-bright ${className}`}
     >
-      <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[#f59e0b]" aria-hidden="true" />
+      <span
+        className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-seal-bright"
+        aria-hidden="true"
+      />
       {copy}
     </div>
   );

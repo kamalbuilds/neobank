@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { BankCard } from './components/v2/BankCard';
-import { ThreatModelTable } from './components/marketing/ThreatModelTable';
-import { ProofPoints } from './components/marketing/ProofPoints';
 import { ContractsFooter } from './components/marketing/ContractsFooter';
+import { EvidenceStamp } from './components/marketing/EvidenceStamp';
+import { ProofPoints } from './components/marketing/ProofPoints';
+import { RedactedStatement } from './components/marketing/RedactedStatement';
 import { TestnetNotice } from './components/marketing/TestnetNotice';
+import { ThreatModelTable } from './components/marketing/ThreatModelTable';
 
 export const metadata: Metadata = {
   title: 'Sealed: a private money account on Starknet',
@@ -12,196 +13,214 @@ export const metadata: Metadata = {
     'Hold, spend, and move money without publishing your balance to a public ledger. Live on Starknet mainnet through the STRK20 pool; the card, vault and bridge loops run on Sepolia.',
 };
 
+/**
+ * The four routes, drawn as a ruled ledger rather than four equal cards with
+ * arrow glyphs. The route itself is the affordance: a reader who wants to know
+ * where a line goes can read the path.
+ */
 const USES = [
   {
+    index: '01',
     label: 'Hold',
     href: '/app',
     title: 'Deposit stays yours to see',
     body: 'Bring in USDC or STRK. Your balance shows on your screen, not on a public explorer.',
   },
   {
+    index: '02',
     label: 'Spend',
     href: '/spend',
     title: 'A card that settles privately',
-    body: 'Swipe and it approves instantly. The merchant sees a card number - never your balance or your other activity.',
+    body: 'Swipe and it approves instantly. The merchant sees a card number, never your balance or your other activity.',
   },
   {
+    index: '03',
     label: 'Earn',
     href: '/earn',
     title: 'Put idle balance to work',
     body: 'Restaurant swipes lend into a vault automatically. Total assets are read live from the contract, not a projection.',
   },
   {
+    index: '04',
     label: 'Fund',
     href: '/fund',
     title: 'Bridge in already shielded',
-    body: 'Bring USDC in from Base and it lands shielded - no separate deposit step, no exposed transfer.',
+    body: 'Bring USDC in from Base and it lands shielded. No separate deposit step, no exposed transfer.',
   },
+] as const;
+
+const PRIVACY_DOCS = [
+  { href: '/docs/privacy/who-sees-what', label: 'Who sees what, party by party' },
+  { href: '/docs/privacy/the-hosted-account', label: 'The custodial exception' },
+  { href: '/docs/privacy/refused-claims', label: 'What we refuse to claim' },
 ] as const;
 
 export default function LandingPage() {
   return (
-    <div className="vault-bg min-h-[100dvh] text-[#eaf0f8]">
+    <div className="vault-bg min-h-[100dvh]">
       <TestnetNotice />
 
-      <header className="mx-auto flex max-w-[1100px] items-center justify-between px-6 py-5">
-        <span className="font-[family-name:var(--font-display)] text-[16px] font-semibold tracking-[-0.01em]">
-          <span className="bg-gradient-to-r from-[#2dd4bf] via-[#38bdf8] to-[#818cf8] bg-clip-text text-transparent">
-            Sealed
+      <header className="mx-auto max-w-[1100px] px-6 py-5">
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
+          <span className="font-[family-name:var(--font-display)] text-[24px] leading-none tracking-[-0.02em] text-ink">
+            Sealed<span className="text-muted">.cash</span>
           </span>
-          <span className="text-[#6b7689]">.cash</span>
-        </span>
-        <nav className="flex items-center gap-5 text-[13.5px] font-medium text-[#a3acbd]">
-          <a href="#privacy" className="hidden transition-colors hover:text-[#eaf0f8] sm:inline">
-            How privacy works
-          </a>
-          <a href="#proof" className="hidden transition-colors hover:text-[#eaf0f8] sm:inline">
-            Proof
-          </a>
-          <Link href="/docs" className="transition-colors hover:text-[#eaf0f8]">
-            Docs
-          </Link>
+          <nav className="order-3 flex w-full items-center gap-6 text-[15px] text-muted sm:order-2 sm:w-auto">
+            <a href="#privacy" className="transition-colors duration-150 hover:text-ink">
+              How privacy works
+            </a>
+            <a href="#proof" className="transition-colors duration-150 hover:text-ink">
+              Proof
+            </a>
+            <Link href="/docs" className="transition-colors duration-150 hover:text-ink">
+              Docs
+            </Link>
+          </nav>
           <Link
             href="/app"
-            className="rounded-full bg-gradient-to-br from-[#2dd4bf] to-[#38bdf8] px-4 py-2 text-[13px] font-semibold text-[#04140f] shadow-[0_4px_16px_-6px_rgba(45,212,191,0.5)] transition-transform duration-150 active:scale-[0.97]"
+            className="order-2 rounded-[4px] bg-paper px-4 py-2 text-[15px] font-medium text-paper-ink transition-[background-color,transform] duration-150 hover:bg-paper-2 active:scale-[0.97] sm:order-3"
           >
             Open your account
           </Link>
-        </nav>
+        </div>
       </header>
 
-      {/* Hero */}
-      <section className="mx-auto grid max-w-[1100px] items-center gap-10 px-6 pb-16 pt-8 lg:grid-cols-[1.1fr_0.9fr] lg:gap-14 lg:pb-24 lg:pt-16">
-        <div>
-          <h1 className="text-balance font-[family-name:var(--font-display)] text-[clamp(2.25rem,5vw,3.75rem)] font-medium leading-[1.04] tracking-[-0.03em]">
-            A money account the public ledger can&apos;t read.
-          </h1>
-          <p className="mt-5 max-w-xl text-pretty text-[16px] leading-relaxed text-[#a3acbd]">
-            Deposit USDC or STRK, spend with a card, send to anyone on Starknet. Everyone can see
-            that you have an account. No one can see what&apos;s in it, unless you choose to show
-            them.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Link
-              href="/app"
-              className="rounded-2xl bg-gradient-to-br from-[#2dd4bf] to-[#38bdf8] px-6 py-3.5 text-[14.5px] font-semibold text-[#04140f] shadow-[0_10px_30px_-12px_rgba(45,212,191,0.55)] transition-transform duration-150 active:scale-[0.97]"
-            >
-              Open your account
-            </Link>
-            <Link
-              href="/docs"
-              className="rounded-2xl border border-white/[0.12] bg-white/[0.03] px-6 py-3.5 text-[14.5px] font-medium text-[#d8deea] transition-colors duration-150 hover:border-white/[0.2] hover:bg-white/[0.06]"
-            >
-              Read the docs
-            </Link>
+      <section className="mx-auto max-w-[1100px] px-6 pb-16 pt-8 lg:pb-24 lg:pt-14">
+        <div className="grid items-start gap-12 lg:grid-cols-[1.02fr_0.98fr] lg:gap-16">
+          <div>
+            <h1 className="text-balance font-[family-name:var(--font-display)] text-[clamp(2.5rem,5.4vw,3.75rem)] font-normal leading-[1.04] tracking-[-0.03em] text-ink">
+              A money account the public ledger can&apos;t read.
+            </h1>
+            <p className="mt-6 max-w-xl text-pretty text-[17px] leading-relaxed text-ink">
+              Hold, spend and send on Starknet. Everyone can see that you have an account. No one
+              can see what is in it.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <Link
+                href="/app"
+                className="rounded-[4px] bg-paper px-6 py-3.5 text-[15px] font-medium text-paper-ink transition-[background-color,transform] duration-150 hover:bg-paper-2 active:scale-[0.97]"
+              >
+                Open your account
+              </Link>
+              <Link
+                href="/docs"
+                className="doc doc-interactive px-6 py-3.5 text-[15px] font-medium text-ink"
+              >
+                Read the docs
+              </Link>
+            </div>
+            <p className="mt-8 max-w-md text-[13px] leading-relaxed text-muted">
+              Live on Starknet mainnet for holding and shielding, through the canonical STRK20 pool.
+              The card, vault and bridge loops run on Sepolia, where this project&apos;s own
+              contracts are deployed. Not a licensed bank. Not a mixer.
+            </p>
           </div>
-          <p className="mt-5 max-w-md text-[12.5px] leading-relaxed text-[#687287]">
-            Live on Starknet mainnet for holding and shielding, through the canonical STRK20 pool.
-            The card, vault and bridge loops run on Sepolia, where this project&apos;s own contracts
-            are deployed. Not a licensed bank. Not a mixer.
-          </p>
+
+          <div className="mx-auto w-full max-w-[460px] lg:mx-0 lg:max-w-none">
+            <RedactedStatement />
+          </div>
         </div>
 
-        <div className="mx-auto w-full max-w-[420px] lg:mx-0">
-          <BankCard network="Sepolia" status="ready" dailyCap="100 STRK" />
-        </div>
+        <EvidenceStamp />
       </section>
 
-      {/* What you can do */}
-      <section className="mx-auto max-w-[1100px] px-6 py-14">
-        <h2 className="font-[family-name:var(--font-display)] text-[22px] font-semibold tracking-[-0.02em]">
-          What you can do here
+      <section className="mx-auto max-w-[1100px] px-6 py-16">
+        <h2 className="font-[family-name:var(--font-display)] text-[24px] leading-tight tracking-[-0.02em] text-ink">
+          What the account does
         </h2>
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <ol className="mt-6">
           {USES.map((u) => (
+            <li key={u.label} className="rule">
+              <Link
+                href={u.href}
+                className="group grid gap-x-8 gap-y-2 py-6 sm:grid-cols-[3rem_minmax(0,1fr)_auto] sm:items-baseline"
+              >
+                <span className="figure text-[13px] font-semibold text-muted">{u.index}</span>
+                <span className="min-w-0">
+                  <span className="flex flex-wrap items-baseline gap-x-3">
+                    <span className="font-[family-name:var(--font-display)] text-[24px] leading-none tracking-[-0.02em] text-ink">
+                      {u.label}
+                    </span>
+                    <span className="text-[17px] leading-snug text-ink">{u.title}</span>
+                  </span>
+                  <span className="mt-2 block max-w-[62ch] text-[13px] leading-relaxed text-muted">
+                    {u.body}
+                  </span>
+                </span>
+                <span className="figure text-[13px] text-muted underline decoration-[color:var(--line-strong)] underline-offset-4 transition-colors duration-150 group-hover:text-ink group-hover:decoration-[color:var(--ink)] sm:text-right">
+                  {u.href}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section id="privacy" className="mx-auto max-w-[1100px] px-6 py-16">
+        <div className="rule grid gap-4 pb-8 pt-8 md:grid-cols-[minmax(0,0.7fr)_minmax(0,1fr)]">
+          <h2 className="font-[family-name:var(--font-display)] text-[24px] leading-tight tracking-[-0.02em] text-ink">
+            What&apos;s hidden, what isn&apos;t
+          </h2>
+          <p className="max-w-[62ch] text-[15px] leading-relaxed text-muted">
+            A privacy pool on a public blockchain is not invisible. It is selectively decryptable.
+            Here is exactly what that means, fact by fact, not a marketing promise.
+          </p>
+        </div>
+
+        <div className="mt-2">
+          <ThreatModelTable />
+        </div>
+
+        <div className="mt-6 flex flex-wrap gap-3">
+          {PRIVACY_DOCS.map((d) => (
             <Link
-              key={u.label}
-              href={u.href}
-              className="group flex flex-col rounded-2xl border border-white/[0.07] bg-white/[0.022] p-5 transition-colors duration-150 hover:border-white/[0.16] hover:bg-white/[0.04]"
+              key={d.href}
+              href={d.href}
+              className="doc doc-interactive px-4 py-2.5 text-[15px] font-medium text-ink"
             >
-              <span className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[#6ee9d5]">
-                {u.label}
-              </span>
-              <h3 className="mt-2 text-[15px] font-semibold leading-snug text-[#eaf0f8]">{u.title}</h3>
-              <p className="mt-2 flex-1 text-[12.5px] leading-relaxed text-[#7a859c]">{u.body}</p>
-              <span className="mt-4 text-[11.5px] font-medium text-[#a3acbd] group-hover:text-[#eaf0f8]">
-                Open {u.label.toLowerCase()} →
-              </span>
+              {d.label}
             </Link>
           ))}
         </div>
-      </section>
 
-      {/* Privacy, honestly */}
-      <section id="privacy" className="mx-auto max-w-[1100px] px-6 py-14">
-        <div className="grid gap-3 border-b border-white/[0.07] pb-6 md:grid-cols-[minmax(0,0.7fr)_minmax(0,1fr)]">
-          <h2 className="font-[family-name:var(--font-display)] text-[22px] font-semibold tracking-[-0.02em]">
-            What&apos;s hidden, what isn&apos;t
-          </h2>
-          <p className="text-[13.5px] leading-relaxed text-[#7a859c]">
-            A privacy pool on a public blockchain is not invisible - it&apos;s selectively
-            decryptable. Here is exactly what that means, row by row, not a marketing promise.
+        <div className="doc mt-8 max-w-3xl p-6 text-[15px] leading-relaxed text-muted">
+          <p className="font-medium text-ink">
+            Who holds the key that unlocks the revealed column?
           </p>
-        </div>
-        <div className="mt-6">
-          <ThreatModelTable />
-        </div>
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Link
-            href="/docs/privacy/who-sees-what"
-            className="rounded-xl border border-white/[0.1] bg-white/[0.03] px-4 py-2.5 text-[13px] font-medium text-[#d8deea] transition-colors hover:border-white/[0.2] hover:bg-white/[0.06]"
-          >
-            Who sees what, party by party →
-          </Link>
-          <Link
-            href="/docs/privacy/the-hosted-account"
-            className="rounded-xl border border-white/[0.1] bg-white/[0.03] px-4 py-2.5 text-[13px] font-medium text-[#d8deea] transition-colors hover:border-white/[0.2] hover:bg-white/[0.06]"
-          >
-            The custodial exception →
-          </Link>
-          <Link
-            href="/docs/privacy/refused-claims"
-            className="rounded-xl border border-white/[0.1] bg-white/[0.03] px-4 py-2.5 text-[13px] font-medium text-[#d8deea] transition-colors hover:border-white/[0.2] hover:bg-white/[0.06]"
-          >
-            What we refuse to claim →
-          </Link>
-        </div>
-        <div className="mt-6 max-w-3xl rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5 text-[13px] leading-relaxed text-[#a3acbd]">
-          <p className="font-semibold text-[#eaf0f8]">Who holds the key that unlocks the &ldquo;revealed&rdquo; column?</p>
           <p className="mt-2">
             Your personal wallet generates and holds your viewing key on your own device the first
-            time you shield with it - Sealed&apos;s app code never receives or stores it. The one
+            time you shield with it. Sealed&apos;s app code never receives or stores it. The one
             exception is the hosted card-settlement account used to process swipes: it has its own
             separate, server-held viewing key so it can operate that one account. It cannot decrypt
             your personal wallet&apos;s notes.
           </p>
-          <p className="mt-3 font-semibold text-[#eaf0f8]">Why does it have to be Ready?</p>
+          <p className="mt-5 font-medium text-ink">Why does it have to be Ready?</p>
           <p className="mt-2">
-            Private actions need a wallet that implements the Starknet privacy wallet API - the part
+            Private actions need a wallet that implements the Starknet privacy wallet API, the part
             that generates your viewing key on-device and produces the proofs behind every private
-            transfer. Ready is the wallet that does this today. Other Starknet wallets can still hold
-            your public funds; they just can&apos;t do the private actions yet.
+            transfer. Ready is the wallet that does this today. Other Starknet wallets can still
+            hold your public funds; they just can&apos;t do the private actions yet.
           </p>
         </div>
       </section>
 
-      {/* Proof */}
-      <section id="proof" className="mx-auto max-w-[1100px] px-6 py-14">
-        <h2 className="font-[family-name:var(--font-display)] text-[22px] font-semibold tracking-[-0.02em]">
-          Not a demo recording - four settled transactions
+      <section id="proof" className="mx-auto max-w-[1100px] px-6 py-16">
+        <h2 className="font-[family-name:var(--font-display)] text-[24px] leading-tight tracking-[-0.02em] text-ink">
+          Not a demo recording. Four receipts you can open.
         </h2>
-        <p className="mt-2 max-w-2xl text-[13.5px] leading-relaxed text-[#7a859c]">
-          One on mainnet against the live STRK20 pool, three on Sepolia through this project&apos;s
-          own contracts. Each is confirmed on chain: click through to Voyager and read it yourself.
+        <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-muted">
+          Four of the transactions on the record: one on mainnet against the live STRK20 pool,
+          three on Sepolia through this project&apos;s own contracts. Each is confirmed on chain,
+          so click through to Voyager and read it yourself.
         </p>
-        <div className="mt-6">
+        <div className="mt-8">
           <ProofPoints />
         </div>
         <Link
           href="/docs/evidence"
-          className="mt-5 inline-block text-[13px] font-medium text-[#6ee9d5] underline decoration-[#6ee9d5]/30 underline-offset-4 transition-colors hover:decoration-[#6ee9d5]"
+          className="mt-6 inline-block text-[15px] text-ink underline decoration-[color:var(--line-strong)] underline-offset-4 transition-colors duration-150 hover:decoration-[color:var(--ink)]"
         >
-          Every contract and transaction, with the file each value comes from →
+          Every contract and transaction, with the file each value comes from
         </Link>
       </section>
 
