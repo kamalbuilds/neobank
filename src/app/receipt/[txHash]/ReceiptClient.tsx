@@ -10,6 +10,7 @@ import {
 } from "@/utils/constants";
 import { Skeleton } from "../../components/v2/ui";
 import { AccountChrome } from "../../components/v2/AccountChrome";
+import { DisplayFigure, DisplayRedaction } from "../../components/v2/DisplayFigure";
 
 // Starknet prints felts with leading zeros stripped, so a real hash is 1-64
 // hex digits, not always 64: the JIT settlement
@@ -240,20 +241,33 @@ export function ReceiptClient() {
       <div className={`${SHEET} animate-rise-in`}>
         <SheetHead title="Settled through the STRK20 privacy pool" />
 
-        <dl className="mt-6">
+        {/* On a receipt the amount is the page, and on this receipt the amount
+            is genuinely unreadable: it lives encrypted in pool storage and no
+            RPC returns it. So the amount still gets the display step, drawn as
+            the bar that is actually there rather than shrunk to a caption. A
+            number would have to be invented to fill it, and none is. */}
+        <DisplayFigure
+          className="mt-7"
+          label="Amount"
+          value={<DisplayRedaction label="Amount encrypted in pool storage" width="w-[6ch]" />}
+          caption="Encrypted in pool storage. The bar is the fact, not a placeholder for one: this page proves the settlement happened and cannot show what it was worth."
+          provenance={`sepolia · block ${blockNumber ?? "not reported"} · ${utcFromBlockTimestamp(timestamp)}`}
+        />
+
+        <dl className="mt-7">
           <div className="rule-paper flex items-baseline justify-between gap-4 py-2.5">
             <dt className="text-[13px] text-paper-muted">Status</dt>
-            <dd className="figure text-[13px] font-bold text-ledger-green">Settled</dd>
+            <dd className="figure text-[15px] font-bold text-ledger-green">Settled</dd>
           </div>
           <div className="rule-paper flex items-baseline justify-between gap-4 py-2.5">
             <dt className="text-[13px] text-paper-muted">Block</dt>
-            <dd className="figure text-[13px] font-semibold text-paper-ink">{blockNumber ?? "Not reported"}</dd>
+            <dd className="figure text-[15px] font-semibold text-paper-ink">{blockNumber ?? "Not reported"}</dd>
           </div>
           <div className="rule-paper flex items-baseline justify-between gap-4 py-2.5">
             <dt className="text-[13px] text-paper-muted">
               Block time
             </dt>
-            <dd className="figure text-[13px] font-semibold text-paper-ink">
+            <dd className="figure text-[15px] font-semibold text-paper-ink">
               {utcFromBlockTimestamp(timestamp)}
             </dd>
           </div>
@@ -261,11 +275,7 @@ export function ReceiptClient() {
             <dt className="text-[13px] text-paper-muted">
               Pool events found
             </dt>
-            <dd className="figure text-[13px] font-semibold text-paper-ink">{eventCount}</dd>
-          </div>
-          <div className="rule-paper flex items-baseline justify-between gap-4 py-2.5">
-            <dt className="text-[13px] text-paper-muted">Amount</dt>
-            <dd className="text-[13px] text-paper-muted">Encrypted in pool storage</dd>
+            <dd className="figure text-[15px] font-semibold text-paper-ink">{eventCount}</dd>
           </div>
         </dl>
 

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { TOKENS } from "@/utils/constants";
 import { fromBaseUnits } from "../components/lib/format";
 import { AccountChrome } from "../components/v2/AccountChrome";
+import { DISPLAY_FIGURE, DisplayRedaction } from "../components/v2/DisplayFigure";
 import { PanelState, Redacted, Skeleton } from "../components/v2/ui";
 
 const DEMO_AUTH = "iauth_dinner_1787803543";
@@ -27,15 +28,24 @@ type StatementJson = {
   missing?: string[];
 };
 
-/** Base units as the token they are denominated in. Never a guessed decimal. */
-function amountLabel(units: string, token?: string): string {
+/**
+ * Base units as the token they are denominated in. Never a guessed decimal: an
+ * unrecognised token keeps its raw units and says so, rather than being
+ * divided by 18 on the assumption that everything is STRK.
+ */
+function amountParts(units: string, token?: string): { value: string; unit: string } {
   try {
     const isStrk = token ? BigInt(token) === BigInt(TOKENS.STRK.address) : true;
-    if (!isStrk) return `${units} units`;
-    return `${fromBaseUnits(BigInt(units), TOKENS.STRK.decimals)} STRK`;
+    if (!isStrk) return { value: units, unit: "units" };
+    return { value: fromBaseUnits(BigInt(units), TOKENS.STRK.decimals), unit: "STRK" };
   } catch {
-    return `${units} units`;
+    return { value: units, unit: "units" };
   }
+}
+
+function amountLabel(units: string, token?: string): string {
+  const { value, unit } = amountParts(units, token);
+  return `${value} ${unit}`;
 }
 
 function shortHash(hash: string): string {
@@ -155,8 +165,8 @@ export function StatementsClient() {
           )}
         </div>
 
-        {/* The statement itself is paper: ruled rows, figures in a right-hand
-            column, and a real ink bar over anything not disclosed. */}
+        {/* The statement itself is paper: ruled rows, the settled figure at
+            display size, and a real ink bar over anything not disclosed. */}
         {(loading || payload) && !error && (
           <div className="paper paper-torn relative px-6 pb-7 pt-9 sm:px-8">
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -179,9 +189,10 @@ export function StatementsClient() {
                 aria-busy="true"
                 aria-label="Reading statement"
               >
-                <Skeleton className="skeleton-paper h-4 w-2/5" />
-                <Skeleton className="skeleton-paper h-11" />
-                <Skeleton className="skeleton-paper h-11 opacity-70" />
+                <Skeleton className="skeleton-paper h-3 w-2/5" />
+                <Skeleton className="skeleton-paper h-[52px] w-56" />
+                <Skeleton className="skeleton-paper h-4 w-40" />
+                <Skeleton className="skeleton-paper h-3 w-2/3 opacity-70" />
               </div>
             )}
 
@@ -205,12 +216,9 @@ export function StatementsClient() {
                   </p>
                 ) : (
                   <>
-                    <div className="mt-5 flex items-baseline justify-between border-b border-[color:var(--paper-line)] pb-1.5">
+                    <div className="mt-5 border-b border-[color:var(--paper-line)] pb-1.5">
                       <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-paper-muted">
-                        On-chain settlement
-                      </span>
-                      <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-paper-muted">
-                        Amount
+                        Amount settled on chain
                       </span>
                     </div>
 
@@ -218,63 +226,63 @@ export function StatementsClient() {
                       {rows.map((item) => (
                         <li
                           key={item.transactionHash}
-                          className="rule-paper flex items-start justify-between gap-5 py-3 first:border-t-0"
+                          className="rule-paper py-5 first:border-t-0"
                         >
-                          <div className="min-w-0">
-                            <a
-                              href={item.explorerTransactionUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="figure block text-[13px] font-semibold text-paper-ink underline decoration-[color:var(--paper-line)] underline-offset-4 hover:decoration-[color:var(--seal)]"
-                            >
-                              {shortHash(item.transactionHash)}
-                            </a>
-                            <span className="figure mt-1 block text-[13px] text-paper-muted">
-                              {item.blockNumber !== undefined
-                                ? `${payload.network ?? "sepolia"} · block ${item.blockNumber}`
-                                : `${payload.network ?? "sepolia"} · block not reported`}
-                            </span>
-                          </div>
-                          <div className="shrink-0 text-right">
-                            <span className="figure block text-[15px] font-bold text-paper-ink">
+                          {/* The settled amount is the statement. At 15px it
+                              sat two steps below the page heading, which reads
+                              as the title mattering more than the money.
+                              Withheld, the bar takes the same display size:
+                              the redaction is the product, so it is not the
+                              thing that shrinks. */}
+                          <div className="flex flex-wrap items-baseline gap-x-2.5">
+                            <span className={`${DISPLAY_FIGURE} text-paper-ink`}>
                               {item.amount ? (
                                 <Redacted
                                   key={`settle-${item.transactionHash}-${full}`}
                                   revealed
                                   srLabel="Settled amount"
                                 >
-                                  {amountLabel(item.amount, item.token)}
+                                  {amountParts(item.amount, item.token).value}
                                 </Redacted>
                               ) : (
-                                <Redacted
-                                  revealed={false}
-                                  className="w-[104px]"
-                                  srLabel="Settled amount withheld"
-                                >
-                                  {" "}
-                                </Redacted>
+                                <DisplayRedaction
+                                  label="Settled amount withheld"
+                                  width="w-[5ch]"
+                                />
                               )}
                             </span>
-                            <span className="figure mt-1 block text-[13px] text-paper-muted">
-                              {item.lendAssets ? (
-                                <Redacted
-                                  key={`lend-${item.transactionHash}-${full}`}
-                                  revealed
-                                  srLabel="Lent into the vault"
-                                >
-                                  {`lent ${amountLabel(item.lendAssets, TOKENS.STRK.address)}`}
-                                </Redacted>
-                              ) : full ? (
-                                "no vault lend"
-                              ) : (
-                                <Redacted
-                                  revealed={false}
-                                  className="w-[72px]"
-                                  srLabel="Vault lend withheld"
-                                >
-                                  {" "}
-                                </Redacted>
-                              )}
+                            <span className="figure text-[18px] font-semibold text-paper-muted">
+                              {item.amount ? amountParts(item.amount, item.token).unit : "STRK"}
+                            </span>
+                          </div>
+                          <span className="figure mt-2.5 block text-[15px] font-semibold text-paper-ink">
+                            {item.lendAssets ? (
+                              <Redacted
+                                key={`lend-${item.transactionHash}-${full}`}
+                                revealed
+                                srLabel="Lent into the vault"
+                              >
+                                {`lent ${amountLabel(item.lendAssets, TOKENS.STRK.address)}`}
+                              </Redacted>
+                            ) : full ? (
+                              "no vault lend"
+                            ) : (
+                              <DisplayRedaction label="Vault lend withheld" width="w-[9ch]" />
+                            )}
+                          </span>
+                          <div className="mt-2.5 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                            <a
+                              href={item.explorerTransactionUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="figure text-[13px] font-semibold text-paper-ink underline decoration-[color:var(--paper-line)] underline-offset-4 hover:decoration-[color:var(--seal)]"
+                            >
+                              {shortHash(item.transactionHash)}
+                            </a>
+                            <span className="figure text-[13px] text-paper-muted">
+                              {item.blockNumber !== undefined
+                                ? `${payload.network ?? "sepolia"} · block ${item.blockNumber}`
+                                : `${payload.network ?? "sepolia"} · block not reported`}
                             </span>
                           </div>
                         </li>

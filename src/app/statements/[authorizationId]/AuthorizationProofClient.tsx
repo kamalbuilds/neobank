@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { explorerTxUrl } from "@/utils/constants";
 import { AccountChrome } from "../../components/v2/AccountChrome";
+import { DisplayFigure } from "../../components/v2/DisplayFigure";
 import { Skeleton } from "../../components/v2/ui";
 
 type ProofJson = {
@@ -210,19 +211,21 @@ export function AuthorizationProofClient() {
             leaves your account.
           </p>
 
-          <dl className="mt-6">
+          {/* The settled amount is what this page is for, so it is the largest
+              thing on it. The entrypoint and block that produced it sit
+              directly underneath rather than in a row further down, because a
+              figure separated from its call is a figure with no origin. */}
+          <DisplayFigure
+            className="rule-paper mt-6 pt-6"
+            label="Settled to the merchant"
+            value={fromUnits(proof.settleAmount.units, proof.settleAmount.decimals)}
+            unit="STRK"
+            provenance={`${proof.settleAmount.origin.call.entrypoint} · sepolia · block ${proof.settleAmount.origin.call.blockNumber}`}
+          />
+
+          <dl className="mt-7">
             <Row label="Cardholder alias">{proof.cardholderAlias}</Row>
             <Row label="Authorization">{proof.authorizationId}</Row>
-            <Row label="Settle amount">
-              <span className="text-[18px] font-bold">
-                {fromUnits(proof.settleAmount.units, proof.settleAmount.decimals)}
-              </span>{" "}
-              <span className="text-[13px] font-semibold text-paper-muted">STRK</span>
-            </Row>
-            <Row label="Read via">
-              {proof.settleAmount.origin.call.entrypoint} at block{" "}
-              {proof.settleAmount.origin.call.blockNumber}
-            </Row>
             <Row label="Program contract">
               {proof.settleAmount.origin.call.contractAddress}
             </Row>
@@ -253,10 +256,13 @@ export function AuthorizationProofClient() {
                         {action.vault ?? "pool"}
                       </span>
                     </dt>
-                    <dd className="figure min-w-0 break-all text-right text-[13px] font-semibold text-paper-ink">
-                      {fromUnits(action.amount.units, 18)}{" "}
-                      <span className="text-[13px] text-paper-muted">
-                        STRK · {action.amount.origin.call.entrypoint} at block{" "}
+                    <dd className="min-w-0 text-right">
+                      <span className="figure text-[24px] font-bold leading-none text-paper-ink">
+                        {fromUnits(action.amount.units, 18)}{" "}
+                        <span className="text-[13px] font-semibold text-paper-muted">STRK</span>
+                      </span>
+                      <span className="figure mt-1.5 block break-words text-[13px] text-paper-muted">
+                        {action.amount.origin.call.entrypoint} · sepolia · block{" "}
                         {action.amount.origin.call.blockNumber}
                       </span>
                     </dd>

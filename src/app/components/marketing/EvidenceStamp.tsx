@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { CONTRACT_RECORD, RETIRED_CONTRACTS, TX_RECORD } from '@/lib/evidence';
+import { ChainHead } from './ChainHead';
 
 /**
  * The counts a reviewer reaches for first, counted rather than typed. Every
@@ -7,8 +8,10 @@ import { CONTRACT_RECORD, RETIRED_CONTRACTS, TX_RECORD } from '@/lib/evidence';
  * added or removed there moves the number here; none of it is a literal.
  *
  * evidence.ts carries a block number per transaction but no "verified at"
- * timestamp, so this stamp deliberately claims no freshness date. The command
- * that re-reads the record against chain is named instead.
+ * timestamp, so these three counts deliberately claim no freshness date. The
+ * command that re-reads the record against chain is named instead. The one
+ * figure below that does carry a time is the chain head, because that one is
+ * read from the RPC in the browser rather than derived from the repository.
  */
 const SETTLED = TX_RECORD.length;
 const SETTLED_MAINNET = TX_RECORD.filter((t) => t.network === 'mainnet').length;
@@ -38,7 +41,7 @@ const FIGURES: { value: number; label: string; split: string }[] = [
 
 export function EvidenceStamp() {
   return (
-    <section aria-label="Evidence counts" className="rule mt-14 pt-8 lg:mt-20">
+    <section aria-label="Evidence counts and chain head" className="rule mt-14 pt-8 lg:mt-20">
       <dl className="grid gap-x-10 gap-y-8 sm:grid-cols-3">
         {FIGURES.map((f) => (
           <div key={f.label}>
@@ -65,6 +68,12 @@ export function EvidenceStamp() {
         </Link>
         .
       </p>
+
+      {/* Everything above this line is a record: true, checkable, and fixed.
+          None of it distinguishes this page from a screenshot of it, which is
+          why the chain head is read here rather than only two clicks away on
+          the Earn page. */}
+      <ChainHead />
     </section>
   );
 }

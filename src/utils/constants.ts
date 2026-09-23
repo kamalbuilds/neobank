@@ -42,9 +42,13 @@ function rpcUrl(network: NetworkKey): string {
   }
   // blastapi.io is retired and now answers every call with "Blast API is no
   // longer available", so the Sepolia fallback silently failed every request.
-  // Both endpoints below were checked against starknet_blockNumber.
+  // rpc.starknet.lava.build went the same way and now returns HTTP 410
+  // "This endpoint has been discontinued", which took the mainnet fallback
+  // with it. Both endpoints below were checked against
+  // starknet_blockHashAndNumber, from the shell and from the browser, so the
+  // CORS headers are known good too.
   return network === "mainnet"
-    ? "https://rpc.starknet.lava.build"
+    ? "https://starknet-rpc.publicnode.com"
     : "https://starknet-sepolia-rpc.publicnode.com";
 }
 

@@ -12,11 +12,20 @@ import { TX_RECORD } from '@/lib/evidence';
 import { withRetry } from '../components/lib/rpcRetry';
 import { fromBaseUnits, shortHex } from '../components/lib/format';
 import { AccountChrome } from '../components/v2/AccountChrome';
+import { DisplayFigure } from '../components/v2/DisplayFigure';
 import { HowThisWorks, PanelState, Skeleton } from '../components/v2/ui';
 
 const EARN_VAULT = ANONYMIZER_ADDRESSES.sepolia.earnVault;
 const EXPECTED_VAULT =
   '0x076811f28a950b5c6ddaa02bd323b5fccb572676ff57bbc3b979a430f0acda8b';
+
+/**
+ * The card authorization behind the first receipt below. Its settled hash is
+ * VAULT_TX_HASHES[0], so the two display figures at the top of the sheet and
+ * the receipt underneath them are the same transaction seen twice: once as
+ * amounts re-read from the program contract, once as a hash you can open.
+ */
+const ATOMIC_AUTHORIZATION = 'iauth_dinner_1787803543';
 
 /**
  * The two receipts where this vault did the thing it exists to do: a swipe
@@ -78,10 +87,30 @@ function utcFrom(seconds: number | null): string {
   return `${date.toISOString().slice(0, 16).replace('T', ' ')} UTC`;
 }
 
+/**
+ * The proof bundle for one authorization. Only the fields this page prints are
+ * modelled: each amount carries the entrypoint and block it was re-read at, so
+ * neither figure can be shown without its provenance.
+ */
+type AtomicCall = { entrypoint: string; blockNumber: number };
+type AtomicReceipt = {
+  settleAmount: { units: string; decimals: number; origin: { call: AtomicCall } };
+  positionActions: Array<{
+    kind: string;
+    amount: { units: string; decimals?: number; origin: { call: AtomicCall } };
+  }>;
+};
+
+function unitsToStrk(units: string, decimals = TOKENS.STRK.decimals): string {
+  return fromBaseUnits(BigInt(units), decimals);
+}
+
 export function EarnClient() {
   const [read, setRead] = useState<VaultRead | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [atomic, setAtomic] = useState<AtomicReceipt | null>(null);
+  const [atomicError, setAtomicError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     if (!EARN_VAULT) {
@@ -106,6 +135,45 @@ export function EarnClient() {
     refresh();
   }, [refresh]);
 
+  // The two figures at the top of the sheet are re-read from the program
+  // contract on every request, which is why they are fetched rather than
+  // restated from evidence.ts: the block each one names is the server's read,
+  // not a number typed into this file.
+  useEffect(() => {
+    let cancelled = false;
+    async function loadAtomic() {
+      try {
+        const response = await fetch(
+          `/api/card/statement?view=proof&authorizationId=${ATOMIC_AUTHORIZATION}`,
+          { cache: 'no-store' },
+        );
+        if (cancelled) return;
+        if (!response.ok) {
+          setAtomic(null);
+          setAtomicError(
+            response.status === 503
+              ? 'the card runtime is not configured on this deployment'
+              : `the proof endpoint answered ${response.status}`,
+          );
+          return;
+        }
+        const body = (await response.json()) as AtomicReceipt;
+        if (cancelled) return;
+        setAtomic(body);
+        setAtomicError(null);
+      } catch (e) {
+        if (cancelled) return;
+        setAtomic(null);
+        setAtomicError(e instanceof Error ? e.message : 'the proof endpoint did not answer');
+      }
+    }
+    void loadAtomic();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const lend = atomic?.positionActions.find((action) => action.kind === 'lend') ?? null;
   const vault = EARN_VAULT ?? EXPECTED_VAULT;
   const assetsNumber = read ? Number(read.assets) : null;
   const empty = assetsNumber === 0;
@@ -153,6 +221,76 @@ export function EarnClient() {
             </span>
           </div>
 
+          {/* The argument of this page is not the testnet total below, which is
+              a dollar and a half of Sepolia STRK. It is that one swipe paid a
+              merchant and opened a lending position in a single transaction,
+              so those are the two figures set at display size. */}
+          <div className="rule-paper mt-6 pt-6">
+            {!atomic && !atomicError && (
+              <div
+                className="grid gap-7 sm:grid-cols-2 sm:gap-8"
+                aria-busy="true"
+                aria-label="Reading the atomic settlement"
+              >
+                {[0, 1].map((i) => (
+                  <div key={i} className="flex flex-col gap-3">
+                    <Skeleton className="skeleton-paper h-3 w-32" />
+                    <Skeleton className="skeleton-paper h-[52px] w-40" />
+                    <Skeleton className="skeleton-paper h-3 w-48" />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {atomicError && (
+              <p
+                className="max-w-xl border-l-2 border-[color:var(--seal)] pl-3 text-[13px] leading-relaxed text-paper-ink"
+                role="alert"
+              >
+                The settled amount and the lend could not be re-read: {atomicError}. No figure is
+                shown in their place. The receipt below still carries the hash, so the same two
+                amounts are readable on Voyager.
+              </p>
+            )}
+
+            {atomic && (
+              <>
+                <div className="grid gap-7 sm:grid-cols-2 sm:gap-8">
+                  <DisplayFigure
+                    label="Paid to the merchant"
+                    value={unitsToStrk(atomic.settleAmount.units, atomic.settleAmount.decimals)}
+                    unit="STRK"
+                    provenance={`${atomic.settleAmount.origin.call.entrypoint} · sepolia · block ${atomic.settleAmount.origin.call.blockNumber}`}
+                  />
+                  {lend ? (
+                    <DisplayFigure
+                      label="Lent into this vault"
+                      value={unitsToStrk(lend.amount.units, lend.amount.decimals)}
+                      unit="STRK"
+                      provenance={`${lend.amount.origin.call.entrypoint} · sepolia · block ${lend.amount.origin.call.blockNumber}`}
+                    />
+                  ) : (
+                    <div>
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-paper-muted">
+                        Lent into this vault
+                      </div>
+                      <p className="mt-2.5 max-w-[46ch] text-[15px] leading-snug text-paper-ink">
+                        This authorization opened no vault position. It settled the merchant and
+                        nothing else.
+                      </p>
+                    </div>
+                  )}
+                </div>
+                <p className="mt-5 max-w-2xl text-[13px] leading-relaxed text-paper-muted">
+                  Both figures come out of the same transaction and the same block. The merchant was
+                  paid and the position was opened together, so no balance sat exposed in an
+                  intermediate account between the two. Each amount was re-read from the card
+                  program contract when this page loaded, at the block printed beneath it.
+                </p>
+              </>
+            )}
+          </div>
+
           {VAULT_RECEIPTS.length === 0 ? (
             <p className="mt-6 text-[15px] leading-relaxed text-paper-ink">
               No vault receipt is recorded yet. Pay a restaurant with the card on the Card page:
@@ -198,11 +336,14 @@ export function EarnClient() {
                 Vault total assets, right now
               </span>
               {loading ? (
-                <Skeleton className="skeleton-paper h-5 w-28" />
+                <Skeleton className="skeleton-paper h-7 w-32" />
               ) : error ? (
                 <span className="figure text-[15px] font-semibold text-seal">Unavailable</span>
               ) : (
-                <span className="figure text-[18px] font-bold text-paper-ink">
+                /* Deliberately a step below the two figures above. This is a
+                   Sepolia balance of testnet money; setting it at display size
+                   would advertise it as scale, which it is not. */
+                <span className="figure text-[24px] font-bold leading-none text-paper-ink">
                   {read?.assets ?? 'Unavailable'}{' '}
                   <span className="text-[13px] font-semibold text-paper-muted">STRK</span>
                 </span>
