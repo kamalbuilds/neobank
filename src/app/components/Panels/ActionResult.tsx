@@ -19,8 +19,8 @@ export function errorResult(message: string): ActionResult {
 }
 
 // A wallet error the classifier does not recognise must still show what the
-// wallet actually said. Dropping the raw text turns any unmatched error - a
-// differently worded "not registered" included - into a silent dead end.
+// wallet actually said. Dropping the raw text turns any unmatched error, a
+// differently worded "not registered" included, into a silent dead end.
 export function walletErrorResult(error: Strk20Error | undefined): ActionResult {
   if (!error) return errorResult("Action failed.");
   const note =

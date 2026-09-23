@@ -261,14 +261,14 @@ export default function InboundPanel({ network }: { network: NetworkKey }) {
         <p>
           The transfer from Base and the mint on Starknet are both public onchain events, the
           same as any bridge. The last step, shielding, moves the balance into the STRK20 pool
-          behind the hosted account&apos;s viewing key - which Sealed&apos;s operator holds, not
+          behind the hosted account&apos;s viewing key, which Sealed&apos;s operator holds, not
           you. This is a custodial account, unlike your own self-custody balance elsewhere in
           Sealed.
         </p>
       </HowThisWorks>
 
       <div className={CARD}>
-        <div className={LABEL}>Step 1 - Send USDC from Base</div>
+        <div className={LABEL}>Step 1. Send USDC from Base</div>
         <div className="mt-3 flex flex-col gap-2">
           <div className={ui.note}>Send to this account:</div>
           {hosted ? (
@@ -338,7 +338,7 @@ export default function InboundPanel({ network }: { network: NetworkKey }) {
       </div>
 
       <div className={CARD}>
-        <div className={LABEL}>Step 2 - Claim the mint on Starknet</div>
+        <div className={LABEL}>Step 2. Claim the mint on Starknet</div>
         <div className="mt-3 flex flex-col gap-2 sm:flex-row">
           <input
             className={`${ui.inputField} py-2.5`}
@@ -383,7 +383,7 @@ export default function InboundPanel({ network }: { network: NetworkKey }) {
                   />
                   <span className="text-ink">
                     {status.phase === 'not_found' &&
-                      'Circle has not indexed this burn yet - polling…'}
+                      'Circle has not indexed this burn yet. Polling…'}
                     {status.phase === 'attesting' &&
                       `Waiting for Base finality and Circle attestation (${status.irisStatus ?? 'pending'})…`}
                     {status.phase === 'ready_to_claim' &&
@@ -431,16 +431,16 @@ export default function InboundPanel({ network }: { network: NetworkKey }) {
         ) : null}
         {claim?.phase === 'already_claimed' ? (
           <p className={`${ui.note} mt-2`}>
-            This burn was already claimed on Starknet - continue to shielding.
+            This burn was already claimed on Starknet. Continue to shielding.
           </p>
         ) : null}
       </div>
 
       <div className={CARD}>
-        <div className={LABEL}>Step 3 - Shield it</div>
+        <div className={LABEL}>Step 3. Shield it</div>
         <p className={`${ui.note} mt-3`}>
           Move the USDC you just received into the hosted account&apos;s shielded balance. This
-          step moves it behind the STRK20 pool - kept as its own step so the public arrival and
+          step moves it behind the STRK20 pool, kept as its own step so the public arrival and
           the pool deposit are each visible on their own. The operator still holds the viewing
           key for this account.
         </p>

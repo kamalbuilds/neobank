@@ -16,6 +16,35 @@ import { encodePublicAddress, encodeShieldedReceiver } from "../lib/beam";
 import TokenSelect from "./TokenSelect";
 import { HowThisWorks } from "../v2/ui";
 import PoolFacts, { usePoolSnapshot } from "./PoolFacts";
+import VerbEvidence, { receiptsFor } from "./VerbEvidence";
+
+/**
+ * Receiving has three settled receipts: value arriving already shielded, and
+ * the two mainnet registrations without which the pool rejects a transfer to
+ * an account rather than holding it. The inbound one is Sepolia, the
+ * registrations are mainnet, and each row prints its own network.
+ */
+const RECEIVE_RECEIPTS = receiptsFor([
+  "0x28b053d9a670650604bf8f7ae8b67fc7f296d2f4fa630a987e7a6f775b11fe2",
+  "0xe08fd329091b483978c64f93288b7346b158e0dc485fd7c5f594899f0294",
+  "0x428d5947280d2c670162aa7a3d666bcaa4d5256e016fab460c1b7a560609578",
+]);
+
+/**
+ * The example request the disconnected panel prints a QR for. Both values are
+ * real and checkable: the account is Sealed's own, registered with the
+ * canonical mainnet pool by the last receipt above, and 0.24 STRK is the
+ * amount the Osteria dinner settlement actually paid (strk20.json
+ * settle_amount). It is labelled an example everywhere it appears, because it
+ * is not the reader's address and paying it would pay us.
+ */
+const EXAMPLE_ACCOUNT = "0x071c62dfb692c3821a9ef120919f388b4559cb2d414c7378da62e6bf7f4f494d";
+const EXAMPLE_REQUEST: PaymentRequest = {
+  recipient: EXAMPLE_ACCOUNT,
+  token: "STRK",
+  units: 240000000000000000n,
+  memo: "Osteria dinner",
+};
 
 const EXPIRY_OPTIONS: { value: string; label: string }[] = [
   { value: "0", label: "No expiry" },
@@ -39,6 +68,9 @@ export default function ReceivePanel() {
   const [qr, setQr] = useState<string>("");
   const [qrPending, setQrPending] = useState(false);
   const [qrError, setQrError] = useState("");
+  const [exampleQr, setExampleQr] = useState("");
+  const [exampleQrPending, setExampleQrPending] = useState(false);
+  const [exampleQrError, setExampleQrError] = useState("");
 
   const tokenConfig = TOKENS[token];
   const poolHex = poolAddressFor(network);
@@ -128,6 +160,44 @@ export default function ReceivePanel() {
     };
   }, [requestLink]);
 
+  // The disconnected panel used to print nothing a reader could look at, which
+  // for a page whose whole output is a QR code reads as broken rather than
+  // withheld. This encodes a request to a real, pool-registered account so the
+  // format is visible before a wallet exists, and it is built on the client
+  // only, same as the user's own.
+  useEffect(() => {
+    if (address) return;
+    let cancelled = false;
+    let link: string;
+    try {
+      link = buildPaymentRequestUrl(window.location.href, EXAMPLE_REQUEST);
+    } catch (err: any) {
+      setExampleQrError(err?.message ?? "The example request could not be encoded as a link.");
+      return;
+    }
+    setExampleQrPending(true);
+    setExampleQrError("");
+    QRCode.toDataURL(link, {
+      width: 240,
+      margin: 1,
+      color: { dark: "#16161a", light: "#f4f1ea" },
+    })
+      .then((data) => {
+        if (!cancelled) setExampleQr(data);
+      })
+      .catch((err: any) => {
+        if (cancelled) return;
+        setExampleQr("");
+        setExampleQrError(err?.message ?? "The example request could not be drawn as a QR code.");
+      })
+      .finally(() => {
+        if (!cancelled) setExampleQrPending(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [address]);
+
   async function copy(kind: Exclude<CopyKind, "">, value: string) {
     if (!value) return;
     try {
@@ -153,6 +223,75 @@ export default function ReceivePanel() {
           with your account hex, your pool address, your checksummed <Figure>strk</Figure> string
           and your shielded <Figure>strkx</Figure> receiver, each one copyable.
         </PanelState>
+
+        <VerbEvidence
+          stamp="mainnet · sepolia"
+          title="Value has arrived into a shielded balance"
+          verdict="The first receipt is the inbound leg itself: USDC bridged from Base Sepolia over CCTP V2, landing and shielding in the same flow. The two under it are the registrations that make an account able to receive at all, and those settled on mainnet. No inbound private transfer from another person's wallet is in the record yet."
+          receiptsLabel="What has settled: arriving value, and the keys that can read it"
+          receipts={RECEIVE_RECEIPTS}
+          footnote="Receiving needs your account to have registered a viewing key with the pool at least once. Until it has, a payer's transfer to you is refused outright rather than held, which is why the panel above asks you to shield before you ask to be paid."
+        />
+
+        {/* An example, printed rather than described. A page whose output is a
+            QR code has to be able to show one before a wallet exists, and the
+            label has to make it impossible to mistake for the reader's own. */}
+        <section className="paper p-4 sm:p-5" aria-label="Example payment request">
+          <div className="flex flex-wrap items-start justify-between gap-3 border-b-[3px] border-double border-[var(--paper-line)] pb-2.5">
+            <h3 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-paper-muted">
+              Example, not your address
+            </h3>
+            <span className="figure shrink-0 text-[13px] font-semibold text-paper-ink">
+              0.24 STRK
+            </span>
+          </div>
+
+          {exampleQrPending && !exampleQr ? (
+            <PanelState
+              kind="loading"
+              rows={1}
+              tone="paper"
+              title="Encoding the example request as a QR code"
+              className="mt-3"
+            />
+          ) : null}
+          {exampleQrError ? (
+            <PanelState
+              kind="error"
+              tone="paper"
+              title="Could not draw the example QR code"
+              className="mt-3"
+            >
+              {exampleQrError} The account and amount it encodes are printed below, so the format is
+              still readable.
+            </PanelState>
+          ) : null}
+          {exampleQr ? (
+            <div className="my-4 flex justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={exampleQr}
+                alt="Example payment request QR code for Sealed's own account"
+                width={200}
+                height={200}
+                className="block rounded-[2px]"
+              />
+            </div>
+          ) : null}
+
+          <p className="mt-3 text-[13px] leading-relaxed text-paper-muted">
+            This asks for <Figure className="font-semibold text-paper-ink">0.24 STRK</Figure>, the
+            amount the Osteria dinner settlement actually paid, into Sealed&apos;s own account:
+          </p>
+          <Figure className="mt-1.5 block break-all text-[13px] leading-relaxed text-paper-ink">
+            {EXAMPLE_ACCOUNT}
+          </Figure>
+          <p className="mt-2 text-[13px] leading-relaxed text-paper-muted">
+            It is here to show the format. Scanning it would pay us, not you. Link a wallet and the
+            same code is rebuilt against your address, with the amount and label you choose.
+          </p>
+        </section>
+
         {/* Reads with no wallet connected, so this panel is never an empty shell. */}
         <PoolFacts network={network} snapshot={pool} />
       </div>
@@ -255,9 +394,9 @@ export default function ReceivePanel() {
           </p>
         ) : null}
 
-        <HowThisWorks className="mt-3" label="Not a card - what opening this link does">
+        <HowThisWorks className="mt-3" label="Not a card: what opening this link does">
           <p>
-            This is a request link, not a card number - a merchant checkout can&apos;t take it.
+            This is a request link, not a card number, and a merchant checkout cannot take it.
             Opening it opens this app with the Send panel filled in, and the payer approves the
             transfer from their own wallet. The token, amount and label are readable by anyone who
             opens or scans the link.

@@ -13,6 +13,19 @@ import FeeRow from "./FeeRow";
 import { ResultCard, errorResult, receiptToResult, walletErrorResult, type ActionResult } from "./ActionResult";
 import { Figure, HowThisWorks, PanelState } from "../v2/ui";
 import PoolFacts, { usePoolSnapshot } from "./PoolFacts";
+import VerbEvidence, { receiptsFor } from "./VerbEvidence";
+
+/**
+ * The two Sepolia receipts where the pool's withdraw action actually ran. Both
+ * withdrew shielded value out to a public recipient inside a card settlement,
+ * which is the same pool entrypoint this form calls. Neither is a standalone
+ * unshield to an address the user picked, and the copy below says so rather
+ * than letting the rows imply it.
+ */
+const WITHDRAW_RECEIPTS = receiptsFor([
+  "0x4d94fa79724d3e997604e4a42a54daab3cc68f4ec17672b3ca9644a843e2639",
+  "0x1f815361cd9cb1b378f208c8def10dddf5452ead190cb199a1da37adf4fe5df",
+]);
 
 export default function UnshieldPanel({ network }: { network: NetworkKey }) {
   const myWalletAccount = useStoreWallet((s) => s.myWalletAccount);
@@ -131,7 +144,7 @@ export default function UnshieldPanel({ network }: { network: NetworkKey }) {
     } else if (outcome.status === "submitted") {
       setResult({
         status: "pending",
-        title: "Submitted - not yet confirmed by this RPC",
+        title: "Submitted, not yet confirmed by this RPC",
         note: "Paymaster-relayed transactions can take a while to surface. Track it on the explorer.",
         rows: [{ label: "Transaction", value: submission.txHash, hash: submission.txHash }],
       });
@@ -153,6 +166,17 @@ export default function UnshieldPanel({ network }: { network: NetworkKey }) {
           <p>The withdrawal amount and destination address become visible onchain once it lands.</p>
         </HowThisWorks>
       </div>
+
+      {!myWalletAccount && (
+        <VerbEvidence
+          stamp="sepolia"
+          title="The withdraw leg has run on Sepolia, inside a settlement"
+          verdict="Both receipts below call the same pool entrypoint this form calls: value leaves the shielded balance and lands in public. In each one the destination was chosen by the card runtime settling a swipe, not typed into this form, and both are Sepolia. No withdrawal has been run on mainnet."
+          receiptsLabel="What has settled: the pool withdrawing to a public recipient"
+          receipts={WITHDRAW_RECEIPTS}
+          footnote="A standalone withdrawal to a destination of your choosing is not in the record yet. The difference is the recipient, not the mechanism: the pool action, the fee and the public visibility of the amount are identical to what this form submits."
+        />
+      )}
 
       <div className={ui.inputBlock}>
         <label htmlFor="unshield-amount" className={ui.inputLabel}>

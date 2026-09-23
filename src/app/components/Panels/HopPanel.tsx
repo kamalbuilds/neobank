@@ -146,7 +146,7 @@ export default function HopPanel({ network }: { network: NetworkKey }) {
     } else if (outcome.status === "submitted") {
       setResult({
         status: "pending",
-        title: "Submitted - not yet confirmed by this RPC",
+        title: "Submitted, not yet confirmed by this RPC",
         note: "Track it on the explorer. Once it lands, come back and check the attestation with the transaction hash above.",
         rows: [{ label: "Transaction", value: submission.txHash, hash: submission.txHash }],
       });
@@ -254,7 +254,7 @@ export default function HopPanel({ network }: { network: NetworkKey }) {
           <div className={`${ui.warn} mt-2`}>Not enough public native USDC for this amount.</div>
         )}
         <p className={`${ui.note} mt-2`}>
-          No bridge fee, finalizes in a few minutes. Native USDC only - bridged USDC.e isn&apos;t supported here.
+          No bridge fee, finalizes in a few minutes. Native USDC only. Bridged USDC.e isn&apos;t supported here.
         </p>
       </div>
 
@@ -354,7 +354,7 @@ export default function HopPanel({ network }: { network: NetworkKey }) {
           ) : null}
           {attestation?.status === "timeout" ? (
             <div className={`${ui.warn} mt-3`}>
-              Still waiting on Circle after 2 minutes - that&apos;s normal for this transfer type. Check{" "}
+              Still waiting on Circle after 2 minutes, which is normal for this transfer type. Check{" "}
               <a
                 href={`https://iris-api.circle.com/v2/messages/${CCTP.starknetDomain}?transactionHash=${txHash}`}
                 target="_blank"

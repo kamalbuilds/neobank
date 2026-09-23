@@ -12,7 +12,7 @@ import { HowThisWorks } from "../v2/ui";
 import PoolFacts, { usePoolSnapshot } from "./PoolFacts";
 
 // Matches the pool's documented note-maturity window. Applied to a real
-// receipt block_number - never used to fabricate a countdown on its own.
+// receipt block_number, never used to fabricate a countdown on its own.
 const MATURITY_BLOCKS = 10;
 
 export default function ShieldPanel({ network }: { network: NetworkKey }) {
@@ -133,7 +133,7 @@ export default function ShieldPanel({ network }: { network: NetworkKey }) {
     } else if (outcome.status === "submitted") {
       setResult({
         status: "pending",
-        title: "Submitted - not yet confirmed by this RPC",
+        title: "Submitted, not yet confirmed by this RPC",
         note: "Paymaster-relayed transactions can take a while to surface. Track it on the explorer.",
         rows: [{ label: "Transaction", value: submission.txHash, hash: submission.txHash }],
       });
@@ -198,7 +198,7 @@ export default function ShieldPanel({ network }: { network: NetworkKey }) {
         <p className={ui.note}>
           Some wallets also set aside a small extra amount when shielding USDC, on top of the pool
           fee above. That is wallet behavior, not a charge from this app, and the amount is not
-          fixed - your wallet will show it before you approve.
+          fixed. Your wallet will show it before you approve.
         </p>
       )}
 

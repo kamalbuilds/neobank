@@ -15,6 +15,21 @@ import FeeRow from "./FeeRow";
 import { ResultCard, errorResult, receiptToResult, walletErrorResult, type ActionResult } from "./ActionResult";
 import { Figure, HowThisWorks, PanelState } from "../v2/ui";
 import PoolFacts, { usePoolSnapshot } from "./PoolFacts";
+import VerbEvidence, { receiptsFor } from "./VerbEvidence";
+import { TX_RECORD } from "@/lib/evidence";
+
+/**
+ * The two mainnet receipts that register a viewing key with the canonical
+ * pool. They are the precondition a private transfer is refused without, not
+ * transfers themselves, and the disconnected panel says exactly that.
+ */
+const SEND_PRECONDITION = receiptsFor([
+  "0xe08fd329091b483978c64f93288b7346b158e0dc485fd7c5f594899f0294",
+  "0x428d5947280d2c670162aa7a3d666bcaa4d5256e016fab460c1b7a560609578",
+]);
+
+const MAINNET_SETTLED = TX_RECORD.filter((row) => row.network === "mainnet").length;
+const SEPOLIA_SETTLED = TX_RECORD.length - MAINNET_SETTLED;
 
 export interface BatchRow {
   recipient: string;
@@ -360,7 +375,7 @@ export default function SendPanel({
     } else if (outcome.status === "submitted") {
       setResult({
         status: "pending",
-        title: "Submitted - not yet confirmed by this RPC",
+        title: "Submitted, not yet confirmed by this RPC",
         note: "Paymaster-relayed transactions can take a while to surface. Track it on the explorer.",
         rows: [{ label: "Transaction", value: submission.txHash, hash: submission.txHash }],
       });
@@ -386,6 +401,26 @@ export default function SendPanel({
           </p>
         </HowThisWorks>
       </div>
+
+      {!myWalletAccount && (
+        <VerbEvidence
+          stamp="mainnet"
+          title="No shielded to shielded transfer has settled yet"
+          verdict={
+            <>
+              The record holds{" "}
+              <Figure className="font-semibold text-paper-ink">{MAINNET_SETTLED}</Figure> settled
+              mainnet transactions and{" "}
+              <Figure className="font-semibold text-paper-ink">{SEPOLIA_SETTLED}</Figure> on
+              Sepolia. Not one of them is a private transfer between two shielded balances, so none
+              is printed here as one. This leg has not been run on either network.
+            </>
+          }
+          receiptsLabel="What has settled: the step this send is refused without"
+          receipts={SEND_PRECONDITION}
+          footnote="A private transfer is rejected unless the recipient has already registered a viewing key with the pool, which is why the panel above says the recipient has to have shielded once before. These two registrations are that step, settled on mainnet against the canonical STRK20 pool with real STRK spent on the fee. They are not transfers, and the moment one settles from this form its hash belongs in this list instead."
+        />
+      )}
 
       <div className={ui.inputBlock}>
         <label htmlFor="send-amount" className={ui.inputLabel}>

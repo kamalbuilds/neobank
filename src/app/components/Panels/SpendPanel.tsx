@@ -25,6 +25,18 @@ import {
 import FeeRow from "./FeeRow";
 import { HowThisWorks } from "../v2/ui";
 import PoolFacts, { usePoolSnapshot } from "./PoolFacts";
+import VerbEvidence, { receiptsFor } from "./VerbEvidence";
+
+/**
+ * The three card authorizations that have actually settled from a shielded
+ * balance. This is the verb the whole product is built around, so a reader who
+ * lands here with no wallet gets the receipts before the form, not after it.
+ */
+const SWIPE_RECEIPTS = receiptsFor([
+  "0x1f815361cd9cb1b378f208c8def10dddf5452ead190cb199a1da37adf4fe5df",
+  "0x48ccd889292f406734d97a27c53db53910fb0f9ef3c056668bd64e20ccb111b",
+  "0x063b3fe7e13e9baca4d0a9ca9616b7b5e71504b38ed02bb3b98512935988acf4",
+]);
 
 export interface SpendLeg {
   recipient: string;
@@ -152,7 +164,7 @@ export default function SpendPanel({ network }: SpendPanelProps) {
     } else if (outcome.status === "submitted") {
       setResult({
         status: "pending",
-        title: "Submitted - not yet confirmed by this RPC",
+        title: "Submitted, not yet confirmed by this RPC",
         note: "Paymaster-relayed transactions can take a while to surface. Track it on the explorer.",
         rows: [{ label: "Transaction", value: submission.txHash, hash: submission.txHash }],
       });
@@ -176,6 +188,22 @@ export default function SpendPanel({ network }: SpendPanelProps) {
           </p>
         </HowThisWorks>
       </div>
+
+      {!myWalletAccount && (
+        <VerbEvidence
+          stamp="sepolia"
+          title="A swipe has already settled from a shielded balance"
+          verdict="One transaction sells shielded STRK, pays the merchant in USDC and records the authorization. The receipts below are those swipes, read back against Sepolia. Every card contract in this product is deployed on Sepolia only, so none of this has run on mainnet and none of it moved real money."
+          receiptsLabel="What has settled: card authorizations against the pool"
+          receipts={SWIPE_RECEIPTS}
+          footnote="These settled through a hosted account that holds its own server side viewing key, so Sealed's operator can see them. That is why this surface is marked partial rather than live, and the form below submits from your own wallet instead, which the operator cannot read."
+        />
+      )}
+
+      {/* The live contract read goes above the form. A disabled form is the
+          least informative thing on this page; a fee and a block number the
+          reader can check are the most. */}
+      <PoolFacts network={network} snapshot={pool} />
 
       <div className={ui.inputBlock}>
         <label htmlFor="spend-recipient" className={ui.inputLabel}>
@@ -247,9 +275,6 @@ export default function SpendPanel({ network }: SpendPanelProps) {
       </button>
 
       {result ? <ResultCard r={result} network={network} /> : null}
-
-      {/* Reads with no wallet connected, so this panel is never an empty shell. */}
-      <PoolFacts network={network} snapshot={pool} />
     </div>
   );
 }

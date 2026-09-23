@@ -2,7 +2,7 @@
  * The documentation's table of contents, as data.
  *
  * It is the single source for the sidebar, the prev/next footer, and the
- * route-coverage test in tests/docs-nav.test.ts - which fails if a page is
+ * route-coverage test in tests/docs-nav.test.ts, which fails if a page is
  * listed here without a file behind it, or a file exists that nothing links
  * to. A docs site whose sidebar and filesystem disagree is how orphan pages
  * ship.
@@ -38,7 +38,7 @@ export const DOCS_NAV: DocSection[] = [
       {
         slug: 'status',
         title: 'Surface status',
-        summary: 'Every surface, marked live, partial, or not built - with the evidence.',
+        summary: 'Every surface, marked live, partial, or not built, with the evidence.',
       },
     ],
   },

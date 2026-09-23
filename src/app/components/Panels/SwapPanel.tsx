@@ -19,7 +19,7 @@ const SLIPPAGE = 0.05;
 // The SDK's own executePrivateSwap fails fast on a chain mismatch before the
 // expensive proof. The split flow (server-side fee/submit, client-side proving)
 // drops that guard, so re-apply it here. Only enforced when both ids parse as
-// felts - an unparseable id must not block a valid swap.
+// felts. An unparseable id must not block a valid swap.
 function chainMismatch(walletChainId: string, quoteChainId: string): boolean {
   try {
     return BigInt(walletChainId) !== BigInt(quoteChainId);
@@ -82,7 +82,7 @@ export default function SwapPanel({ network }: { network: NetworkKey }) {
     try {
       // No takerAddress on the quote request. It is optional here, and
       // `quoteToCalls({private: true})` sets the taker to AVNU's executor
-      // anyway - sending the user's public address would hand AVNU the
+      // anyway: sending the user's public address would hand AVNU the
       // quoteId -> address link that the pool exists to hide, before the same
       // quoteId is submitted through their paymaster.
       const quotes = await getQuotes(
@@ -150,7 +150,7 @@ export default function SwapPanel({ network }: { network: NetworkKey }) {
       } else if (outcome.status === "submitted") {
         setResult({
           status: "pending",
-          title: "Submitted - not yet confirmed by this RPC",
+          title: "Submitted, not yet confirmed by this RPC",
           note: "Paymaster-relayed private swaps can take a while to surface. Track it on the explorer.",
           rows: [{ label: "Transaction", value: txHash, hash: txHash }],
         });

@@ -5,7 +5,7 @@ const ROWS: { hidden: string; visible: string }[] = [
   { hidden: "Sender and receiver of a private transfer", visible: "Deposit and withdrawal amounts (the public ERC-20 legs)" },
   { hidden: "Private transfer amounts and token type", visible: "That this address touched the pool, and when" },
   { hidden: "Which notes were spent", visible: "The pool's screening decision on a deposit" },
-  { hidden: "", visible: "The relayer address as tx sender - never the user" },
+  { hidden: "", visible: "The relayer address as tx sender, never the user" },
   { hidden: "", visible: "The pool fee, paid in public STRK by tx.caller" },
 ];
 
