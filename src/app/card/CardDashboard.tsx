@@ -5,6 +5,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { ANONYMIZER_ADDRESSES } from "@/utils/constants";
@@ -43,10 +44,53 @@ type LookupState =
 
 type SettlementsState =
   | { phase: "loading" }
-  | { phase: "loaded"; items: JsonRecord[]; readAt: Date }
+  | {
+      phase: "loaded";
+      items: JsonRecord[];
+      readAt: Date;
+      readAtIso?: string;
+      fromBlock?: number;
+      headBlock?: number;
+    }
   | { phase: "error"; message: string };
 
-type TimelineState = "waiting" | "active" | "complete" | "blocked";
+type TimelineState =
+  | "waiting"
+  | "active"
+  | "complete"
+  | "blocked"
+  | "unsettled";
+
+/**
+ * How long the page watches a queued swipe for its Starknet receipt, and how
+ * often it re-reads the settlement contract while it waits.
+ *
+ * A bound is the point. Settlement runs server side after the approval returns,
+ * and the approval is an accepted request, not a completed operation: the
+ * contract is the only thing that can say the swipe settled. Watching forever
+ * turns a failure into a spinner, so the wait ends at a stated deadline and the
+ * page then says, in terminal language, that no receipt exists.
+ */
+const SETTLEMENT_WAIT_MS = 120_000;
+const SETTLEMENT_POLL_MS = 5_000;
+
+/** The bounded wait on one queued authorization. */
+type WatchState =
+  | { phase: "idle" }
+  | {
+      phase: "watching";
+      authorizationId: string;
+      startedAt: number;
+      elapsedMs: number;
+    }
+  | { phase: "settled"; authorizationId: string; elapsedMs: number }
+  | {
+      phase: "unsettled";
+      authorizationId: string;
+      elapsedMs: number;
+      status?: JsonRecord;
+    }
+  | { phase: "error"; authorizationId: string; elapsedMs: number; message: string };
 
 const STRK_TOKEN =
   "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
@@ -175,11 +219,17 @@ function statusLabel(state: TimelineState): string {
   if (state === "complete") return "Complete";
   if (state === "active") return "In progress";
   if (state === "blocked") return "Blocked";
+  if (state === "unsettled") return "Not settled";
   return "Waiting";
+}
+
+function seconds(ms: number): string {
+  return `${Math.max(0, Math.round(ms / 1000))}s`;
 }
 
 function timelineFromLookup(
   lookup: LookupState,
+  watch: WatchState,
 ): Array<{ title: string; detail: string; state: TimelineState }> {
   const base = [
     {
@@ -236,14 +286,24 @@ function timelineFromLookup(
       : hasTransaction || settled === true || status === "queued" || status === "confirmed"
         ? "complete"
         : "active";
+  // Step 4 is the only step the chain can confirm, so it is the only step
+  // allowed to sit unresolved, and it is not allowed to sit there forever. Once
+  // the bounded wait is spent it reads "Not settled", which is terminal and
+  // true: the contract reports this authorization as unused.
   base[3].state =
     settled === true || status === "confirmed" || status === "succeeded"
       ? "complete"
       : approved === false
         ? "blocked"
-        : hasTransaction
+        : watch.phase === "watching"
           ? "active"
-          : "waiting";
+          : watch.phase === "unsettled"
+            ? "unsettled"
+            : watch.phase === "error"
+              ? "blocked"
+              : hasTransaction
+                ? "active"
+                : "unsettled";
   return base;
 }
 
@@ -315,6 +375,12 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
   });
   const [demo, setDemo] = useState<"idle" | "running" | "error">("idle");
   const [demoMessage, setDemoMessage] = useState("");
+  const [watch, setWatch] = useState<WatchState>({ phase: "idle" });
+  // What the authorization endpoint answered when it accepted the swipe. The
+  // contract read that follows only knows whether the authorization is used, so
+  // without this the "approved" and "queued" facts the server did report would
+  // be overwritten by the first poll and the timeline would lose them.
+  const acceptedRef = useRef<JsonRecord | undefined>(undefined);
 
   const loadRuntime = useCallback(async () => {
     setRuntime({ phase: "loading" });
@@ -366,7 +432,14 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
       const items = Array.isArray(payload.settlements)
         ? payload.settlements.filter(isRecord)
         : [];
-      setSettlements({ phase: "loaded", items, readAt: new Date() });
+      setSettlements({
+        phase: "loaded",
+        items,
+        readAt: new Date(),
+        readAtIso: stringValue(payload, "readAtIso"),
+        fromBlock: numberValue(payload, "fromBlock"),
+        headBlock: numberValue(payload, "headBlock"),
+      });
     } catch (error) {
       setSettlements({
         phase: "error",
@@ -382,7 +455,103 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
     void loadRuntime();
   }, [loadRuntime]);
 
-  const timeline = useMemo(() => timelineFromLookup(lookup), [lookup]);
+  const watchId = watch.phase === "watching" ? watch.authorizationId : undefined;
+  const watchStartedAt = watch.phase === "watching" ? watch.startedAt : undefined;
+
+  // The bounded wait. Every tick refreshes the elapsed figure so the deadline is
+  // visible while it runs; every SETTLEMENT_POLL_MS it re-reads the settlement
+  // contract. The loop can only end three ways, and all three are terminal:
+  // the contract confirms, the deadline passes, or the read fails.
+  useEffect(() => {
+    if (!watchId || watchStartedAt === undefined) return;
+    let cancelled = false;
+    let inFlight = false;
+    let lastPollAt = 0;
+    let lastStatus: JsonRecord | undefined;
+
+    const tick = async () => {
+      if (cancelled) return;
+      const sinceStart = Date.now() - watchStartedAt;
+      setWatch((current) =>
+        current.phase === "watching" && current.authorizationId === watchId
+          ? { ...current, elapsedMs: sinceStart }
+          : current,
+      );
+      // The deadline is checked every second rather than only after a read
+      // returns, so the terminal state lands when it says it will instead of
+      // whenever the next poll happens to come back.
+      if (sinceStart >= SETTLEMENT_WAIT_MS && !inFlight) {
+        setWatch({
+          phase: "unsettled",
+          authorizationId: watchId,
+          elapsedMs: sinceStart,
+          status: lastStatus,
+        });
+        return;
+      }
+      if (inFlight || Date.now() - lastPollAt < SETTLEMENT_POLL_MS) return;
+      lastPollAt = Date.now();
+      inFlight = true;
+      try {
+        const response = await fetch(
+          `/api/card/status/${encodeURIComponent(watchId)}`,
+          { cache: "no-store" },
+        );
+        const data = await readJson(response);
+        if (cancelled) return;
+        if (!response.ok) {
+          throw new Error(
+            stringValue(data, "error", "message") ||
+              `Authorization lookup returned ${response.status}.`,
+          );
+        }
+        const merged = { ...(acceptedRef.current || {}), ...data };
+        lastStatus = merged;
+        setLookup({ phase: "loaded", data: merged });
+        const elapsedMs = Date.now() - watchStartedAt;
+        if (booleanValue(merged, "settled") === true) {
+          setWatch({ phase: "settled", authorizationId: watchId, elapsedMs });
+          void loadRuntime();
+          return;
+        }
+        if (elapsedMs >= SETTLEMENT_WAIT_MS) {
+          setWatch({
+            phase: "unsettled",
+            authorizationId: watchId,
+            elapsedMs,
+            status: merged,
+          });
+        }
+      } catch (error) {
+        if (cancelled) return;
+        setWatch({
+          phase: "error",
+          authorizationId: watchId,
+          elapsedMs: Date.now() - watchStartedAt,
+          message:
+            error instanceof Error
+              ? error.message
+              : "The settlement contract could not be read.",
+        });
+      } finally {
+        inFlight = false;
+      }
+    };
+
+    void tick();
+    const timer = setInterval(() => {
+      void tick();
+    }, 1_000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [watchId, watchStartedAt, loadRuntime]);
+
+  const timeline = useMemo(
+    () => timelineFromLookup(lookup, watch),
+    [lookup, watch],
+  );
 
   async function handleLookup(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -397,6 +566,8 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
     }
 
     setLookup({ phase: "loading" });
+    setWatch({ phase: "idle" });
+    acceptedRef.current = undefined;
     try {
       const response = await fetch(
         `/api/card/status/${encodeURIComponent(id)}`,
@@ -424,6 +595,8 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
   async function handleDemoAuthorize(scene: "dinner" | "from-vault" = "dinner") {
     setDemo("running");
     setDemoMessage("");
+    setWatch({ phase: "idle" });
+    acceptedRef.current = undefined;
     try {
       const response = await fetch("/api/card/demo-authorize", {
         method: "POST",
@@ -442,6 +615,18 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
       if (id) {
         setAuthorizationId(id);
         setLookup({ phase: "loaded", data });
+        // A 202 with settlementStatus "queued" is an accepted request. Start
+        // the bounded watch on the contract rather than presenting the queue
+        // position as if it were a receipt.
+        if (booleanValue(data, "settled") !== true) {
+          acceptedRef.current = data;
+          setWatch({
+            phase: "watching",
+            authorizationId: id,
+            startedAt: Date.now(),
+            elapsedMs: 0,
+          });
+        }
       }
       setDemo("idle");
       await loadRuntime();
@@ -720,16 +905,23 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
             </>
           )}
 
+          {/* The scan now reports the block range it walked and the clock it
+              walked it on, so the provenance line carries the server's own
+              read time rather than the browser's. A scan served from the
+              server's cache is still a real read; dating it to when the browser
+              asked would be the dishonest part. */}
           {settlements.phase === "loaded" && (
             <p className="figure rule-paper mt-5 pt-4 text-[13px] text-paper-muted">
               Read from {network} settlement events{" "}
-              {headBlock !== undefined
-                ? `up to block ${headBlock}`
-                : "up to the head block the node reported"}
-              , at {clockUtc(settlements.readAt)}, this browser clock.
-              {headBlock === undefined
-                ? " The health probe did not return a block height on this read."
-                : ""}
+              {settlements.fromBlock !== undefined
+                ? `between block ${settlements.fromBlock} and `
+                : "up to "}
+              {settlements.headBlock !== undefined
+                ? `block ${settlements.headBlock}`
+                : "the head block the node reported"}
+              {settlements.readAtIso
+                ? `, at ${clockUtc(new Date(settlements.readAtIso))}, the server clock when it read the chain.`
+                : `, at ${clockUtc(settlements.readAt)}, this browser clock. The scan did not report when it read the chain.`}
             </p>
           )}
         </section>
@@ -748,17 +940,24 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
               </div>
             </div>
 
+            {/* The text and the two buttons used to share one sm:flex-row. This
+                column is 548px at 1440, the two nowrap buttons take 389px of
+                it, and the paragraph collapsed to about eight characters wide.
+                A viewport breakpoint cannot see that, because the column is
+                narrow at every viewport the grid puts it in, so the row is
+                gone: the sentence gets the full column and the buttons sit
+                under it. */}
             <div className="rule mt-5 pt-5">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                <div>
+              <div className="flex flex-col gap-4">
+                <div className="min-w-0">
                   <h3 className="text-[15px] font-semibold text-ink">Try a real swipe</h3>
-                  <p className="mt-1 max-w-md text-[13px] leading-6 text-muted">
+                  <p className="mt-1 text-pretty text-[13px] leading-6 text-muted">
                     A restaurant purchase also lends 10 STRK into the Earn vault, settled in the
                     same transaction as the payment.
                   </p>
                 </div>
                 {demoEnabled && (
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
                     <button
                       type="button"
                       onClick={() => void handleDemoAuthorize("dinner")}
@@ -929,6 +1128,153 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
               )}
             </div>
 
+            <div aria-live="polite" className="empty:hidden">
+              {watch.phase === "watching" && (
+                <div className="rule mt-5 pt-5">
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                    <h3 className="text-[15px] font-semibold text-ink">
+                      Waiting for the Starknet receipt
+                    </h3>
+                    <span className="figure text-[13px] font-semibold text-muted">
+                      {seconds(watch.elapsedMs)} of{" "}
+                      {seconds(SETTLEMENT_WAIT_MS)}
+                    </span>
+                  </div>
+                  <p className="mt-2 max-w-xl text-[13px] leading-6 text-muted">
+                    The swipe was approved and settlement was queued. Queued is not
+                    settled, so this reads the settlement contract every{" "}
+                    {seconds(SETTLEMENT_POLL_MS)} and stops at{" "}
+                    {seconds(SETTLEMENT_WAIT_MS)} either way.
+                  </p>
+                </div>
+              )}
+
+              {watch.phase === "settled" && (
+                <p className="rule mt-5 pt-5 text-[13px] leading-6 text-[color:var(--green)]">
+                  The settlement contract confirmed this authorization after{" "}
+                  <span className="figure">{seconds(watch.elapsedMs)}</span>. Its
+                  receipt is above.
+                </p>
+              )}
+
+              {watch.phase === "unsettled" && (
+                <div className="rule mt-5 pt-5">
+                  <div
+                    role="alert"
+                    className="border-l-2 border-[color:var(--seal)] py-0.5 pl-3.5"
+                  >
+                    <p className="text-[13px] font-medium leading-snug text-seal-bright">
+                      No Starknet receipt after {seconds(watch.elapsedMs)}
+                    </p>
+                    <p className="mt-2 max-w-xl text-[13px] leading-6 text-muted">
+                      The authorization was approved and queued, and that is all
+                      that happened. The settlement contract still reports this
+                      authorization as unused, so no STRK moved on {network} and
+                      there is no transaction to open. Settlement runs on the
+                      server after the approval returns, so the reason it did not
+                      land is in that server log against this id, not on this
+                      page.
+                    </p>
+                    <dl className="mt-3">
+                      <div className="rule flex items-baseline justify-between gap-4 py-2 first:border-t-0">
+                        <dt className="text-[13px] text-muted">Authorization</dt>
+                        <dd className="figure min-w-0 break-all text-right text-[13px] font-semibold text-ink">
+                          {watch.authorizationId}
+                        </dd>
+                      </div>
+                      <div className="rule flex items-baseline justify-between gap-4 py-2">
+                        <dt className="text-[13px] text-muted">
+                          Contract checked
+                        </dt>
+                        <dd className="figure min-w-0 text-right text-[13px] font-semibold text-ink">
+                          {contractUrl && contractAddress ? (
+                            <a
+                              href={contractUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="underline decoration-[color:var(--line-strong)] underline-offset-4 hover:decoration-[color:var(--seal-text)]"
+                              title={contractAddress}
+                            >
+                              {shorten(contractAddress, 12, 10)}
+                            </a>
+                          ) : (
+                            shorten(contractAddress)
+                          )}
+                        </dd>
+                      </div>
+                      <div className="rule flex items-baseline justify-between gap-4 py-2">
+                        <dt className="text-[13px] text-muted">
+                          Answer when it was accepted
+                        </dt>
+                        <dd className="figure text-right text-[13px] font-semibold text-ink">
+                          {watch.status
+                            ? `approved: ${String(
+                                booleanValue(watch.status, "approved") ??
+                                  "not reported",
+                              )}, ${
+                                stringValue(watch.status, "settlementStatus") ||
+                                "no settlement status"
+                              }`
+                            : "not reported"}
+                        </dd>
+                      </div>
+                      <div className="rule flex items-baseline justify-between gap-4 py-2">
+                        <dt className="text-[13px] text-muted">
+                          Answer on the last contract read
+                        </dt>
+                        <dd className="figure text-right text-[13px] font-semibold text-ink">
+                          {watch.status
+                            ? `settled: ${String(
+                                booleanValue(watch.status, "settled") ?? "not reported",
+                              )}`
+                            : "not reported"}
+                        </dd>
+                      </div>
+                      {transactionHash && (
+                        <div className="rule flex items-baseline justify-between gap-4 py-2">
+                          <dt className="text-[13px] text-muted">
+                            Hash the server did return
+                          </dt>
+                          <dd className="figure min-w-0 break-all text-right text-[13px] font-semibold text-ink">
+                            {transactionUrl ? (
+                              <a
+                                href={transactionUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="underline decoration-[color:var(--line-strong)] underline-offset-4 hover:decoration-[color:var(--seal-text)]"
+                                title={transactionHash}
+                              >
+                                {shorten(transactionHash, 12, 10)}
+                              </a>
+                            ) : (
+                              shorten(transactionHash, 12, 10)
+                            )}
+                          </dd>
+                        </div>
+                      )}
+                    </dl>
+                    <p className="mt-3 max-w-xl text-[13px] leading-6 text-muted">
+                      Check it yourself: open the contract and call
+                      is_authorization_used with this id. Retrace the id above at
+                      any time, or run another swipe.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {watch.phase === "error" && (
+                <PanelState
+                  kind="error"
+                  title="The settlement contract could not be read"
+                  className="mt-5"
+                >
+                  {watch.message} The swipe may still settle; this page stopped
+                  reading after {seconds(watch.elapsedMs)} because the read
+                  itself failed.
+                </PanelState>
+              )}
+            </div>
+
             <ol className="mt-6">
               {timeline.map((step, index) => (
                 <li
@@ -939,7 +1285,7 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
                     className={`figure mt-0.5 flex size-7 items-center justify-center rounded-[4px] border text-[13px] font-semibold ${
                       step.state === "complete"
                         ? "border-[color:var(--green)] text-[color:var(--green)]"
-                        : step.state === "blocked"
+                        : step.state === "blocked" || step.state === "unsettled"
                           ? "border-[color:var(--seal-text)] text-seal-bright"
                           : step.state === "active"
                             ? "border-[color:var(--line-strong)] text-ink"
@@ -956,7 +1302,7 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
                     className={`figure pt-1 text-[13px] font-semibold ${
                       step.state === "complete"
                         ? "text-[color:var(--green)]"
-                        : step.state === "blocked"
+                        : step.state === "blocked" || step.state === "unsettled"
                           ? "text-seal-bright"
                           : "text-muted"
                     }`}
@@ -1114,9 +1460,16 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
             </p>
           </div>
 
-          <div className="mt-5 overflow-x-auto">
-            <table className="w-full min-w-[640px] border-collapse text-left">
-              <thead>
+          {/* Below 768px the columns restack instead of sitting in a 640px
+              track inside an overflow box. The Public column is the honest half
+              of this claim and it was entirely off screen at 375px with no
+              affordance saying so, which reads as if only the Hidden column
+              existed. Same three rows, same words; the Hidden and Public
+              headings repeat inline on small screens because a stacked cell has
+              no column head above it. */}
+          <div className="mt-5 md:overflow-x-auto">
+            <table className="w-full border-collapse text-left md:min-w-[640px]">
+              <thead className="hidden md:table-header-group">
                 <tr className="border-b border-[color:var(--line-strong)] text-[11px] uppercase tracking-[0.14em] text-muted">
                   <th scope="col" className="pb-3 pr-5 font-semibold">
                     Boundary
@@ -1129,37 +1482,64 @@ export function CardDashboard({ policy }: { policy: PublicCardPolicy }) {
                   </th>
                 </tr>
               </thead>
-              <tbody className="text-[13px]">
-                <tr className="border-b border-[color:var(--line)] align-top">
-                  <th scope="row" className="py-4 pr-5 font-semibold text-ink">
+              <tbody className="block text-[13px] md:table-row-group">
+                <tr className="block border-b border-[color:var(--line)] pb-3 last:border-b-0 md:table-row md:pb-0 md:align-top">
+                  <th
+                    scope="row"
+                    className="block pt-4 font-semibold text-ink md:table-cell md:py-4 md:pr-5"
+                  >
                     Identity
                   </th>
-                  <td className="py-4 pr-5 leading-6 text-muted">
+                  <td className="block pt-3 leading-6 text-muted md:table-cell md:py-4 md:pr-5">
+                    <span className="block text-[11px] font-semibold text-ink md:hidden">
+                      Hidden
+                    </span>
                     Primary wallet link and unrelated account history
                   </td>
-                  <td className="py-4 leading-6 text-muted">
+                  <td className="block pt-3 leading-6 text-muted md:table-cell md:py-4">
+                    <span className="block text-[11px] font-semibold text-ink md:hidden">
+                      Public
+                    </span>
                     Hosted settlement account activity
                   </td>
                 </tr>
-                <tr className="border-b border-[color:var(--line)] align-top">
-                  <th scope="row" className="py-4 pr-5 font-semibold text-ink">
+                <tr className="block border-b border-[color:var(--line)] pb-3 last:border-b-0 md:table-row md:pb-0 md:align-top">
+                  <th
+                    scope="row"
+                    className="block pt-4 font-semibold text-ink md:table-cell md:py-4 md:pr-5"
+                  >
                     Funds
                   </th>
-                  <td className="py-4 pr-5 leading-6 text-muted">
+                  <td className="block pt-3 leading-6 text-muted md:table-cell md:py-4 md:pr-5">
+                    <span className="block text-[11px] font-semibold text-ink md:hidden">
+                      Hidden
+                    </span>
                     Total private holdings, selected notes, and private change
                   </td>
-                  <td className="py-4 leading-6 text-muted">
+                  <td className="block pt-3 leading-6 text-muted md:table-cell md:py-4">
+                    <span className="block text-[11px] font-semibold text-ink md:hidden">
+                      Public
+                    </span>
                     Settlement token and exact settlement amount
                   </td>
                 </tr>
-                <tr className="align-top">
-                  <th scope="row" className="py-4 pr-5 font-semibold text-ink">
+                <tr className="block border-b border-[color:var(--line)] pb-3 last:border-b-0 md:table-row md:pb-0 md:align-top">
+                  <th
+                    scope="row"
+                    className="block pt-4 font-semibold text-ink md:table-cell md:py-4 md:pr-5"
+                  >
                     Transaction
                   </th>
-                  <td className="py-4 pr-5 leading-6 text-muted">
+                  <td className="block pt-3 leading-6 text-muted md:table-cell md:py-4 md:pr-5">
+                    <span className="block text-[11px] font-semibold text-ink md:hidden">
+                      Hidden
+                    </span>
                     Link between the cardholder and STRK20 input notes
                   </td>
-                  <td className="py-4 leading-6 text-muted">
+                  <td className="block pt-3 leading-6 text-muted md:table-cell md:py-4">
+                    <span className="block text-[11px] font-semibold text-ink md:hidden">
+                      Public
+                    </span>
                     Settlement recipient, transaction timing, and receipt status
                   </td>
                 </tr>
