@@ -1,23 +1,26 @@
 import type { Metadata } from 'next'
-import { Geist, Space_Mono, Space_Grotesk } from 'next/font/google'
+import { Geist, IBM_Plex_Mono, Instrument_Serif } from 'next/font/google'
 import './globals.css'
 
-// Faces picked on purpose for the Vault design system (see .uicraft-read.json):
-// Space Grotesk carries display type, Geist is the deliberate body face, Space
-// Mono only for hex addresses / hashes.
+// Faces picked for the "statement" system (see .uicraft-read.json).
+// Instrument Serif carries display type because the argument here is a document,
+// not a dashboard. Geist is the body face. IBM Plex Mono holds every figure,
+// address and hash, and it is the only face with tabular numerals.
 const geist = Geist({
   subsets: ['latin'],
   variable: '--font-body-face',
   display: 'swap',
 })
-const spaceMono = Space_Mono({
+const plexMono = IBM_Plex_Mono({
   subsets: ['latin'],
-  weight: ['400', '700'],
+  weight: ['400', '500', '600', '700'],
   variable: '--font-mono-ui',
   display: 'swap',
 })
-const spaceGrotesk = Space_Grotesk({
+const instrumentSerif = Instrument_Serif({
   subsets: ['latin'],
+  weight: '400',
+  style: ['normal', 'italic'],
   variable: '--font-display-face',
   display: 'swap',
 })
@@ -40,7 +43,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geist.variable} ${spaceMono.variable} ${spaceGrotesk.variable}`}
+      className={`${geist.variable} ${plexMono.variable} ${instrumentSerif.variable}`}
       suppressHydrationWarning
     >
       <body>{children}</body>

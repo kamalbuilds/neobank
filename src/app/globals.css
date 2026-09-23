@@ -1,39 +1,92 @@
 @import "tailwindcss";
 
+/* Sealed design system: "the statement".
+   The product's whole argument is that a private balance is a document only you
+   can read. So the surfaces are documents: graphite chrome around cream paper,
+   hairline rules instead of glass, tabular figures, and redaction bars that are
+   the real thing rather than a blur filter. One accent, seal vermilion, used
+   only where something is stamped, refused, or revealed. */
+
 @theme {
-  --color-ink: #eaf0f8;
-  --color-muted: #7a859c;
-  --color-bg: #06070b;
-  --color-panel: rgba(255 255 255 / 0.028);
-  --color-accent: #2dd4bf;
+  --color-chrome: #0c0d10;
+  --color-chrome-2: #131419;
+  --color-chrome-3: #1b1d23;
+  --color-ink: #e8e6e1;
+  --color-muted: #8c8b87;
+  --color-paper: #f4f1ea;
+  --color-paper-2: #ebe7dd;
+  --color-paper-ink: #16161a;
+  --color-paper-muted: #6b6960;
+  --color-seal: #b23a2e;
+  --color-seal-bright: #d9584a;
+  --color-ledger-green: #2f6f4f;
+
+  /* The accent needs a different value per surface or it fails contrast on one
+     of them. Measured: #b23a2e is 5.23:1 on cream and 3.19:1 on graphite;
+     #d9584a is 4.95:1 on graphite and too light on cream. Use the semantic
+     name, never the raw seal, for anything a reader has to read. */
+  --color-seal-on-paper: #b23a2e;
+  --color-seal-on-chrome: #d9584a;
+
+  /* Hairlines and state tints, exposed so a border is `border-line` rather than
+     `border-[var(--line)]` in every file that draws one. */
+  --color-line: rgba(232, 230, 225, 0.09);
+  --color-line-strong: rgba(232, 230, 225, 0.18);
+  --color-paper-line: rgba(22, 22, 26, 0.13);
+  --color-green: #4e9b73;
+  --color-green-soft: rgba(78, 155, 115, 0.12);
+  --color-seal-soft: rgba(178, 58, 46, 0.1);
+  --color-seal-soft-2: rgba(178, 58, 46, 0.24);
+  --color-danger: #c2503f;
+  --color-danger-soft: rgba(194, 80, 63, 0.12);
+
+  /* Legacy aliases. Still referenced by routes not yet migrated; both resolve
+     into the new palette so a half-migrated tree never renders two products. */
+  --color-bg: #0c0d10;
+  --color-panel: rgba(255 255 255 / 0.03);
+  --color-accent: #b23a2e;
+
   --font-body: var(--font-body-face), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-display-face), var(--font-body-face), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display-face), Georgia, serif;
   --font-mono: var(--font-mono-ui), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --radius-doc: 4px;
 }
 
 @layer base {
   html {
     color-scheme: dark;
   }
-  
+
   body {
-    @apply bg-bg text-ink font-body;
-    --ink: #eaf0f8;
-    --muted: #7a859c;
-    --bg: #06070b;
-    --card: rgba(255, 255, 255, 0.028);
-    --line: rgba(255, 255, 255, 0.06);
-    --line-strong: rgba(255, 255, 255, 0.12);
+    @apply bg-chrome text-ink font-body;
+    --ink: #e8e6e1;
+    --muted: #8c8b87;
+    --bg: #0c0d10;
+    --card: rgba(255, 255, 255, 0.03);
+    --line: rgba(232, 230, 225, 0.09);
+    --line-strong: rgba(232, 230, 225, 0.18);
     --inset: rgba(255, 255, 255, 0.04);
     --inset-2: rgba(255, 255, 255, 0.08);
-    --pink: #2dd4bf;
-    --pink-soft: rgba(45, 212, 191, 0.09);
-    --pink-soft-2: rgba(45, 212, 191, 0.2);
-    --pink-text: #6ee9d5;
-    --green: #34d399;
-    --green-soft: rgba(52, 211, 153, 0.1);
-    --danger: #f87171;
-    --danger-soft: rgba(248, 113, 113, 0.1);
+    --paper: #f4f1ea;
+    --paper-ink: #16161a;
+    --paper-muted: #6b6960;
+    --paper-line: rgba(22, 22, 26, 0.13);
+    --seal: #b23a2e;
+    --seal-soft: rgba(178, 58, 46, 0.1);
+    --seal-soft-2: rgba(178, 58, 46, 0.24);
+    --seal-text: #d9584a;
+    --green: #4e9b73;
+    --green-soft: rgba(78, 155, 115, 0.12);
+    --danger: #c2503f;
+    --danger-soft: rgba(194, 80, 63, 0.12);
+
+    /* Legacy names kept so unmigrated panels inherit the new palette instead of
+       falling back to the old teal. Delete once every route is migrated. */
+    --pink: #b23a2e;
+    --pink-soft: rgba(178, 58, 46, 0.1);
+    --pink-soft-2: rgba(178, 58, 46, 0.24);
+    --pink-text: #d9584a;
   }
 
   * {
@@ -45,7 +98,8 @@
     padding: 0;
   }
 
-  html, body {
+  html,
+  body {
     max-width: 100vw;
     overflow-x: hidden;
   }
@@ -57,104 +111,278 @@
 
   button:focus-visible,
   input:focus-visible,
+  summary:focus-visible,
   [role='button']:focus-visible {
-    outline: 2px solid currentColor;
+    outline: 2px solid var(--seal-text);
     outline-offset: 2px;
+  }
+
+  /* Money is a column, not a sentence. Every figure lines up. */
+  .figure {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
   }
 }
 
 @layer utilities {
   @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
+    *,
+    *::before,
+    *::after {
       animation: none !important;
       transition: none !important;
     }
   }
 }
 
-@keyframes riseIn {
-  from { opacity: 0; transform: translateY(14px); }
-  to { opacity: 1; transform: none; }
+/* ---- Surfaces ------------------------------------------------------------ */
+
+/* Cream statement sheet. Carries its own ink colour so anything nested inside
+   inherits the dark-on-paper relationship without each child restating it. */
+.paper {
+  background: var(--paper);
+  color: var(--paper-ink);
+  border-radius: var(--radius-doc);
+  box-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.5) inset,
+    0 24px 60px -28px rgba(0, 0, 0, 0.85),
+    0 2px 0 -1px rgba(0, 0, 0, 0.5);
 }
 
-@keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(0.9); }
+/* Perforated top edge, the way a statement tears off a book.
+   The notches are painted in the ground colour, not the paper colour: the first
+   version drew paper on paper and rendered nothing at all. Override
+   `--torn-ground` when the sheet sits on something other than the page. */
+.paper-torn {
+  --torn-ground: #0c0d10;
+}
+
+.paper-torn::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 5px;
+  border-radius: var(--radius-doc) var(--radius-doc) 0 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 7px,
+    var(--torn-ground) 7px 12px
+  );
+}
+
+/* Chrome panel: a ruled card, not a glass slab. Depth comes from one hairline
+   highlight and a long shadow, never from backdrop-blur. */
+.doc {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015));
+  border: 1px solid var(--line);
+  border-radius: var(--radius-doc);
+  box-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.05) inset,
+    0 18px 40px -30px rgba(0, 0, 0, 0.9);
+}
+
+.doc-interactive {
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.doc-interactive:hover {
+  border-color: var(--line-strong);
+  background-color: rgba(255, 255, 255, 0.045);
+}
+
+.doc-interactive:active {
+  transform: scale(0.99);
+}
+
+/* A control sitting on a cream sheet. Hand-rolled in four places before this
+   existed, each time re-deriving the focus ring offset against paper. */
+.btn-paper {
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-doc);
+  color: var(--paper-ink);
+  background: transparent;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    transform 150ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.btn-paper:hover {
+  background: rgba(22, 22, 26, 0.05);
+  border-color: rgba(22, 22, 26, 0.26);
+}
+
+.btn-paper:active {
+  transform: scale(0.97);
+}
+
+.btn-paper:focus-visible {
+  outline: 2px solid var(--seal);
+  outline-offset: 2px;
+}
+
+/* Legacy elevation classes, retuned. Unmigrated panels keep working. */
+.elevate-1 {
+  box-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.04) inset,
+    0 18px 40px -30px rgba(0, 0, 0, 0.9);
+}
+
+.elevate-2 {
+  box-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.05) inset,
+    0 28px 60px -32px rgba(0, 0, 0, 0.9);
+}
+
+.elevate-interactive {
+  transition:
+    transform 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.elevate-interactive:hover {
+  border-color: var(--line-strong);
+}
+
+/* ---- Redaction ----------------------------------------------------------- */
+
+/* A real redaction bar: solid ink over the glyphs, sized to the text it hides,
+   with the text still selectable-free (aria-hidden on the covered node). A blur
+   filter is not a redaction, it is a hint, and the difference is the product. */
+.redact {
+  position: relative;
+  display: inline-block;
+  color: transparent;
+  user-select: none;
+}
+
+.redact::after {
+  content: "";
+  position: absolute;
+  inset: 0.08em -0.18em 0.1em -0.18em;
+  background: var(--paper-ink);
+  border-radius: 1px;
+}
+
+.redact-on-chrome::after {
+  background: #23242b;
+}
+
+/* Reveal: the bar wipes off left to right, as if lifted. scaleX only. */
+.redact-reveal::after {
+  transform-origin: left center;
+  animation: redactLift 420ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+@keyframes redactLift {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 @keyframes shimmer {
-  from { background-position: -200% 0; }
-  to { background-position: 200% 0; }
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
 }
 
-@keyframes cardSheen {
-  from { transform: translateX(-120%) skewX(-12deg); }
-  to { transform: translateX(220%) skewX(-12deg); }
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(0.92);
+  }
 }
 
 .animate-rise-in {
-  animation: riseIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: riseIn 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .animate-pulse-soft {
   animation: pulse 2s ease-in-out infinite;
 }
 
-/* Elevation system: depth via layered shadow, not just a border.
-   Panels use one of these instead of a flat border-only surface. */
-.elevate-1 {
-  box-shadow:
-    0 1px 0 0 rgba(255, 255, 255, 0.03) inset,
-    0 10px 30px -18px rgba(0, 0, 0, 0.7);
-}
+/* ---- Loading ------------------------------------------------------------- */
 
-.elevate-2 {
-  box-shadow:
-    0 1px 0 0 rgba(255, 255, 255, 0.04) inset,
-    0 20px 50px -20px rgba(0, 0, 0, 0.75),
-    0 6px 16px -10px rgba(45, 212, 191, 0.08);
-}
-
-.elevate-interactive {
-  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 180ms ease, border-color 180ms ease;
-}
-
-.elevate-interactive:hover {
-  transform: translateY(-1px);
-  border-color: rgba(255, 255, 255, 0.12);
-}
-
-/* Skeleton loading: small isolated surfaces only (per motion-performance rules). */
 .skeleton {
   position: relative;
   overflow: hidden;
-  border-radius: 0.75rem;
-  background: rgba(255, 255, 255, 0.045);
+  border-radius: var(--radius-doc);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .skeleton::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.07),
-    transparent
-  );
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.07), transparent);
   background-size: 200% 100%;
   animation: shimmer 1.6s ease-in-out infinite;
+}
+
+.skeleton-paper {
+  background: rgba(22, 22, 26, 0.07);
+}
+
+.skeleton-paper::after {
+  background: linear-gradient(90deg, transparent, rgba(22, 22, 26, 0.06), transparent);
+  background-size: 200% 100%;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .skeleton::after {
     animation: none;
   }
+  .redact-reveal::after {
+    animation: none;
+    transform: scaleX(0);
+  }
 }
 
+/* ---- Page ground --------------------------------------------------------- */
+
+/* Faint ledger ruling, not a coloured glow. The page reads as paper stock under
+   low light; nothing here tints the content sitting on top of it. */
 .vault-bg {
-  background:
-    radial-gradient(900px 500px at 82% -10%, rgba(45, 212, 191, 0.065), transparent 55%),
-    radial-gradient(800px 450px at 5% 115%, rgba(56, 189, 248, 0.05), transparent 50%),
-    linear-gradient(180deg, #04050a, #0a0c12 60%, #04050a);
+  background-color: #0c0d10;
+  background-image:
+    linear-gradient(rgba(232, 230, 225, 0.028) 1px, transparent 1px),
+    radial-gradient(1100px 620px at 50% -20%, rgba(232, 230, 225, 0.035), transparent 62%);
+  background-size:
+    100% 34px,
+    auto;
+}
+
+.rule {
+  border-top: 1px solid var(--line);
+}
+
+.rule-paper {
+  border-top: 1px solid var(--paper-line);
 }

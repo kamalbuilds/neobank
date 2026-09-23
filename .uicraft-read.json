@@ -1,13 +1,13 @@
 {
-  "as": "Private banking vault for Starknet Sepolia STRK20, dark-first consumer crypto with restrained financial density",
-  "dials": "4/3/8",
-  "type": "Geist",
-  "surface": "near-black #06070b with teal breath",
-  "accent": "shield-teal #2dd4bf",
-  "radius": "16",
-  "showpiece": "blurred-until-revealed balance",
+  "as": "Private bank statement for crypto-native earners; document-grade evidence density, Swiss ledger restraint, zero SaaS gradient",
+  "dials": "3/4/8",
+  "type": "Instrument Serif display + Geist body + tabular Space Mono figures",
+  "surface": "graphite chrome #0C0D10 with cream paper statement cards #F4F1EA",
+  "accent": "seal vermilion #B23A2E",
+  "radius": "4",
+  "showpiece": "redacted statement you reveal with a viewing key",
   "direction": "design-taste-frontend",
   "review": "anti-ai-slop-frontend",
   "cwd": "/Users/kamal/Desktop/neobank",
-  "ts": "2026-08-26T14:25:55Z"
+  "ts": "2026-09-23T03:00:33Z"
 }
