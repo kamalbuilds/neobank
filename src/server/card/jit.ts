@@ -74,6 +74,7 @@ export class JitQuoteError extends Error {
     readonly reason:
       | "network"
       | "no_liquidity"
+      | "unsupported_chain"
       | "bad_quote"
       | "bad_input",
   ) {
@@ -363,9 +364,29 @@ async function fetchEkuboQuote(
   }
   if (!response.ok) {
     const body = await response.text().catch(() => "");
+    // A 404 used to be read as "no liquidity for this pair", which is the wrong
+    // diagnosis and the expensive kind: it tells the caller the market is thin
+    // when the endpoint is simply not serving this chain. Verified 2026-09-23,
+    // the quoter answers /{chainId}/health with 200 for mainnet
+    // (23448594291968334) and 404 with {"code":"route_not_found"} for every
+    // encoding of SN_SEPOLIA, including the correct decimal. It no longer
+    // indexes Sepolia. A genuine empty route comes back as a 200 with no
+    // splits, which is handled below.
+    let code = "";
+    try {
+      code = String((JSON.parse(body) as { code?: unknown }).code ?? "");
+    } catch {
+      code = "";
+    }
+    const reason =
+      code === "route_not_found"
+        ? "unsupported_chain"
+        : response.status === 404
+          ? "no_liquidity"
+          : "network";
     throw new JitQuoteError(
       `Ekubo quoter returned ${response.status}: ${body.slice(0, 200)}`,
-      response.status === 404 ? "no_liquidity" : "network",
+      reason,
     );
   }
   const quote = (await response.json()) as EkuboQuote;

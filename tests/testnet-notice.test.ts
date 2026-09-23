@@ -34,6 +34,13 @@ describe('the account chrome badge names the chain it is on', () => {
     // "MAINNET TESTNET" in the header.
     const chrome = readFileSync('src/app/components/v2/AccountChrome.tsx', 'utf8');
     expect(chrome).not.toMatch(/\{net\}\s+testnet/);
-    expect(chrome).toContain("net === 'mainnet' ? 'mainnet' : 'sepolia testnet'");
+
+    // The badge moved out of AccountChrome into a shared NetworkChip during the
+    // statement redesign. What must hold is unchanged: mainnet says mainnet,
+    // and sepolia says the word "testnet" in text a reader can see, not only in
+    // a title attribute that never fires on touch.
+    const chip = readFileSync('src/app/components/Panels/PoolFacts.tsx', 'utf8');
+    expect(chip).toMatch(/network === "mainnet" \? "mainnet" : "sepolia testnet"/);
+    expect(chip).not.toMatch(/network === "mainnet" \? "mainnet" : "sepolia"\s*}/);
   });
 });

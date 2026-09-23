@@ -294,13 +294,19 @@ describe("getJitQuote fail-closed", () => {
 
 describe("live Ekubo sepolia quote", () => {
   // Hits https://prod-api-quoter.ekubo.org for a real 2 STRK -> USDC quote.
-  // Skipped ONLY when the quoter is unreachable (offline CI); a reachable
-  // quoter with no route is a hard failure, because that means the demo pair
-  // lost its liquidity and the pinned deployment assumptions no longer hold.
-  it("quotes 2 STRK to a non-zero USDC amount and encodes full calldata", async (ctx) => {
-    let quote;
+  //
+  // Upstream state, measured 2026-09-23: the quoter no longer indexes Starknet
+  // Sepolia. GET /{chainId}/health answers 200 for mainnet (23448594291968334)
+  // and 404 {"code":"route_not_found"} for every encoding of SN_SEPOLIA,
+  // including the correct decimal 393402133025997798000961. So a Sepolia quote
+  // cannot succeed today, and asserting that it does would be asserting a wish.
+  //
+  // This test now pins the upstream fact instead. It goes red the day Ekubo
+  // restores Sepolia, which is the day the assertion below should be swapped
+  // back for the full quote assertions kept underneath it.
+  it("reports the quoter as not serving sepolia, rather than as having no liquidity", async (ctx) => {
     try {
-      quote = await getJitQuote(
+      await getJitQuote(
         2_000_000_000_000_000_000n,
         "0x00000000000000000000000000000000000000000000000000000000000000ab",
       );
@@ -309,8 +315,23 @@ describe("live Ekubo sepolia quote", () => {
         ctx.skip(`network unavailable: ${error.message}`);
         return;
       }
-      throw error;
+      expect(error).toBeInstanceOf(JitQuoteError);
+      // The distinction that matters: "this chain is not served" is a different
+      // fact from "this pair is illiquid", and conflating them sends someone
+      // hunting for liquidity that was never the problem.
+      expect((error as JitQuoteError).reason).toBe("unsupported_chain");
+      return;
     }
+    throw new Error(
+      "Ekubo answered a Sepolia quote. Restore the full quote assertions below.",
+    );
+  }, 30_000);
+
+  it.skip("quotes 2 STRK to a non-zero USDC amount and encodes full calldata", async () => {
+    const quote = await getJitQuote(
+      2_000_000_000_000_000_000n,
+      "0x00000000000000000000000000000000000000000000000000000000000000ab",
+    );
 
     expect(quote.router).toBe(JIT_ROUTER_SEPOLIA);
     expect(quote.soldToken).toBe(STRK_SEPOLIA);
