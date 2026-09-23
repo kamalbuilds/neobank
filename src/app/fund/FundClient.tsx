@@ -10,10 +10,9 @@ import { AccountChrome, AccountConnectWall } from '../components/v2/AccountChrom
 type FundDirection = 'inbound' | 'outbound';
 
 const DIR_BTN =
-  'px-3.5 py-2 rounded-xl text-[13px] font-medium whitespace-nowrap transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2dd4bf]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#06070b]';
-const DIR_ON =
-  'text-[#04140f] bg-gradient-to-br from-[#2dd4bf] to-[#38bdf8] font-semibold shadow-[0_4px_16px_-6px_rgba(45,212,191,0.5)]';
-const DIR_OFF = 'text-[#7a859c] hover:text-[#eaf0f8] hover:bg-white/[0.04]';
+  'px-3.5 py-2 rounded-[3px] text-[13px] whitespace-nowrap transition-[background-color,color] duration-150 focus-visible:outline-none';
+const DIR_ON = 'bg-paper text-paper-ink font-semibold';
+const DIR_OFF = 'text-muted font-medium hover:text-ink hover:bg-white/[0.04]';
 
 export function FundClient() {
   const network = useStoreWallet((s) => s.network);
@@ -23,7 +22,7 @@ export function FundClient() {
   return (
     <AccountChrome>
       <div
-        className="mb-4 flex w-fit gap-1 rounded-2xl border border-white/[0.07] bg-white/[0.028] p-1"
+        className="mb-4 flex w-fit max-w-full gap-1 overflow-x-auto rounded-[4px] border border-[color:var(--line)] bg-white/[0.02] p-1"
         role="tablist"
         aria-label="Funding direction"
       >
@@ -34,7 +33,7 @@ export function FundClient() {
           className={`${DIR_BTN} ${direction === 'inbound' ? DIR_ON : DIR_OFF}`}
           onClick={() => setDirection('inbound')}
         >
-          Bring in · Base → Starknet
+          Bring in · Base to Starknet
         </button>
         <button
           type="button"
@@ -43,18 +42,18 @@ export function FundClient() {
           className={`${DIR_BTN} ${direction === 'outbound' ? DIR_ON : DIR_OFF}`}
           onClick={() => setDirection('outbound')}
         >
-          Send out · Starknet → Base/Solana
+          Send out · Starknet to Base/Solana
         </button>
       </div>
 
       {direction === 'inbound' ? (
         // Inbound runs on the hosted account server-side: no user wallet needed.
-        <div className="rounded-3xl border border-white/[0.07] bg-white/[0.028] backdrop-blur-xl elevate-1 p-6 min-h-[380px]">
+        <div className="doc p-4 min-h-[380px] sm:p-6">
           <InboundPanel network={net} />
         </div>
       ) : (
         <AccountConnectWall>
-          <div className="rounded-3xl border border-white/[0.07] bg-white/[0.028] backdrop-blur-xl elevate-1 p-6 min-h-[380px]">
+          <div className="doc p-4 min-h-[380px] sm:p-6">
             <HopPanel network={net} />
           </div>
         </AccountConnectWall>
