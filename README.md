@@ -77,6 +77,12 @@ npm run verify:deployment  # all 22 routes on sealed.cash return 200, demo video
 `verify:claim` fails the submission unless each listed hash exists, succeeded, and carries a pool
 event.
 
+`verify:evidence` writes what it found to `src/lib/evidence-verification.json`: how many values
+passed, the block each chain was at, and when the run happened. The evidence page renders that
+attestation rather than asserting it was verified, so a run that failed shows as failed and a run
+older than 72 hours shows as stale. Mutating one hex digit of one hash makes the script exit 1 and
+flips the page to "Not verified", which is the only reason the green state means anything.
+
 ## How it talks to STRK20
 
 - Wallet API via `WalletAccountV6` (`starknet@10.4.0`, get-starknet `6.0.4`).
@@ -93,12 +99,18 @@ Integration plan: [`STRK20_INTEGRATION_PLAN.md`](STRK20_INTEGRATION_PLAN.md). Pr
 | Gap | State |
 |---|---|
 | Mainnet unshield and private send | Not run. Needs public STRK past the 6 STRK pool fee. Exercised on Sepolia |
-| AVNU private swap | Server route needs `AVNU_PAYMASTER_API_KEY`. Not set on this deployment; `/api/avnu/status` returns `{"configured":false}` and the Swap tab degrades with a 503 |
+| Private swap | Server route needs `AVNU_PAYMASTER_API_KEY`. Not set on this deployment; `/api/avnu/status` returns `{"configured":false}` and the Swap tab degrades with a 503. Private swaps on Ekubo went live through STRK20 on 2026-09-22 and are the route this should use instead; not integrated yet |
 | Shadow spend identities | One settled transaction. Marked PARTIAL on the status page rather than LIVE |
 | Vesu | Not on mainnet. The published class hash is undeclared there |
 | Mainnet contracts | None. Every contract this project deployed is on Sepolia, recorded under `sepolia_contracts` |
 
-`npm run typecheck` and `npm run build` pass.
+## Where this came from
+
+Built for the STRK20 Private Sprint, 2026-08-14 to 2026-09-07. StarkWare has since said the sprint
+drew more than 200 projects, and named three winners on 2026-09-21: Erebus, StakeWars and Xenia.
+Sealed was not one of them. The scoring weighted a working mainnet product at 30% and documentation
+at 15%, and those are the two places this build was weakest: nothing written here had run on
+mainnet, and the docs lagged the code. Both are being fixed rather than argued with.
 
 ## License
 
