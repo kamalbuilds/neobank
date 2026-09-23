@@ -1,0 +1,14 @@
+{
+  "ranAt": "2026-09-23T03:39:10.137Z",
+  "checked": 11,
+  "passed": 11,
+  "failed": 0,
+  "blocks": {
+    "mainnet": 15300777,
+    "sepolia": 15495276
+  },
+  "rpc": {
+    "mainnet": "https://mainnet.nodes.starknet.org/rpc/v0_10",
+    "sepolia": "https://starknet-sepolia-rpc.publicnode.com"
+  }
+}

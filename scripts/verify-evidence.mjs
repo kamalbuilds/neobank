@@ -6,7 +6,7 @@
  * a false claim, so it gets checked against the chain rather than reviewed by
  * eye.
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 
 // rpc.starknet.lava.build answers every call with "This endpoint has been
 // discontinued.", which reads as a failed claim rather than a dead endpoint.
@@ -70,4 +70,28 @@ for (const { hash, network } of rows) {
 }
 
 console.log(`\n${failures === 0 ? 'ALL EVIDENCE VERIFIED' : `${failures} FAILED`}`);
+
+// The evidence page used to say it was verified against a live RPC without
+// saying when, which is the shape a claim takes after it stops being true.
+// The run writes its own result, including the block each chain was at, and
+// the page renders that instead of an assertion. A failed run overwrites the
+// attestation too: a stale green stamp is worse than a red one.
+const attestation = {
+  ranAt: new Date().toISOString(),
+  checked: rows.length,
+  passed: rows.length - failures,
+  failed: failures,
+  blocks: {
+    mainnet: (await rpc('mainnet', 'starknet_blockNumber', [])).result ?? null,
+    sepolia: (await rpc('sepolia', 'starknet_blockNumber', [])).result ?? null,
+  },
+  rpc: { mainnet: RPC.mainnet, sepolia: RPC.sepolia },
+};
+
+const out = new URL('../src/lib/evidence-verification.json', import.meta.url);
+writeFileSync(out, `${JSON.stringify(attestation, null, 2)}\n`);
+console.log(
+  `wrote src/lib/evidence-verification.json  block ${attestation.blocks.mainnet} mainnet / ${attestation.blocks.sepolia} sepolia`,
+);
+
 process.exit(failures === 0 ? 0 : 1);
