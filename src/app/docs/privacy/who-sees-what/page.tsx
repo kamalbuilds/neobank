@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { A, C, DocsPage, H2, H3, LI, Limit, P, Table, UL } from '../../components/prose';
+import { A, C, DocsPage, H2, H3, LI, Limit, Nil, P, Table, UL } from '../../components/prose';
 
 export const metadata: Metadata = {
   title: 'Who sees what - Sealed docs',
@@ -62,21 +62,22 @@ export default function WhoSeesWhat() {
 
       <H2>The same thing as a table</H2>
       <Table
+        wide
         head={['What', 'Hidden', 'Public on chain', 'Readable with a viewing key']}
         rows={[
           [
             'Which notes were spent alongside yours',
             'Unlinkable, protected by the anonymity set',
-            '—',
-            '—',
+            <Nil />,
+            <Nil />,
           ],
-          ['Sender and receiver of a private transfer', '—', '—', 'Either side\u2019s key'],
-          ['Private transfer and spend amounts', '—', '—', 'A viewing-key holder'],
-          ['Your shielded balance and history', '—', '—', 'A viewing-key holder'],
-          ['Deposit and withdrawal amounts', '—', 'Always, no key needed', '—'],
-          ['That an address touched the pool, and when', '—', 'Always, no key needed', '—'],
-          ['The pool fee, paid in public STRK', '—', 'Always, no key needed', '—'],
-          ['Transaction sender', 'Your address is not the sender', 'The relayer\u2019s address is', '—'],
+          ['Sender and receiver of a private transfer', <Nil />, <Nil />, 'Either side\u2019s key'],
+          ['Private transfer and spend amounts', <Nil />, <Nil />, 'A viewing-key holder'],
+          ['Your shielded balance and history', <Nil />, <Nil />, 'A viewing-key holder'],
+          ['Deposit and withdrawal amounts', <Nil />, 'Always, no key needed', <Nil />],
+          ['That an address touched the pool, and when', <Nil />, 'Always, no key needed', <Nil />],
+          ['The pool fee, paid in public STRK', <Nil />, 'Always, no key needed', <Nil />],
+          ['Transaction sender', 'Your address is not the sender', 'The relayer\u2019s address is', <Nil />],
         ]}
       />
 

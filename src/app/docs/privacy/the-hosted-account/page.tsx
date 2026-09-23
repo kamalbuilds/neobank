@@ -31,7 +31,7 @@ export default function HostedAccount() {
         <LI>It can decrypt its own notes, because it has to spend them.</LI>
         <LI>It can read every swipe it settles: merchant, amount, time.</LI>
         <LI>
-          It <strong className="font-semibold text-[#dce3ee]">cannot</strong> decrypt your
+          It <strong className="font-bold text-ink">cannot</strong> decrypt your
           self-custody wallet&apos;s notes. Different key, different account. Value you hold
           yourself is not readable by it.
         </LI>

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { A, C, DocsPage, Evidence, H2, Limit, P, Table } from '../../components/prose';
+import { A, C, DocsPage, Evidence, H2, Limit, Nil, P, Table } from '../../components/prose';
 
 export const metadata: Metadata = {
   title: 'Funding and exit - Sealed docs',
@@ -77,7 +77,7 @@ export default function Funding() {
             'Destination address, amount, and the STRK fee',
             'Which notes funded it',
           ],
-          ['CCTP hop out', 'Entirely public, by design and by label', '—'],
+          ['CCTP hop out', 'Entirely public, by design and by label', <Nil />],
         ]}
       />
     </DocsPage>

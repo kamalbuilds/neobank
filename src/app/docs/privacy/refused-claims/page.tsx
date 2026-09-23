@@ -23,15 +23,33 @@ export default function RefusedClaims() {
         this list cannot reach production without turning the suite red.
       </P>
 
-      <div className="mt-6 flex flex-wrap gap-2">
-        {FORBIDDEN_CLAIMS.map((c) => (
-          <span
-            key={c.phrase}
-            className="rounded-full border border-white/[0.09] px-3 py-1.5 font-[family-name:var(--font-mono-ui)] text-[12px] text-[#7a859c] line-through decoration-[#f87171]/70 decoration-2"
-          >
-            {c.phrase}
+      {/* The register, not a cloud of tags. Each refusal gets its own ruled
+          line and its own number, because a list a reader can count is a list
+          a reader can hold the project to. */}
+      <div className="mt-7 rounded-[4px] border border-[color:var(--line)]">
+        <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-[color:var(--line-strong)] bg-white/[0.03] px-4 py-3">
+          <span className="figure text-[12px] font-semibold uppercase tracking-[0.16em] text-muted">
+            Refused phrases
           </span>
-        ))}
+          <span className="figure text-[12px] font-semibold uppercase tracking-[0.14em] text-seal-bright">
+            {FORBIDDEN_CLAIMS.length} refused
+          </span>
+        </header>
+        <ul>
+          {FORBIDDEN_CLAIMS.map((c, i) => (
+            <li
+              key={c.phrase}
+              className="flex items-baseline gap-4 border-b border-[color:var(--line)] px-4 py-3 last:border-b-0"
+            >
+              <span className="figure w-6 shrink-0 text-[12px] font-semibold text-muted">
+                {String(i + 1).padStart(2, '0')}
+              </span>
+              <span className="figure text-[16px] text-ink/75 line-through decoration-[color:var(--seal-text)] decoration-2">
+                {c.phrase}
+              </span>
+            </li>
+          ))}
+        </ul>
       </div>
 
       <H2>Why some of them read as fragments</H2>

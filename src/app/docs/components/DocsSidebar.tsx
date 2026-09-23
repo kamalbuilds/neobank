@@ -9,18 +9,22 @@ import { DOCS_NAV, hrefFor } from '../nav';
  * The persistent left rail. Client-side only because it needs the current
  * pathname to mark the active page; the pages themselves stay server
  * components so their prose ships as HTML.
+ *
+ * One continuous hairline runs down the rail and the active page puts a seal
+ * tick on it. That is the only accent in the navigation: a reader should be
+ * able to find where they are without a colour ever competing with the page.
  */
 export function DocsSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
 
   return (
-    <nav aria-label="Documentation" className="flex flex-col gap-7">
+    <nav aria-label="Documentation" className="flex flex-col gap-8">
       {DOCS_NAV.map((section) => (
         <div key={section.title}>
-          <p className="px-3 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[#6b7689]">
+          <p className="figure pl-3 text-[12px] font-semibold uppercase tracking-[0.16em] text-muted">
             {section.title}
           </p>
-          <ul className="mt-2 flex flex-col gap-0.5">
+          <ul className="mt-2.5 flex flex-col">
             {section.links.map((link) => {
               const href = hrefFor(link.slug);
               const active = pathname === href;
@@ -30,10 +34,10 @@ export function DocsSidebar({ onNavigate }: { onNavigate?: () => void }) {
                     href={href}
                     onClick={onNavigate}
                     aria-current={active ? 'page' : undefined}
-                    className={`block rounded-lg px-3 py-1.5 text-[13.5px] leading-snug transition-colors duration-150 ${
+                    className={`block border-l-2 py-1.5 pl-3 pr-2 text-[14px] leading-snug transition-[color,background-color,border-color] duration-150 ${
                       active
-                        ? 'bg-white/[0.06] font-medium text-[#eaf0f8]'
-                        : 'text-[#8b95a8] hover:bg-white/[0.03] hover:text-[#d8deea]'
+                        ? 'border-l-[color:var(--seal)] bg-white/[0.04] font-bold text-ink'
+                        : 'border-l-[color:var(--line)] text-ink/70 hover:border-l-[color:var(--line-strong)] hover:bg-white/[0.02] hover:text-ink'
                     }`}
                   >
                     {link.title}
@@ -48,7 +52,7 @@ export function DocsSidebar({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-/** The same nav behind a button on narrow screens, where a 260px rail cannot fit. */
+/** The same nav behind a button on narrow screens, where a 236px rail cannot fit. */
 export function DocsMobileNav() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -75,15 +79,17 @@ export function DocsMobileNav() {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-controls="docs-mobile-nav"
-        className="flex items-center gap-2 rounded-xl border border-white/[0.1] bg-white/[0.03] px-3.5 py-2 text-[13px] font-medium text-[#d8deea]"
+        className="flex items-center gap-2 rounded-[4px] border border-[color:var(--line-strong)] bg-white/[0.03] px-3.5 py-2 text-[14px] font-bold text-ink transition-transform duration-150 active:scale-[0.97]"
       >
-        <span aria-hidden>{open ? '×' : '☰'}</span>
+        <span aria-hidden="true" className="figure">
+          {open ? '×' : '≡'}
+        </span>
         Documentation
       </button>
       {open ? (
         <div
           id="docs-mobile-nav"
-          className="mt-3 rounded-2xl border border-white/[0.08] bg-[#0a0c12] p-4"
+          className="mt-3 rounded-[4px] border border-[color:var(--line)] bg-chrome-2 p-4"
         >
           <DocsSidebar onNavigate={() => setOpen(false)} />
         </div>

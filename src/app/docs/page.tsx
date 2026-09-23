@@ -68,10 +68,10 @@ export default function DocsOverview() {
       </P>
       <P>
         Holding and shielding are{' '}
-        <strong className="font-semibold text-[#dce3ee]">live on Starknet mainnet</strong>, through
+        <strong className="font-bold text-ink">live on Starknet mainnet</strong>, through
         the canonical STRK20 pool, with four settled transactions and real STRK spent on the pool
         fee. Everything built on top of that - the card swipe, the earn vault, the CCTP bridge -
-        runs on <strong className="font-semibold text-[#dce3ee]">Sepolia testnet</strong> with test
+        runs on <strong className="font-bold text-ink">Sepolia testnet</strong> with test
         money, because those are this project&apos;s own contracts and they are deployed on Sepolia
         only. That split is stated here first because it qualifies every other sentence in this
         documentation: check which network a page names before reading a number off it.
@@ -97,17 +97,17 @@ export default function DocsOverview() {
         <Status kind="live" /> row is a transaction hash on{' '}
         <A href="/docs/evidence">the evidence page</A>.
       </P>
-      <div className="mt-6 flex flex-col gap-3">
+      <div className="mt-7 rounded-[4px] border border-[color:var(--line)]">
         {SURFACES.map((s) => (
           <div
             key={s.name}
-            className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4"
+            className="border-b border-[color:var(--line)] px-4 py-4 last:border-b-0"
           >
             <div className="flex flex-wrap items-center gap-3">
-              <span className="text-[14.5px] font-semibold text-[#eaf0f8]">{s.name}</span>
+              <span className="text-[16px] font-bold text-ink">{s.name}</span>
               <Status kind={s.kind} />
             </div>
-            <p className="mt-2 text-[13.5px] leading-relaxed text-[#8b95a8]">{s.body}</p>
+            <p className="mt-2 max-w-[58ch] text-[14px] leading-[1.65] text-ink/75">{s.body}</p>
           </div>
         ))}
       </div>
@@ -135,7 +135,7 @@ export default function DocsOverview() {
             <LI key={l.slug}>
               <Link
                 href={hrefFor(l.slug)}
-                className="font-medium text-[#dce3ee] underline decoration-white/20 underline-offset-[3px] transition-colors hover:text-[#eaf0f8] hover:decoration-white/50"
+                className="font-bold text-ink underline decoration-[color:var(--line-strong)] underline-offset-[3px] transition-[text-decoration-color] duration-150 hover:decoration-[color:var(--seal-text)]"
               >
                 {l.title}
               </Link>

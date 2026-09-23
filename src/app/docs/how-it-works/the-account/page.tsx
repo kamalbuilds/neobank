@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { A, C, DocsPage, H2, LI, Limit, P, Table, UL } from '../../components/prose';
+import { A, C, DocsPage, H2, LI, Limit, Nil, P, Table, UL } from '../../components/prose';
 
 export const metadata: Metadata = {
   title: 'The account - Sealed docs',
@@ -17,7 +17,7 @@ export default function TheAccount() {
     >
       <P>
         There is no account balance stored anywhere in this product. What exists is a set of{' '}
-        <strong className="font-semibold text-[#dce3ee]">notes</strong> inside the STRK20 pool, each
+        <strong className="font-bold text-ink">notes</strong> inside the STRK20 pool, each
         encrypted, each decryptable only by the key that owns it. The number on your screen is the
         result of decrypting your own notes locally and adding them up.
       </P>
@@ -69,11 +69,11 @@ export default function TheAccount() {
       <Table
         head={['Action', 'Public on chain', 'Needs your key to read']}
         rows={[
-          ['Deposit / shield', 'Your address, the token, the amount', '—'],
+          ['Deposit / shield', 'Your address, the token, the amount', <Nil />],
           ['Private transfer', 'That the pool was touched, and when', 'Sender, receiver, amount'],
           ['Holding a balance', 'Nothing beyond the deposit that created it', 'Balance and history'],
-          ['Unshield / withdraw', 'Destination address and amount', '—'],
-          ['Pool fee', 'Always visible, paid in public STRK', '—'],
+          ['Unshield / withdraw', 'Destination address and amount', <Nil />],
+          ['Pool fee', 'Always visible, paid in public STRK', <Nil />],
         ]}
       />
       <P>

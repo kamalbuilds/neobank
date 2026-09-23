@@ -24,14 +24,14 @@ export default function Quickstart() {
       <H2>Before you start</H2>
       <UL>
         <LI>
-          <strong className="font-semibold text-[#dce3ee]">The Ready wallet.</strong> Private
+          <strong className="font-bold text-ink">The Ready wallet.</strong> Private
           actions need a wallet implementing the Starknet privacy wallet API - the part that derives
           your viewing key on-device and produces the proofs behind a private transfer. Ready is the
           wallet that does this today. Other Starknet wallets can hold your public funds; they
           cannot do the private actions.
         </LI>
         <LI>
-          <strong className="font-semibold text-[#dce3ee]">Public STRK for fees.</strong> The pool
+          <strong className="font-bold text-ink">Public STRK for fees.</strong> The pool
           charges a fee per private operation, and it is paid in{' '}
           <em>public</em> STRK from your ordinary balance, not from your shielded notes. If your
           public STRK is empty, a shielded balance cannot move.
@@ -54,7 +54,7 @@ export default function Quickstart() {
         <Step title="Deposit STRK or USDC">
           <P>
             The deposit leg is an ordinary ERC-20 transfer into the pool, so{' '}
-            <strong className="font-semibold text-[#dce3ee]">the amount and your address are
+            <strong className="font-bold text-ink">the amount and your address are
             public</strong>. What becomes private is everything after it. On a brand-new account
             this transaction also deploys the account before depositing, in the same flow.
           </P>
