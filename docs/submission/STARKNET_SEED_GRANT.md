@@ -261,11 +261,16 @@ Ecosystem context as of 2026-09-23, which shapes several answers below:
 
 **Proposed solution**
 
-> Start with what the sprint results say, because it is the most useful framing available. The
-> three projects that placed were Erebus (confidential settlement between AI agents), StakeWars
-> (sealed-bid auctions inside a game) and Xenia (private payment links). Two of those are new
-> categories, and the third, private payment links, is a primitive Sealed also has. So the question
-> worth answering is what Sealed does that none of them do.
+> Sealed is your RFP 18, "Private crypto neobank with a non-custodial spending card", and nobody in
+> 206 hackathon entries built it. We measured the field on 2026-09-23 with a full event scan at
+> block 15,316,804 before writing this answer, so the claims below are counts rather than
+> impressions. Working notes: `docs/COMPETITIVE_FIELD_2026-09-23.md`.
+>
+> The three projects that placed were Erebus (confidential settlement between AI agents), StakeWars
+> (sealed-bid auctions inside a game) and Xenia (private payment links). Xenia is the closest to us
+> and has created six links in its lifetime, moving about 17 STRK across 11 transactions. So the
+> question worth answering is what Sealed does that none of them do, and what none of them ship at
+> all.
 >
 > One transaction that pays and invests. A single STRK20 `privacy_invoke` pays a merchant, puts the
 > remainder into a lending position, and reshields the change, with the payer hidden throughout.
@@ -286,16 +291,42 @@ Ecosystem context as of 2026-09-23, which shapes several answers below:
 > built on it. Sealed is useful to the ecosystem precisely because it consumes other people's
 > privacy primitives instead of reimplementing them.
 >
+> Custody that outlives the frontend, which nothing in this field has. Xenia keeps sender keys in
+> `localStorage` only, so clearing a browser strands the funds permanently, and its own
+> `recover-claim-account.ts` tells users to import the key into Ready while its own component
+> docstring says that does not work for shielded funds. No STRK20 product ships a viewing-key
+> export, a documented recovery path, or a second client that can read the same notes. For anything
+> calling itself a money account that is the line between a demo and a product, and it is Milestone
+> 1 work rather than a someday item.
+>
+> A stated answer to who can read you. The pool exposes `get_auditor_public_key` and
+> `set_auditor_public_key` behind a role, which we called on mainnet: the auditor key is
+> `0x1eed60b8d483b3bede62d1cc0f32874aea30747e6943437c858359b41801bf7` and the screener key is
+> `0x501cc452e5a4370e2f0879c9a863b3efc915005817487460b23a8d6ef88fdb2`. L2Beat's review puts it
+> bluntly: nothing a user does removes the auditor key. No product on Starknet or Ethereum tells its
+> users this. Sealed will, on a page that reads the key live the way the evidence page already reads
+> the verifier. It costs us the comfortable version of our own pitch, which is the point.
+>
 > A privacy product that publishes what it does not do. Every competing pitch in this category
 > claims a card. Sealed publishes the reason there is no BIN, refuses third-party no-KYC virtual
 > cards on the evidence that they freeze privacy-pool funds, and marks its own shadow-spend feature
-> PARTIAL because exactly one transaction has settled through it. For a committee that has to tell
-> shipped work from a good deck, that is the most useful signal a project can offer.
+> PARTIAL because exactly one transaction has settled through it. That refusal is now better
+> evidenced than when we wrote it: Kulipa went insolvent on 2026-07-29 and took Ready's card with it
+> at no notice, and Gnosis Pay announced on 2026-09-03 that its consumer card ends on 2026-12-20
+> after roughly $22.5M of DAO funding produced under $400K of revenue. We are not asking the
+> Foundation to fund a BIN hunt.
 >
-> The ecosystem value is concrete rather than rhetorical. STRK20's usefulness scales with its
-> anonymity set, and an anonymity set grows through ordinary reasons to deposit, not through people
-> who want privacy in the abstract. An account someone funds every payday is a better source of set
-> growth than any amount of advocacy.
+> The ecosystem value is concrete rather than rhetorical, and we would rather state the hard version
+> than the flattering one. We scanned the canonical pool on 2026-09-23: 2,852 lifetime registered
+> users, 16,798 deposits, and **415 distinct depositors in the last 30 days**, against roughly
+> $464,550 of identifiable TVL by `balanceOf` per token ($870.77K on L2Beat, the gap being an
+> unpriced memecoin tail). The shielded USDC set is $205,622.68.
+>
+> That is the anonymity set every STRK20 product's privacy claim is bounded by, including ours, and
+> it is small. It also means a single account funded every payday moves the number in a way no
+> amount of advocacy does. We are not claiming a market. We are asking to be the reason the set
+> grows, and we will publish the set size per asset as a product metric so the claim stays checkable
+> rather than becoming marketing.
 
 ---
 
@@ -454,6 +485,15 @@ Ecosystem context as of 2026-09-23, which shapes several answers below:
 > the block each chain was at, and the run timestamp, regenerated on every deploy, and displaying a
 > failed or stale state rather than a green badge when the verifier has not passed recently. This
 > exists today and Milestone 1 keeps it true against mainnet contracts.
+>
+> A viewing-key export and a documented recovery path, plus a second client that can read the same
+> notes, so a Sealed balance survives the Sealed frontend disappearing. No STRK20 product ships any
+> of the three today, and the nearest comparison strands funds permanently when a browser is
+> cleared.
+>
+> A published disclosure of who can read a user, reading `get_auditor_public_key` and
+> `get_screener_public_key` from the pool live rather than asserting a value, and stating what a
+> role holder replacing that key means for a user's notes.
 >
 > Documentation brought current with the deployed state, checked by a script rather than by eye, so
 > that no page claims a capability the chain does not show. Documentation and open-source quality
