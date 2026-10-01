@@ -30,6 +30,13 @@ SHORT = {
     "Milestone 1 name": "Everything on mainnet",
     "Milestone 1 amount": "11000",
     "Milestone 1 completion date": "December 19, 2026",
+    "Number of users": "1",
+    "Number of transactions": "4",
+    "Revenue": "0",
+    "Signatory full name": "Kamal Nayan",
+    "Signatory email": "kamalthedev7@gmail.com",
+    "Signatory title": "Founder",
+    "Referral": "STRK20 Private Sprint, run by StarkWare's STRK20 team",
 }
 
 # Draft header -> form aria-label.
@@ -58,6 +65,14 @@ LONG = {
 EXTRA_LONG = {
     "Team GitHub Handles": "kamalbuilds, aarav1656",
     "Other social URL": "https://x.com/kamalbuilds",
+    "Other metrics": (
+        "Everything we report is read from chain, not from analytics. On Starknet mainnet: 4 "
+        "transactions through the canonical STRK20 pool, all re-verified against a live RPC by "
+        "npm run verify:claim. On Sepolia: 8 Cairo contracts deployed and verified 8 of 8, 5 card "
+        "settlements read from our settlement contract events, and 11 of 11 evidence values "
+        "passing our verifier. The pool Sealed builds on counted 415 distinct depositors in the "
+        "30 days to 2026-09-23, from a full event scan at block 15,316,804."
+    ),
 }
 # (label, nth occurrence in form order): phase, project live, network, applied to Seed Grant before.
 RADIOS = [("MVP/Development", 0), ("Yes", 0), ("Yes - Mainnet", 0), ("No", 1)]
@@ -67,7 +82,11 @@ window.__short=function(label,v){var labs=[...document.querySelectorAll('div,lab
 for(var i=0;i<labs.length;i++){var n=labs[i];for(var u=0;u<7&&n;u++){n=n.parentElement;if(!n)break;var c=n.querySelector('textarea,input[type=text],input:not([type])');
 if(c){var p=c instanceof HTMLTextAreaElement?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;Object.getOwnPropertyDescriptor(p,'value').set.call(c,v);
 c.dispatchEvent(new Event('input',{bubbles:true}));c.dispatchEvent(new Event('change',{bubbles:true}));c.dispatchEvent(new Event('blur',{bubbles:true}));return 'OK'}}}return 'NOFIELD'};
-window.__long=function(label,v){var e=document.querySelector('[role=textbox][aria-label="'+label+'"]');if(!e)return 'NOFIELD';e.focus();
+window.__ed=function(label){var e=document.querySelector('[role=textbox][aria-label="'+label+'"]');if(e)return e;var L=label.toLowerCase();
+var labs=[...document.querySelectorAll('div,label,span,h3,p')].filter(function(n){return n.children.length===0&&n.textContent.trim().toLowerCase()===L});
+for(var i=0;i<labs.length;i++){var n=labs[i];for(var u=0;u<7&&n;u++){n=n.parentElement;if(!n)break;var c=n.querySelector('[contenteditable=true],[contenteditable=plaintext-only]');if(c)return c}}return null};
+window.__readLong=function(label){var e=__ed(label);return e?e.textContent.trim().length:-1};
+window.__long=function(label,v){var e=__ed(label);if(!e)return 'NOFIELD';e.focus();
 var s=getSelection(),r=document.createRange();r.selectNodeContents(e);s.removeAllRanges();s.addRange(r);document.execCommand('insertText',false,v);
 e.dispatchEvent(new Event('input',{bubbles:true}));return 'OK'};
 window.__readShort=function(label){var labs=[...document.querySelectorAll('div,label,span,h3,p')].filter(function(n){return n.children.length===0&&n.textContent.trim()===label});
@@ -102,7 +121,16 @@ def milestone(n):
     return "\n\n".join(re.sub(r"\s*\n\s*", " ", p).strip() for p in re.split(r"\n\s*\n", text) if p.strip())
 
 
+TARGET = None  # deepsurge tab id holding the form; other sessions switch the shared tab
+
+
 def js(expr):
+    # Re-pin before every call and refuse to act anywhere but Airtable.
+    if TARGET:
+        subprocess.run(["bhn", "deepsurge", "use", TARGET], capture_output=True)
+        host = subprocess.run(["bhn", "deepsurge", "eval", "location.hostname"], capture_output=True, text=True).stdout
+        if "airtable.com" not in host:
+            return "WRONG_TAB"
     out = subprocess.run(["bhn", "deepsurge", "eval", expr], capture_output=True, text=True).stdout
     last = [l for l in out.splitlines() if l.strip()][-1] if out.strip() else "{}"
     try:
@@ -117,6 +145,9 @@ def b64call(fn, label, value):
 
 
 def main():
+    global TARGET
+    tabs = json.loads(subprocess.run(["bhn", "deepsurge", "tabs"], capture_output=True, text=True).stdout)
+    TARGET = next(t["targetId"] for t in tabs["tabs"] if "airtable.com/appfoRv2ottjRfTpL" in t["url"])
     js(HELPERS)
     results = {}
 
@@ -147,13 +178,11 @@ def main():
         ok = norm(value) in norm(got) or norm(got) in norm(value) and got
         print(f"  {'OK ' if ok else 'BAD'} {label:30} {str(got)[:48]}")
     print("== long fields")
-    lengths = js("(function(){var o={};document.querySelectorAll('[role=textbox][aria-label]').forEach(function(e){o[e.getAttribute('aria-label')]=e.textContent.trim().length});return o})()") or {}
     for label, value in long_answers.items():
-        got = lengths.get(label, 0)
+        got = js(f"__readLong({json.dumps(label)})")
+        got = got if isinstance(got, int) else -1
         ok = got >= min(len(value), 20) * 0.9
         print(f"  {'OK ' if ok else 'BAD'} {label:36} {got:5d} chars (draft {len(value)})")
-    empty = [k for k, v in lengths.items() if v == 0]
-    print("== still empty:", ", ".join(empty) or "none")
     print("== radios checked:", js("[...document.querySelectorAll('[role=radio][aria-checked=true]')].map(function(e){return e.textContent.trim()}).join(' | ')"))
 
 
