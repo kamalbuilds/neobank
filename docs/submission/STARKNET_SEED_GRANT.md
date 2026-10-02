@@ -48,7 +48,7 @@ Application answers for the Airtable form at
 >
 > Why we're building it: we get paid in USDC, and so does every contractor we know. The moment you self-custody and then spend from the same address, every invoice you've ever received is permanently linked to every purchase you've ever made. That pushes people straight back to exchanges and custodians. Sealed is how they stay on-chain without giving up their privacy.
 >
-> What's already running. On Starknet mainnet, Sealed shields and holds through the canonical pool, with four transactions anyone can open on Voyager, starting with 0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193. On Sepolia, through eight Cairo contracts we wrote and deployed, the whole loop works: a card swipe that sells shielded STRK and pays the merchant in USDC in a single transaction, a dinner paid while a lending position opens in the same receipt (10.24 STRK out of the pool, 0.24 to the merchant, 10 into the vault, AuthorizationSettled and PositionOpened together), the same dinner paid again by redeeming vault shares, and USDC bridged in from Base over CCTP V2 that lands already shielded.
+> What's already running. On Starknet mainnet, Sealed shields, holds, sends privately and unshields through the canonical pool, with five transactions anyone can open on Voyager. The newest, 0x6342cd9a1c1f4f9cd85f6561b3d78ed196c0ee3a332b8cc1feacd89e739360e, is a private send: one apply_actions, proved by the STRK20 prover through Starkscan's relay, registers a viewing key, shields 3 STRK, sends 1 STRK privately to a second account and unshields 1 STRK. On Sepolia, through eight Cairo contracts we wrote and deployed, the whole loop works: a card swipe that sells shielded STRK and pays the merchant in USDC in a single transaction, a dinner paid while a lending position opens in the same receipt (10.24 STRK out of the pool, 0.24 to the merchant, 10 into the vault, AuthorizationSettled and PositionOpened together), the same dinner paid again by redeeming vault shares, and USDC bridged in from Base over CCTP V2 that lands already shielded.
 >
 > Spending runs through a settlement path that pays merchants straight from shielded value, with card policy (per-swipe cap, daily cap, blocked categories) enforced in a contract rather than a dashboard. No issuer can freeze it and no backend can quietly change the limits.
 >
@@ -144,7 +144,7 @@ Application answers for the Airtable form at
 >
 > Settled card authorizations per network, read from our settlement contracts.
 >
-> Today we have four mainnet pool transactions, eight deployed Sepolia contracts and five settled card authorizations, all published on sealed.cash/docs/evidence.
+> Today we have five mainnet pool transactions including a private send and an unshield, eight deployed Sepolia contracts and five settled card authorizations, all published on sealed.cash/docs/evidence.
 
 **User acquisition strategy**
 
@@ -208,7 +208,7 @@ Application answers for the Airtable form at
 >
 > A card authorization settled on Starknet mainnet through CardSettlementAnonymizer, paying a merchant from shielded value, with the AuthorizationSettled event public on Voyager.
 >
-> A private transfer between two shielded accounts and an unshield to a user's own address, both executed on Starknet mainnet with hashes published.
+> Private send and unshield in the Sealed app for every user, building on the mainnet send already settled through our own tooling (0x6342cd9a1c1f4f9cd85f6561b3d78ed196c0ee3a332b8cc1feacd89e739360e).
 >
 > The atomic pay-and-lend transaction on Starknet mainnet: AuthorizationSettled and PositionOpened in a single receipt.
 >
@@ -250,7 +250,7 @@ Application answers for the Airtable form at
 
 **Track record**
 
-> Sealed is the best picture of how we work. In three weeks during the STRK20 Private Sprint we wrote and deployed eight Cairo contracts, shipped a 22-route app, landed four mainnet transactions through the canonical pool and settled card payments from shielded value on Sepolia. sealed.cash has been live since 2026-08-29 and we've kept shipping since the sprint closed: a full redesign, a verifier that stamps the evidence page on every run, and bug fixes found by our own audits.
+> Sealed is the best picture of how we work. In three weeks during the STRK20 Private Sprint we wrote and deployed eight Cairo contracts, shipped a 22-route app, landed four mainnet transactions through the canonical pool, and on 2 October added the first private send on mainnet and settled card payments from shielded value on Sepolia. sealed.cash has been live since 2026-08-29 and we've kept shipping since the sprint closed: a full redesign, a verifier that stamps the evidence page on every run, and bug fixes found by our own audits.
 >
 > It's all public under Apache 2.0 at github.com/kamalbuilds/neobank, and every number on the site links to a transaction.
 >
