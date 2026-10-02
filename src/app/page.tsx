@@ -110,7 +110,7 @@ export default function LandingPage() {
               </Link>
             </div>
             <p className="mt-8 max-w-md text-[13px] leading-relaxed text-muted">
-              Live on Starknet mainnet for holding and shielding, through the canonical STRK20 pool.
+              Live on Starknet mainnet for holding, shielding, private send and unshield, through the canonical STRK20 pool.
               The card, vault and bridge loops run on Sepolia, where this project&apos;s own
               contracts are deployed. Not a licensed bank. Not a mixer.
             </p>
