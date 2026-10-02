@@ -69,6 +69,14 @@ const ROWS: StatementRow[] = [
     amount: '1 USDC',
     hash: '0x28b053d9a670650604bf8f7ae8b67fc7f296d2f4fa630a987e7a6f775b11fe2',
   },
+  {
+    date: '2026-10-02',
+    description: 'Received privately from a second account',
+    network: 'mainnet',
+    // evidence.ts "Private send and unshield on mainnet": 1 STRK note to this account.
+    amount: '1 STRK',
+    hash: '0x6342cd9a1c1f4f9cd85f6561b3d78ed196c0ee3a332b8cc1feacd89e739360e',
+  },
 ];
 
 /** Gap between one row's bar lifting and the next. */
@@ -148,7 +156,7 @@ export function RedactedStatement() {
           </div>
           <dl className="figure grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-[13px]">
             <dt className="text-paper-muted">Period</dt>
-            <dd className="font-semibold text-paper-ink">2026-08-14 / 2026-08-27</dd>
+            <dd className="font-semibold text-paper-ink">2026-08-14 / 2026-10-02</dd>
             <dt className="text-paper-muted">Owner</dt>
             <dd className="font-semibold text-paper-ink">{shortenHex(OWNER_ACCOUNT, 8, 4)}</dd>
           </dl>
@@ -220,7 +228,7 @@ export function RedactedStatement() {
           {open ? 'Hide again' : 'Reveal with viewing key'}
         </button>
         <p className="mt-4 max-w-[52ch] text-[15px] leading-relaxed text-ink">
-          The public chain shows these as five transfers in and out of a pool address; whose account
+          The public chain shows these as six transfers in and out of a pool address; whose account
           they are and what is left in it stay under the viewing key.
         </p>
         <p className="mt-3 max-w-[52ch] text-[13px] leading-relaxed text-muted">
