@@ -15,8 +15,8 @@ const ROWS: Row[] = [
     kind: 'live',
     evidence: (
       <>
-        Four mainnet pool transactions, all <C>SUCCEEDED</C>, three of them finalised on L1 and the
-        newest still <C>ACCEPTED_ON_L2</C>, plus the full Sepolia loop.
+        Five mainnet pool transactions, all <C>SUCCEEDED</C>, the older ones finalised on L1, plus
+        the full Sepolia loop.
       </>
     ),
   },
@@ -97,7 +97,7 @@ const ROWS: Row[] = [
     kind: 'not-built',
     evidence: (
       <>
-        Every Sealed contract is deployed on Sepolia only. Mainnet has the four pool transactions
+        Every Sealed contract is deployed on Sepolia only. Mainnet has the five pool transactions
         above and nothing else of ours. The sprint counts a mainnet transaction only when it runs
         through a contract the project itself deployed, <em>if</em> the project declares contracts
         at all, and it does not check which network those contracts live on. Declaring the Sepolia
@@ -111,32 +111,26 @@ const ROWS: Row[] = [
     ),
   },
   {
-    // The brief this product was built against names four verbs: hold, send,
-    // spend and earn. Three had a row here and send did not, which read as an
-    // omission rather than as the honest answer. It gets its own row now, and
-    // the answer is no.
     name: 'Private send between two accounts',
-    kind: 'not-built',
+    kind: 'live',
     evidence: (
       <>
-        Never run, on any network. None of the settled transactions on the evidence page is a
-        shielded-to-shielded transfer. The contract path exists and a second recipient is already
-        registered on mainnet (<C>0xe08fd329…0294</C> sets its viewing key), so the blocker is
-        public STRK for the 6 STRK pool fee rather than missing code. Earlier versions of the
-        README and of the grant application said this path was exercised on Sepolia. That was
-        wrong, and both were corrected once the record was checked row by row.
+        Settled on mainnet: <C>0x6342cd9a…360e</C>, block 15,768,124. One <C>apply_actions</C>{' '}
+        proved by the STRK20 prover through Starkscan registered a viewing key, shielded 3 STRK,
+        sent 1 STRK privately to a second registered account and kept 1 STRK as a shielded note,
+        read back from the mainnet indexer with the sender&apos;s viewing key.
       </>
     ),
   },
   {
     name: 'Unshield to your own address',
-    kind: 'not-built',
+    kind: 'live',
     evidence: (
       <>
-        Never run as a user action. The pool <C>withdraw</C> it depends on has executed on Sepolia
-        inside card settlements, where the destination was chosen by the card runtime rather than
-        typed into a form: <C>0x4d94fa79…2639</C> withdrew 10.24 STRK and{' '}
-        <C>0x1f815361…fe5df</C> settled a swipe.
+        Settled on mainnet in the same transaction: 1 STRK withdrawn from the pool to the
+        sender&apos;s own address. The same pool <C>withdraw</C> also runs inside Sepolia card
+        settlements: <C>0x4d94fa79…2639</C> withdrew 10.24 STRK and <C>0x1f815361…fe5df</C>{' '}
+        settled a swipe.
       </>
     ),
   },
@@ -177,9 +171,9 @@ export default function StatusPage() {
       </P>
       <Limit>
         Settlement transactions above are confirmed <C>SUCCEEDED</C>; several are{' '}
-        <C>ACCEPTED_ON_L2</C> rather than finalised on L1. Three of the four mainnet pool
-        transactions are <C>ACCEPTED_ON_L1</C>; the fourth, block 14522373, is{' '}
-        <C>ACCEPTED_ON_L2</C> and had not finalised when this page was last checked. Where that distinction matters to you, check the hash yourself on{' '}
+        <C>ACCEPTED_ON_L2</C> rather than finalised on L1. The older mainnet pool
+        transactions are <C>ACCEPTED_ON_L1</C>; the newest can still read <C>ACCEPTED_ON_L2</C>{' '}
+        for a few hours after it lands. Where that distinction matters to you, check the hash yourself on{' '}
         <A href="/docs/evidence">the evidence page</A>.
       </Limit>
     </DocsPage>

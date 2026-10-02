@@ -216,6 +216,14 @@ export const TX_RECORD: TxRow[] = [
     14522373,
   ),
   tx(
+    'Private send and unshield on mainnet',
+    '0x6342cd9a1c1f4f9cd85f6561b3d78ed196c0ee3a332b8cc1feacd89e739360e',
+    'mainnet',
+    'One apply_actions proved by the STRK20 prover through Starkscan: ViewingKeySet, Deposit of 3 STRK, two EncNoteCreated (1 STRK sent privately to the owner account, 1 STRK kept shielded) and a Withdrawal of 1 STRK back to public. 5 events from the pool.',
+    'SUCCEEDED',
+    15768124,
+  ),
+  tx(
     'A swipe settles privately',
     '0x1f815361cd9cb1b378f208c8def10dddf5452ead190cb199a1da37adf4fe5df',
     'sepolia',

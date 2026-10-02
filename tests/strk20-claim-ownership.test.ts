@@ -129,7 +129,8 @@ describe('the docs agree with the verifier', () => {
 
   it('counts the mainnet transactions the same way the manifest does', () => {
     const manifest = JSON.parse(readFileSync('strk20.json', 'utf8'));
-    expect(manifest.transactions).toHaveLength(4);
+    expect(manifest.transactions).toHaveLength(5);
+    expect(statusPage).not.toMatch(/four mainnet pool transactions/i);
     // The pages used to say "Two shields" while the manifest declared three.
     expect(statusPage).not.toMatch(/two mainnet shields/i);
     expect(statusPage).not.toMatch(/three mainnet pool transactions/i);

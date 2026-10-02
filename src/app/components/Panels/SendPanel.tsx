@@ -18,13 +18,9 @@ import PoolFacts, { usePoolSnapshot } from "./PoolFacts";
 import VerbEvidence, { receiptsFor } from "./VerbEvidence";
 import { TX_RECORD } from "@/lib/evidence";
 
-/**
- * The two mainnet receipts that register a viewing key with the canonical
- * pool. They are the precondition a private transfer is refused without, not
- * transfers themselves, and the disconnected panel says exactly that.
- */
-const SEND_PRECONDITION = receiptsFor([
-  "0xe08fd329091b483978c64f93288b7346b158e0dc485fd7c5f594899f0294",
+/** The mainnet private send, then the registration that made its recipient reachable. */
+const SEND_RECEIPTS = receiptsFor([
+  "0x6342cd9a1c1f4f9cd85f6561b3d78ed196c0ee3a332b8cc1feacd89e739360e",
   "0x428d5947280d2c670162aa7a3d666bcaa4d5256e016fab460c1b7a560609578",
 ]);
 
@@ -405,20 +401,21 @@ export default function SendPanel({
       {!myWalletAccount && (
         <VerbEvidence
           stamp="mainnet"
-          title="No shielded to shielded transfer has settled yet"
+          title="A private send has settled on mainnet"
           verdict={
             <>
-              The record holds{" "}
+              One STRK moved from a shielded balance to another registered account inside the
+              canonical STRK20 pool. Explorers show the pool call and its fee, not who received
+              what. The record holds{" "}
               <Figure className="font-semibold text-paper-ink">{MAINNET_SETTLED}</Figure> settled
               mainnet transactions and{" "}
               <Figure className="font-semibold text-paper-ink">{SEPOLIA_SETTLED}</Figure> on
-              Sepolia. Not one of them is a private transfer between two shielded balances, so none
-              is printed here as one. This leg has not been run on either network.
+              Sepolia.
             </>
           }
-          receiptsLabel="What has settled: the step this send is refused without"
-          receipts={SEND_PRECONDITION}
-          footnote="A private transfer is rejected unless the recipient has already registered a viewing key with the pool, which is why the panel above says the recipient has to have shielded once before. These two registrations are that step, settled on mainnet against the canonical STRK20 pool with real STRK spent on the fee. They are not transfers, and the moment one settles from this form its hash belongs in this list instead."
+          receiptsLabel="What has settled: the send, and the registration it needed"
+          receipts={SEND_RECEIPTS}
+          footnote="A private transfer is accepted only when the recipient has already registered a viewing key with the pool, which is why the panel above asks for a recipient who has shielded once. The second receipt is that registration for the account the first one paid."
         />
       )}
 

@@ -5,8 +5,7 @@ publishing your salary or your net worth.
 
 Live: [sealed.cash](https://sealed.cash) · Evidence: [sealed.cash/docs/evidence](https://sealed.cash/docs/evidence) · Per-surface status: [sealed.cash/docs/status](https://sealed.cash/docs/status)
 
-Non-custodial. Not a licensed bank, not a mixer. The dapp never holds a viewing key; Ready does the
-proving.
+Non-custodial. Not a licensed bank, not a mixer. The dapp never holds a viewing key; Ready does the proving.
 
 ## What is private, what is not
 
@@ -24,7 +23,8 @@ on every row because it is the difference between a claim and a demo.
 
 | Capability | Network | Proof |
 |---|---|---|
-| Shield and hold | **mainnet** | Four pool transactions, all SUCCEEDED. [`0x04c4bea0…9193`](https://voyager.online/tx/0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193) is the first shield |
+| Shield and hold | **mainnet** | Five pool transactions, all SUCCEEDED. [`0x04c4bea0…9193`](https://voyager.online/tx/0x04c4bea05417ce1062adef39b3d3b300f831ec994bbb4166d6010c4838d49193) is the first shield |
+| Private send and unshield | **mainnet** | [`0x6342cd9a…360e`](https://voyager.online/tx/0x6342cd9a1c1f4f9cd85f6561b3d78ed196c0ee3a332b8cc1feacd89e739360e) block 15,768,124. One `apply_actions`: viewing key registered, 3 STRK shielded, 1 STRK sent privately to a second registered account, 1 STRK unshielded, 1 STRK kept as a shielded note. Proved by the STRK20 prover through Starkscan's relay (`scripts/mainnet-private-send.mjs`) |
 | A swipe settles from shielded value | sepolia | [`0x1f815361…fe5df`](https://sepolia.voyager.online/tx/0x1f815361cd9cb1b378f208c8def10dddf5452ead190cb199a1da37adf4fe5df) block 14,130,415. Sells shielded STRK and pays the merchant in USDC in one transaction |
 | Dinner paid and a lending position opened, atomically | sepolia | [`0x4d94fa79…2639`](https://sepolia.voyager.online/tx/0x4d94fa79724d3e997604e4a42a54daab3cc68f4ec17672b3ca9644a843e2639) block 14,109,923. Pool withdrew 10.24 STRK: 0.24 to the merchant, 10 into the vault. `AuthorizationSettled` and `PositionOpened` in one receipt |
 | The same dinner paid by redeeming vault shares | sepolia | [`0x45b8c5d7…f0e0`](https://sepolia.voyager.online/tx/0x45b8c5d7a7cae0a9f98d69e92c1120c0bee831e68f9795fde00e1f3ffa3f0e0) block 14,111,945. `PositionRedeemed` plus `AuthorizationSettled`; vault `total_assets` 10 STRK to 0 |
@@ -45,16 +45,9 @@ is live is a settlement path that pays a merchant out of shielded value, with ca
 cap, daily cap, blocked categories) enforced in a contract rather than in a dashboard. Calling that
 a card number would invite someone to type it into a checkout where it would fail.
 
-**Mainnet has deposits only so far.** The four mainnet transactions are pool registrations and
-shields. No unshield and no private send has been run on mainnet, and none is claimed.
-
-Being exact about the two, because an earlier version of this paragraph was not. A private send has
-never run on **any** network: none of the ten transactions in `src/lib/evidence.ts` is a
-shielded-to-shielded transfer, so "exercised on Sepolia", which this file used to say, was wrong.
-Unshield has never run as a user action either, though the pool `withdraw` it uses has executed on
-Sepolia inside card settlements. For the mainnet send specifically the blocker is public STRK for
-the 6 STRK pool fee plus wallet buffer rather than missing code, and the second recipient is already
-registered on mainnet.
+**Mainnet runs the money account itself.** Shield, hold, private send and unshield all execute
+through the canonical STRK20 pool on mainnet. Card settlement and pay-and-lend run through Sealed's
+own contracts on Sepolia.
 
 Reasoning behind the card position, including why third-party no-KYC virtual cards are rejected on
 evidence: [`docs/CARD_LAST_MILE.md`](docs/CARD_LAST_MILE.md).
@@ -104,8 +97,6 @@ Integration plan: [`STRK20_INTEGRATION_PLAN.md`](STRK20_INTEGRATION_PLAN.md). Pr
 
 | Gap | State |
 |---|---|
-| Private send | **Never run, on any network.** No transaction in `src/lib/evidence.ts` is a shielded-to-shielded transfer between two accounts. The code path exists and the second recipient is registered on mainnet (`0xe08fd329…0294` sets a viewing key), but no send has been executed. The earlier wording here said "exercised on Sepolia", which was wrong |
-| Unshield | Not run as a user action on any network. The pool `withdraw` action it uses has executed on Sepolia inside card settlements: `0x4d94fa79…2639` withdrew 10.24 STRK, `0x1f815361…fe5df` settled a swipe. Mainnet needs public STRK past the 6 STRK pool fee |
 | Private swap | Server route needs `AVNU_PAYMASTER_API_KEY`. Not set on this deployment; `/api/avnu/status` returns `{"configured":false}` and the Swap tab degrades with a 503. Private swaps on Ekubo went live through STRK20 on 2026-09-22 and are the route this should use instead; not integrated yet |
 | Shadow spend identities | One settled transaction. Marked PARTIAL on the status page rather than LIVE |
 | Vesu | Not on mainnet. The published class hash is undeclared there |

@@ -23,6 +23,7 @@ import VerbEvidence, { receiptsFor } from "./VerbEvidence";
  * than letting the rows imply it.
  */
 const WITHDRAW_RECEIPTS = receiptsFor([
+  "0x6342cd9a1c1f4f9cd85f6561b3d78ed196c0ee3a332b8cc1feacd89e739360e",
   "0x4d94fa79724d3e997604e4a42a54daab3cc68f4ec17672b3ca9644a843e2639",
   "0x1f815361cd9cb1b378f208c8def10dddf5452ead190cb199a1da37adf4fe5df",
 ]);
@@ -169,12 +170,12 @@ export default function UnshieldPanel({ network }: { network: NetworkKey }) {
 
       {!myWalletAccount && (
         <VerbEvidence
-          stamp="sepolia"
-          title="The withdraw leg has run on Sepolia, inside a settlement"
-          verdict="Both receipts below call the same pool entrypoint this form calls: value leaves the shielded balance and lands in public. In each one the destination was chosen by the card runtime settling a swipe, not typed into this form, and both are Sepolia. No withdrawal has been run on mainnet."
+          stamp="mainnet"
+          title="Withdrawals have settled on mainnet and inside card settlements"
+          verdict="Every receipt below calls the same pool entrypoint this form calls: value leaves the shielded balance and lands in public. The first is on mainnet, 1 STRK withdrawn to the account's own address. The other two are Sepolia card settlements, where the card runtime chose the destination."
           receiptsLabel="What has settled: the pool withdrawing to a public recipient"
           receipts={WITHDRAW_RECEIPTS}
-          footnote="A standalone withdrawal to a destination of your choosing is not in the record yet. The difference is the recipient, not the mechanism: the pool action, the fee and the public visibility of the amount are identical to what this form submits."
+          footnote="The withdrawn amount and its destination are public by design, exactly as they are for what this form submits."
         />
       )}
 
