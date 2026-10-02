@@ -53,6 +53,15 @@ testnet.txt
 
 marketing/*.mp4
 marketing/*.mov
+marketing/*.txt
+
+docs/TESTNET_ENV.txt
 
 # Third-party reference videos and analysis dumps used for measurement only; not ours to redistribute.
 marketing/_ref/
+
+# Internal docs, never published (kept out of history on 2026-10-02).
+WIN-CONDITIONS.md
+docs/WIN-CONDITIONS.md
+docs/JUDGE_PASS_*.md
+docs/COMPETITIVE_FIELD_*.md
